@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-slate-50 font-sans text-slate-900 antialiased;
+    }
+
+    h1, h2, h3, h4 {
+        @apply font-display text-navy-900;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .container-page {
+        @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10;
+    }
+
+    .card {
+        @apply rounded-xl border border-slate-200 bg-white shadow-card;
+    }
+
+    .card-hover {
+        @apply card transition duration-200 hover:-translate-y-0.5 hover:shadow-lift;
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center gap-2 rounded-lg bg-navy-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-navy-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-navy-900 transition hover:border-brand-500 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+    }
+
+    .btn-blue {
+        @apply inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+    }
+
+    .form-label {
+        @apply mb-2 block text-sm font-semibold text-slate-700;
+    }
+
+    .form-input {
+        @apply block w-full rounded-lg border-slate-300 bg-white text-sm shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-brand-500;
+    }
+
+    .form-help {
+        @apply mt-1.5 text-xs leading-5 text-slate-500;
+    }
+
+    .table-shell {
+        @apply overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card;
+    }
+
+    .data-table {
+        @apply min-w-full divide-y divide-slate-200;
+    }
+
+    .data-table thead {
+        @apply bg-slate-50;
+    }
+
+    .data-table th {
+        @apply px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500;
+    }
+
+    .data-table td {
+        @apply px-5 py-4 text-sm text-slate-700;
+    }
+
+    .data-table tbody {
+        @apply divide-y divide-slate-100;
+    }
+
+    .status-chip {
+        @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+    }
+
+    .status-info {
+        @apply bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200;
+    }
+
+    .status-success {
+        @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200;
+    }
+
+    .status-warning {
+        @apply bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200;
+    }
+
+    .status-danger {
+        @apply bg-red-50 text-red-700 ring-1 ring-inset ring-red-200;
+    }
+
+    .status-purple {
+        @apply bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200;
+    }
+
+    .status-neutral {
+        @apply bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200;
+    }
+
+    .sidebar-link {
+        @apply flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white;
+    }
+
+    .sidebar-link-active {
+        @apply bg-brand-500 text-white shadow-sm hover:bg-brand-500;
+    }
+
+    .section-kicker {
+        @apply text-sm font-bold uppercase tracking-[0.18em] text-brand-600;
+    }
+
+    .metric-number {
+        @apply font-display text-3xl font-bold tracking-tight text-navy-900;
+    }
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
