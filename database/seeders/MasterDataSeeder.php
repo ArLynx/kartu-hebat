@@ -14,6 +14,9 @@ class MasterDataSeeder extends Seeder
         $documents = [
             ['KHS', 'Kartu Hasil Studi (KHS)', 'KHS semester terakhir yang telah dilegalisasi untuk jalur Akademik.', true, 10, ApplicationType::AKADEMIK],
             ['SKTM', 'Surat Keterangan Tidak Mampu', 'SKTM yang masih berlaku untuk jalur Tidak Mampu.', true, 20, ApplicationType::TIDAK_MAMPU],
+            ['SURAT-DISABILITAS', 'Surat Keterangan Disabilitas', 'Surat keterangan disabilitas dari dokter/RS atau dari dinas sosial yang masih berlaku.', true, 15, ApplicationType::DISABILITAS],
+            ['FOTO-KONDISI', 'Foto Kondisi / Alat Bantu', 'Foto kondisi disabilitas atau alat bantu yang digunakan (jika ada).', false, 16, ApplicationType::DISABILITAS],
+            ['SERTIFIKAT-PRESTASI', 'Sertifikat / Piagam Prestasi', 'Sertifikat atau piagam kejuaraan beserta surat keterangan dari perguruan tinggi untuk jalur Non-Akademik.', true, 25, ApplicationType::NON_AKADEMIK],
             ['KTP', 'Kartu Tanda Penduduk', 'KTP mahasiswa yang masih berlaku.', true, 30, null],
             ['KK', 'Kartu Keluarga', 'Kartu Keluarga terbaru.', true, 40, null],
             ['KTM', 'Kartu Mahasiswa', 'Kartu Tanda Mahasiswa aktif.', true, 50, null],

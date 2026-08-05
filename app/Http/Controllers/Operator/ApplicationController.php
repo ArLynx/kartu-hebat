@@ -63,6 +63,7 @@ class ApplicationController extends Controller
             'verificationLogs.actor',
             'scores.criterion',
             'selection',
+            'pendaftaran.prestasis',
         ]);
 
         return view('operator.applications.show', [

@@ -23,6 +23,18 @@ class MahasiswaProfile extends Model
         ];
     }
 
+    public const DISABILITY_TYPES = [
+        'TUNANETRA',
+        'TUNARUNGU',
+        'TUNAWICARA',
+        'TUNADAKSA',
+        'TUNAGRAHITA',
+        'DISABILITAS_GANDA',
+        'LAINNYA',
+    ];
+
+    public const DISABILITY_GRADES = ['RINGAN', 'SEDANG', 'BERAT'];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -31,5 +43,10 @@ class MahasiswaProfile extends Model
     public function village(): BelongsTo
     {
         return $this->belongsTo(Village::class);
+    }
+
+    public function hasDisabilityData(): bool
+    {
+        return ! empty($this->disability_type);
     }
 }

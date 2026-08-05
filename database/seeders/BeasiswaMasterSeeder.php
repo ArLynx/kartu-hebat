@@ -40,6 +40,22 @@ class BeasiswaMasterSeeder extends Seeder
                 'urutan' => 2,
                 'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'SKTM'],
             ],
+            [
+                'kode' => 'BEASISWA-DISABILITAS',
+                'application_type' => ApplicationType::DISABILITAS,
+                'nama' => 'Beasiswa Mahasiswa Disabilitas',
+                'deskripsi' => 'Jalur afirmasi untuk mahasiswa penyandang disabilitas dengan pertimbangan jenis dan tingkat disabilitas.',
+                'urutan' => 3,
+                'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'KHS', 'SURAT-DISABILITAS'],
+            ],
+            [
+                'kode' => 'BEASISWA-NON-AKADEMIK',
+                'application_type' => ApplicationType::NON_AKADEMIK,
+                'nama' => 'Beasiswa Non-Akademik / Prestasi',
+                'deskripsi' => 'Jalur afirmasi untuk mahasiswa berprestasi (MTQ, olahraga, seni, wirausaha, dsb.) berdasarkan tingkat dan peringkat kejuaraan.',
+                'urutan' => 4,
+                'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'KHS', 'SERTIFIKAT-PRESTASI'],
+            ],
         ];
 
         $documentDefinitions = [
@@ -73,6 +89,16 @@ class BeasiswaMasterSeeder extends Seeder
                 'deskripsi' => 'SKTM atau dokumen sosial ekonomi lain yang masih berlaku.',
                 'format_file' => 'pdf,jpg,jpeg,png',
             ],
+            'SURAT-DISABILITAS' => [
+                'nama' => 'Surat Keterangan Disabilitas',
+                'deskripsi' => 'Surat keterangan dari dokter/dinas sosial yang menyatakan jenis dan tingkat disabilitas.',
+                'format_file' => 'pdf',
+            ],
+            'SERTIFIKAT-PRESTASI' => [
+                'nama' => 'Sertifikat / Piagam Prestasi',
+                'deskripsi' => 'Sertifikat atau piagam kejuaraan beserta surat keterangan dari perguruan tinggi.',
+                'format_file' => 'pdf,jpg,jpeg,png',
+            ],
         ];
 
         $documentTypes = collect($documentDefinitions)->mapWithKeys(function (array $definition, string $code): array {
@@ -98,8 +124,18 @@ class BeasiswaMasterSeeder extends Seeder
                     'kuota' => $categoryDefinition['application_type']->quota(),
                     'aktif' => true,
                     'urutan' => $categoryDefinition['urutan'],
-                    'icon' => $categoryDefinition['application_type'] === ApplicationType::AKADEMIK ? 'school' : 'users',
-                    'warna' => null,
+                'icon' => match ($categoryDefinition['application_type']) {
+                    ApplicationType::AKADEMIK => 'school',
+                    ApplicationType::TIDAK_MAMPU => 'users',
+                    ApplicationType::DISABILITAS => 'heart',
+                    ApplicationType::NON_AKADEMIK => 'trophy',
+                },
+                'warna' => match ($categoryDefinition['application_type']) {
+                    ApplicationType::AKADEMIK => '#1E40AF',
+                    ApplicationType::TIDAK_MAMPU => '#047857',
+                    ApplicationType::DISABILITAS => '#B45309',
+                    ApplicationType::NON_AKADEMIK => '#7C3AED',
+                },
                 ],
             );
 

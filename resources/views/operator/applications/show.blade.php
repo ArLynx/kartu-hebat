@@ -44,6 +44,36 @@
                         <dd class="mt-1 text-sm font-medium text-slate-900">{{ $value ?: '-' }}</dd>
                     </div>
                 @endforeach
+                @if($application->application_type === \App\Enums\ApplicationType::DISABILITAS)
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Jenis Disabilitas</dt>
+                        <dd class="mt-1 text-sm font-medium text-slate-900">{{ $application->mahasiswa->profile?->disability_type ? str($application->mahasiswa->profile->disability_type)->replace('_', ' ')->title()->toString() : '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Grade Disabilitas</dt>
+                        <dd class="mt-1 text-sm font-medium text-slate-900">{{ $application->mahasiswa->profile?->disability_grade ?: '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Nomor Dokumen Disabilitas</dt>
+                        <dd class="mt-1 text-sm font-medium text-slate-900">{{ $application->mahasiswa->profile?->disability_document_number ?: '-' }}</dd>
+                    </div>
+                @endif
+                @if($application->application_type === \App\Enums\ApplicationType::NON_AKADEMIK)
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Daftar Prestasi</dt>
+                        <dd class="mt-2 space-y-2">
+                            @forelse($application->pendaftaran?->prestasis ?? [] as $p)
+                                <div class="rounded border border-slate-200 p-2 text-sm">
+                                    <div class="font-semibold text-slate-900">{{ $p->nama_prestasi }} ({{ $p->tahun ?? '-' }})</div>
+                                    <div class="text-xs text-slate-500">{{ $p->jenis }} · Tingkat {{ $p->tingkat }} · Peringkat {{ $p->peringkat }}</div>
+                                    <div class="text-xs text-slate-500">Penyelenggara: {{ $p->penyelenggara ?? '-' }}</div>
+                                </div>
+                            @empty
+                                <span class="text-sm text-slate-500">Belum ada data prestasi.</span>
+                            @endforelse
+                        </dd>
+                    </div>
+                @endif
                 <div class="sm:col-span-2 lg:col-span-3">
                     <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Alamat</dt>
                     <dd class="mt-1 text-sm leading-6 text-slate-900">{{ $application->mahasiswa->profile?->alamat }}, {{ $application->mahasiswa->profile?->village?->display_name }}, Kecamatan {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</dd>

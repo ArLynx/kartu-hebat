@@ -82,6 +82,18 @@ class ApplicationWorkflowService
             ]);
         }
 
+        if ($application->application_type === ApplicationType::NON_AKADEMIK && $student->profile?->ipk === null) {
+            throw ValidationException::withMessages([
+                'ipk' => 'IPK wajib diisi untuk jalur Non-Akademik sebagai baseline.',
+            ]);
+        }
+
+        if ($application->application_type === ApplicationType::NON_AKADEMIK && ($application->pendaftaran_id === null || $application->pendaftaran?->prestasis()->exists() === false)) {
+            throw ValidationException::withMessages([
+                'prestasis' => 'Minimal satu data prestasi wajib diisi untuk jalur Non-Akademik.',
+            ]);
+        }
+
         $requiredIds = DocumentType::query()
             ->where('is_active', true)
             ->where('is_required', true)

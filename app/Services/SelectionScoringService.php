@@ -7,12 +7,17 @@ use App\Enums\ApplicationType;
 use App\Models\Application;
 use App\Models\Criterion;
 use App\Models\Selection;
+use App\Services\Scoring\ScoringStrategy;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SelectionScoringService
 {
+    public function __construct(private readonly ScoringStrategyResolver $resolver)
+    {
+    }
+
     public function calculate(Application $application, ?int $scorerId = null): Selection
     {
         $application->loadMissing('mahasiswa.profile');
@@ -37,13 +42,8 @@ class SelectionScoringService
             ]);
         }
 
-        $values = match ($type) {
-            ApplicationType::AKADEMIK => $this->academicValues($profile?->ipk, $profile?->semester),
-            ApplicationType::TIDAK_MAMPU => $this->desilValues(
-                $profile?->desil_sosial,
-                $profile?->desil_pendidikan,
-            ),
-        };
+        $strategy = $this->resolver->resolve($type);
+        $values = $strategy->values($profile, $application);
 
         return DB::transaction(function () use ($application, $criteria, $values, $scorerId): Selection {
             $criterionIds = $criteria->modelKeys();
@@ -61,7 +61,7 @@ class SelectionScoringService
                     ['criterion_id' => $criterion->id],
                     [
                         'scorer_id' => $scorerId,
-                        'raw_value' => (float) $value['raw'],
+                        'raw_value' => is_numeric($value['raw']) ? (float) $value['raw'] : 0,
                         'normalized_score' => round($normalized, 4),
                         'weighted_score' => round($weighted, 4),
                         'source' => 'automatic',
@@ -129,45 +129,5 @@ class SelectionScoringService
             ->whereKey($rankedIds->all())
             ->orderBy('rank')
             ->get();
-    }
-
-    private function academicValues(float|string|null $ipk, ?int $semester): array
-    {
-        $ipkValue = (float) ($ipk ?? 0);
-        $maxSemester = max(1, (int) config('kartu_hebat.scoring.academic_max_semester', 8));
-
-        return [
-            'ipk' => [
-                'raw' => $ipkValue,
-                'normalized' => min(100, max(0, ($ipkValue / 4) * 100)),
-            ],
-            'semester' => [
-                'raw' => (int) ($semester ?? 0),
-                'normalized' => min(100, max(0, ((int) ($semester ?? 0) / $maxSemester) * 100)),
-            ],
-        ];
-    }
-
-    private function desilValues(?int $desilSosial, ?int $desilPendidikan): array
-    {
-        $available = collect([$desilSosial, $desilPendidikan])
-            ->filter(fn ($desil) => $desil !== null)
-            ->map(fn ($desil) => (int) $desil);
-
-        if ($available->isEmpty()) {
-            throw ValidationException::withMessages([
-                'desil' => 'Desil terverifikasi wajib tersedia untuk perhitungan jalur Tidak Mampu.',
-            ]);
-        }
-
-        $desil = (float) $available->average();
-        $normalized = 100 - (($desil - 1) / 9 * 100);
-
-        return [
-            'desil' => [
-                'raw' => round($desil, 2),
-                'normalized' => min(100, max(0, $normalized)),
-            ],
-        ];
     }
 }
