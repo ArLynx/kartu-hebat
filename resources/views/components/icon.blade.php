@@ -93,6 +93,9 @@
         @case('warning')
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374L10.053 3.38c.866-1.5 3.032-1.5 3.898 0l7.352 12.746ZM12 15.75h.008v.008H12v-.008Z" />
             @break
+        @case('key')
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-6 6c-2.724 0-5.063-1.783-6.32-4.5l-3.18 3.182m0-4.991v4.99" />
+            @break
         @default
             <circle cx="12" cy="12" r="9" />
     @endswitch

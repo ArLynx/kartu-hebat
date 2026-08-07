@@ -41,6 +41,7 @@
                 <x-sidebar-link :href="route('superadmin.dashboard')" :active="request()->routeIs('superadmin.dashboard')" icon="home">Dashboard</x-sidebar-link>
                 <x-sidebar-link :href="route('superadmin.kategori-beasiswa.index')" :active="request()->routeIs('superadmin.kategori-beasiswa.*')" icon="tag">Kategori Beasiswa</x-sidebar-link>
                 <x-sidebar-link :href="route('superadmin.document-types.index')" :active="request()->routeIs('superadmin.document-types.*')" icon="document">Document Types</x-sidebar-link>
+                <x-sidebar-link :href="route('superadmin.operators.index')" :active="request()->routeIs('superadmin.operators.*')" icon="users">Operator</x-sidebar-link>
             @else
                 <x-sidebar-link :href="route('operator.dashboard')" :active="request()->routeIs('operator.dashboard')" icon="home">Dashboard</x-sidebar-link>
                 <x-sidebar-link :href="route('operator.applications.index')" :active="request()->routeIs('operator.applications.*')" icon="form">Antrean Pengajuan</x-sidebar-link>

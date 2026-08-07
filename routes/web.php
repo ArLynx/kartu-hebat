@@ -24,6 +24,7 @@ use App\Http\Controllers\Public\ResultController;
 use App\Http\Controllers\Superadmin\DashboardController as SuperadminDashboardController;
 use App\Http\Controllers\Superadmin\DocumentTypeController as SuperadminDocumentTypeController;
 use App\Http\Controllers\Superadmin\KategoriBeasiswaController as SuperadminKategoriBeasiswaController;
+use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
 use App\Http\Controllers\TwoFactorSetupController;
 use Illuminate\Support\Facades\Route;
 
@@ -128,6 +129,13 @@ Route::middleware([
                 Route::resource('document-types', SuperadminDocumentTypeController::class)
                     ->except('show')
                     ->parameters(['document-types' => 'documentType']);
+
+                Route::resource('operators', SuperadminOperatorController::class)
+                    ->except('show')
+                    ->parameters(['operators' => 'operator']);
+
+                Route::post('operators/{operator}/reset-password', [SuperadminOperatorController::class, 'resetPassword'])
+                    ->name('operators.reset-password');
             });
 
         Route::middleware([
