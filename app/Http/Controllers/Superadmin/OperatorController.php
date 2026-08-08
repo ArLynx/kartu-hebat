@@ -128,6 +128,8 @@ class OperatorController extends Controller
                 $operator->forceFill([
                     'password' => Hash::make($data['password']),
                 ])->save();
+
+                $this->revokeOperatorAuth($operator);
             }
         });
 
@@ -168,6 +170,8 @@ class OperatorController extends Controller
             'password' => Hash::make($newPassword),
         ])->save();
 
+        $this->revokeOperatorAuth($operator);
+
         $request->session()->flash(
             'generated_password',
             $operator->email.' · password baru: '.$newPassword,
@@ -178,6 +182,26 @@ class OperatorController extends Controller
             ->with('success', 'Password operator berhasil di-reset.');
     }
 
+    /**
+     * Cabut akses operator yang masih berlaku setelah password diubah:
+     * 1. remember_token di-null-kan -> cookie "remember me" tidak bisa dipakai lagi;
+     * 2. baris sesi database dihapus -> sesi browser aktif tidak valid;
+     * 3. token API (Sanctum) dihapus.
+     */
+    private function revokeOperatorAuth(User $operator): void
+    {
+        $operator->forceFill(['remember_token' => null])->save();
+
+        if (config('session.driver') === 'database') {
+            DB::connection(config('session.connection'))
+                ->table(config('session.table'))
+                ->where('user_id', $operator->id)
+                ->delete();
+        }
+
+        $operator->tokens()->delete();
+    }
+
     private function validateOperator(Request $request, ?User $operator = null): array
     {
         $request->merge([
@@ -185,6 +209,24 @@ class OperatorController extends Controller
             'email' => strtolower(trim((string) $request->input('email'))),
             'status' => $request->input('status', 'active'),
         ]);
+
+        $requestedRole = $request->input('role');
+
+        // Wilayah wajib mengikuti role: operator desa wajib village_id,
+        // operator kecamatan wajib kecamatan_id. Aturan disusun sebelum
+        // validasi agar request yang tidak melewati UI (mis. JS dimatikan)
+        // tetap tertolak di sisi server.
+        $regionRules = [
+            'village_id' => ['nullable', 'integer', Rule::exists('villages', 'id')],
+            'kecamatan_id' => ['nullable', 'integer', Rule::exists('kecamatans', 'id')],
+            'kabupaten_id' => ['nullable', 'integer', Rule::exists('kabupatens', 'id')],
+        ];
+
+        if ($requestedRole === UserRole::OPERATOR_DESA->value) {
+            $regionRules['village_id'] = ['required', 'integer', Rule::exists('villages', 'id')];
+        } elseif ($requestedRole === UserRole::OPERATOR_KECAMATAN->value) {
+            $regionRules['kecamatan_id'] = ['required', 'integer', Rule::exists('kecamatans', 'id')];
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -204,9 +246,7 @@ class OperatorController extends Controller
                 'confirmed',
                 Password::min(8)->letters()->numbers(),
             ],
-            'village_id' => ['nullable', 'integer', Rule::exists('villages', 'id')],
-            'kecamatan_id' => ['nullable', 'integer', Rule::exists('kecamatans', 'id')],
-            'kabupaten_id' => ['nullable', 'integer', Rule::exists('kabupatens', 'id')],
+            ...$regionRules,
         ]);
 
         if (! $operator && empty($validated['password'])) {
@@ -216,19 +256,35 @@ class OperatorController extends Controller
         }
 
         $role = $validated['role'];
-        $defaults = $this->regionDefaults($role);
 
-        if (! empty($validated['village_id']) && $role === UserRole::OPERATOR_DESA->value) {
-            $validated['kecamatan_id'] = Village::query()
-                ->whereKey($validated['village_id'])
-                ->value('kecamatan_id');
+        // Operator desa: kecamatan & kabupaten diturunkan dari desa yang dipilih,
+        // bukan dari baris pertama tabel — agar tidak salah-scope ke wilayah lain
+        // saat sistem memiliki lebih dari satu kabupaten/kecamatan.
+        if ($role === UserRole::OPERATOR_DESA->value && ! empty($validated['village_id'])) {
+            $village = Village::query()->with('kecamatan')->find($validated['village_id']);
+
+            $validated['kecamatan_id'] = $village?->kecamatan_id;
+            $validated['kabupaten_id'] = $village?->kecamatan?->kabupaten_id;
         }
 
-        if (empty($validated['kecamatan_id'])) {
-            $validated['kecamatan_id'] = $defaults['kecamatan_id'];
+        // Operator kecamatan: kabupaten diturunkan dari kecamatan yang dipilih.
+        if ($role === UserRole::OPERATOR_KECAMATAN->value && ! empty($validated['kecamatan_id'])) {
+            $validated['kabupaten_id'] = Kecamatan::query()
+                ->whereKey($validated['kecamatan_id'])
+                ->value('kabupaten_id');
         }
-        if (empty($validated['kabupaten_id'])) {
-            $validated['kabupaten_id'] = $defaults['kabupaten_id'];
+
+        // Role dinas/kabupaten: kabupaten diambil dari form (hidden input).
+        // Bila kosong dan sistem hanya punya satu kabupaten, gunakan kabupaten itu;
+        // bila lebih dari satu, biarkan kosong (superadmin harus memilih eksplisit).
+        if (
+            empty($validated['kabupaten_id'])
+            && $role !== UserRole::OPERATOR_DESA->value
+            && $role !== UserRole::OPERATOR_KECAMATAN->value
+        ) {
+            $validated['kabupaten_id'] = Kabupaten::query()->count() === 1
+                ? Kabupaten::query()->value('id')
+                : null;
         }
 
         if ($role !== UserRole::OPERATOR_DESA->value) {
@@ -236,26 +292,6 @@ class OperatorController extends Controller
         }
 
         return $validated;
-    }
-
-    private function regionDefaults(string $role): array
-    {
-        $kabupaten = Kabupaten::query()->first();
-
-        return match ($role) {
-            UserRole::OPERATOR_DESA->value => [
-                'kecamatan_id' => $kabupaten?->id ? Kecamatan::query()->first()?->id : null,
-                'kabupaten_id' => $kabupaten?->id,
-            ],
-            UserRole::OPERATOR_KECAMATAN->value => [
-                'kecamatan_id' => Kecamatan::query()->first()?->id,
-                'kabupaten_id' => $kabupaten?->id,
-            ],
-            default => [
-                'kecamatan_id' => null,
-                'kabupaten_id' => $kabupaten?->id,
-            ],
-        };
     }
 
     private function operatorRoleOptions(): array

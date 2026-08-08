@@ -10,7 +10,7 @@
         <h1 class="mt-2 text-3xl font-extrabold">{{ $operator->name }}</h1>
         <p class="mt-2 text-sm text-slate-600">{{ $operator->email }} · {{ $roles[$operator->role->value] ?? $operator->role->value }}</p>
     </div>
-    <form method="POST" action="{{ route('superadmin.operators.reset-password', $operator) }}" onsubmit="return confirm('Reset password untuk {{ $operator->name }}? Password baru akan dibuat otomatis.')">
+    <form method="POST" action="{{ route('superadmin.operators.reset-password', $operator) }}" data-confirm="Reset password untuk {{ $operator->name }}? Password baru akan dibuat otomatis.">
         @csrf
         <button type="submit" class="btn-secondary">
             <x-icon name="key" class="h-4 w-4" />

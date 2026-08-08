@@ -7,6 +7,7 @@ use App\Policies\ApplicationPolicy;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (app()->isProduction()) {
+            URL::forceScheme('https');
+        }
+
         Carbon::setLocale('id');
         Paginator::useTailwind();
         Gate::policy(Application::class, ApplicationPolicy::class);

@@ -27,8 +27,17 @@ use App\Http\Controllers\Superadmin\KategoriBeasiswaController as SuperadminKate
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
 use App\Http\Controllers\TwoFactorSetupController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Http\Controllers\RegisteredUserController;
 
 Route::get('/', LandingController::class)->name('home');
+
+// Override route POST /register dari Fortify dengan throttle agar registrasi
+// publik (yang tidak dilimit Fortify secara bawaan) tidak bisa disalahgunakan
+// untuk membuat akun massal. Didefinisikan di sini agar lebih dulu terdaftar
+// dibandingkan rute Fortify, sehingga yang menang adalah versi ini.
+Route::post('/register', [RegisteredUserController::class, 'store'])
+    ->middleware(['guest:'.config('fortify.guard'), 'throttle:register'])
+    ->name('register.store');
 Route::get('/pengumuman-hasil', [ResultController::class, 'index'])
     ->middleware('throttle:20,1')
     ->name('public.results');

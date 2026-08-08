@@ -95,7 +95,7 @@
                                 <a href="{{ route('superadmin.operators.edit', $operator) }}" class="rounded-lg p-2 text-brand-700 hover:bg-brand-50" title="Edit">
                                     <x-icon name="edit" class="h-5 w-5" />
                                 </a>
-                                <form method="POST" action="{{ route('superadmin.operators.destroy', $operator) }}" onsubmit="return confirm('Hapus operator {{ $operator->name }}? Tindakan ini tidak dapat dibatalkan.')">
+                                <form method="POST" action="{{ route('superadmin.operators.destroy', $operator) }}" data-confirm="Hapus operator {{ $operator->name }}? Tindakan ini tidak dapat dibatalkan.">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="rounded-lg p-2 text-red-600 hover:bg-red-50" title="Hapus">

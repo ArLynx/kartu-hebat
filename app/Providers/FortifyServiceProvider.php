@@ -46,7 +46,17 @@ class FortifyServiceProvider extends ServiceProvider
                 ->where('status', 'active')
                 ->first();
 
-            return $user && Hash::check((string) $request->input('password'), $user->password)
+            // Kalibrasi waktu: ketika email tidak ditemukan, tetap jalankan
+            // Hash::check terhadap dummy hash (cost sama) agar durasi respons
+            // mendekati email valid + password salah. Mencegah enumerasi akun
+            // lewat perbedaan timing.
+            if (! $user) {
+                Hash::check('dummy-password-for-timing', '$2y$12$pNQCY19JUknsXT/Yn4yo4Oe1POrhMBUW7XKmDxrlx6sShQej7U1f2');
+
+                return null;
+            }
+
+            return Hash::check((string) $request->input('password'), $user->password)
                 ? $user
                 : null;
         });
@@ -55,6 +65,10 @@ class FortifyServiceProvider extends ServiceProvider
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
+        });
+
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
         });
 
         RateLimiter::for('two-factor', function (Request $request) {
