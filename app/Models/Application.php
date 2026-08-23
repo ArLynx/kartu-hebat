@@ -68,6 +68,11 @@ class Application extends Model
         return $this->hasMany(Document::class);
     }
 
+    public function documentVerifications(): HasMany
+    {
+        return $this->hasMany(DocumentVerification::class);
+    }
+
     public function villageVerification(): HasOne
     {
         return $this->hasOne(VillageVerification::class);

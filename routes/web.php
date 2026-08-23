@@ -13,6 +13,7 @@ use App\Http\Controllers\Mahasiswa\SubmitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Operator\ApplicationController as OperatorApplicationController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
+use App\Http\Controllers\Operator\DocumentVerificationController;
 use App\Http\Controllers\Operator\ReconciliationController;
 use App\Http\Controllers\Operator\ReportController;
 use App\Http\Controllers\Operator\SelectionController;
@@ -158,6 +159,8 @@ Route::middleware([
                 Route::get('/pengajuan', [OperatorApplicationController::class, 'index'])->name('applications.index');
                 Route::get('/pengajuan/{application}', [OperatorApplicationController::class, 'show'])->name('applications.show');
                 Route::post('/pengajuan/{application}/verifikasi', [VerificationController::class, 'store'])->name('applications.verify');
+                Route::post('/pengajuan/{application}/dokumen/{document}/penilaian', [DocumentVerificationController::class, 'store'])
+                    ->name('applications.documents.verify');
 
                 Route::middleware('role:operator_kecamatan,operator_kabupaten')->group(function (): void {
                     Route::get('/laporan/rekap-excel', [ReportController::class, 'recap'])->name('reports.recap');

@@ -7,6 +7,7 @@ use App\Enums\ApplicationType;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Services\DocumentVerificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -54,9 +55,15 @@ class ApplicationController extends Controller
     {
         $this->authorize('view', $application);
 
+        $user = $request->user();
+        $currentRound = DocumentVerificationService::currentRound($application);
+
         $application->load([
             'mahasiswa.profile.village.kecamatan',
             'documents.type',
+            'documents.verifications' => fn ($query) => $query
+                ->where('round', $currentRound)
+                ->with('verifier'),
             'villageVerification.verifier',
             'districtVerification.verifier',
             'agencyVerifications.verifier',
@@ -66,9 +73,22 @@ class ApplicationController extends Controller
             'pendaftaran.prestasis',
         ]);
 
+        $verifications = $application->documentVerifications;
+        $stage = null;
+        $canEditChecklist = false;
+
+        if ($user->isOperator()) {
+            $stage = DocumentVerificationService::stageFor($user);
+            $canEditChecklist = DocumentVerificationService::canVerifyStage($application, $stage);
+        }
+
         return view('operator.applications.show', [
             'application' => $application,
-            'canVerify' => $request->user()->can('verify', $application),
+            'canVerify' => $user->can('verify', $application),
+            'docVerifications' => $verifications,
+            'docVerificationStage' => $stage,
+            'canEditChecklist' => $canEditChecklist,
+            'docVerificationRound' => $currentRound,
         ]);
     }
 
@@ -80,7 +100,6 @@ class ApplicationController extends Controller
                 ApplicationStatus::VERIFIKASI_DESA->value,
             ],
             UserRole::OPERATOR_KECAMATAN => [
-                ApplicationStatus::MS_DESA->value,
                 ApplicationStatus::VERIFIKASI_KECAMATAN->value,
             ],
             UserRole::OPERATOR_DUKCAPIL,

@@ -84,6 +84,46 @@
                         </div>
                     </div>
                 @endif
+
+                @php
+                    $documentAssessments = $pendaftaran->application->documents
+                        ->flatMap(fn ($document) => $document->verifications)
+                        ->filter()
+                        ->groupBy(fn ($verification) => \App\Services\DocumentVerificationService::stageLabel($verification->stage));
+                @endphp
+                @if($documentAssessments->isNotEmpty())
+                    <div class="mt-5 border-t border-slate-200 pt-5">
+                        <h3 class="text-sm font-bold text-slate-900">Penilaian Dokumen</h3>
+                        <p class="mt-1 text-xs text-slate-500">Hasil pemeriksaan berkas oleh petugas verifikasi.</p>
+                        <div class="mt-3 space-y-4">
+                            @foreach($documentAssessments as $stageLabel => $verifications)
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500">{{ $stageLabel }}</p>
+                                    <ul class="mt-2 space-y-2">
+                                        @foreach($verifications as $verification)
+                                            <li class="flex flex-col gap-1 rounded-lg border border-slate-100 bg-slate-50 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                                                <div class="min-w-0">
+                                                    <p class="font-semibold text-slate-800">{{ $verification->document?->type?->name }}</p>
+                                                    @if($verification->notes)
+                                                        <p class="mt-0.5 text-xs text-slate-600">{{ $verification->notes }}</p>
+                                                    @endif
+                                                </div>
+                                                <span @class([
+                                                    'inline-flex w-fit shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
+                                                    'bg-emerald-50 text-emerald-700' => $verification->result === \App\Enums\DocumentVerificationResult::MEMENUHI,
+                                                    'bg-red-50 text-red-700' => $verification->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI,
+                                                    'bg-slate-100 text-slate-500' => $verification->result === \App\Enums\DocumentVerificationResult::BELUM_DINILAI,
+                                                ])>
+                                                    {{ $verification->result->label() }}
+                                                </span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
         </section>
     @endif

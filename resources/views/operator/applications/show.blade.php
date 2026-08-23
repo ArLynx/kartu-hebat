@@ -117,16 +117,39 @@
                         @php
                             $isPreviewable = $document->mime_type === 'application/pdf'
                                 || in_array($document->mime_type, ['image/jpeg', 'image/png'], true);
+                            $assessment = $document->verifications
+                                ->where('stage', $docVerificationStage)
+                                ->first();
                         @endphp
                         <div class="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center">
                             <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700">
                                 <x-icon name="document" class="h-5 w-5" />
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="text-sm font-bold text-slate-900">{{ $document->type->name }}</p>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p class="text-sm font-bold text-slate-900">{{ $document->type->name }}</p>
+                                    @if($assessment)
+                                        @if($assessment->result === \App\Enums\DocumentVerificationResult::MEMENUHI)
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                                <x-icon name="check" class="h-3 w-3" /> Memenuhi
+                                            </span>
+                                        @elseif($assessment->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI)
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                                                <x-icon name="x" class="h-3 w-3" /> Tidak Memenuhi
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                                                Belum Dinilai
+                                            </span>
+                                        @endif
+                                    @endif
+                                </div>
                                 <p class="mt-1 truncate text-xs text-slate-500">{{ $document->original_name }} · {{ $document->human_size }}</p>
+                                @if($assessment?->notes)
+                                    <p class="mt-2 text-xs italic leading-5 text-slate-500">Catatan: {{ $assessment->notes }}</p>
+                                @endif
                             </div>
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 @if($isPreviewable)
                                     <button
                                         type="button"
@@ -146,6 +169,49 @@
                                     <x-icon name="download" class="h-4 w-4" />
                                     Unduh
                                 </a>
+                                @if($canEditChecklist)
+                                    <div
+                                        x-data="{
+                                            showTmsNotes: {{ $assessment?->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI ? 'true' : 'false' }}
+                                        }"
+                                        class="ml-1 flex items-center gap-1"
+                                    >
+                                        <form method="POST" action="{{ route('operator.applications.documents.verify', [$application, $document]) }}" class="inline">
+                                            @csrf
+                                            <input type="hidden" name="result" value="memenuhi">
+                                            <button class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition
+                                                {{ $assessment?->result === \App\Enums\DocumentVerificationResult::MEMENUHI ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-700' }}">
+                                                ✓ MS
+                                            </button>
+                                        </form>
+                                        <button
+                                            type="button"
+                                            class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition
+                                                {{ $assessment?->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-700' }}"
+                                            @click="showTmsNotes = true"
+                                        >
+                                            ✕ TMS
+                                        </button>
+                                        <div
+                                            x-cloak
+                                            x-show="showTmsNotes"
+                                            @click.outside="showTmsNotes = false"
+                                            class="absolute right-4 top-9 z-20 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
+                                        >
+                                            <p class="text-xs font-bold text-slate-700">Alasan Tidak Memenuhi Syarat</p>
+                                            <p class="mt-1 text-[10px] text-slate-500">Catatan wajib diisi untuk penilaian ini.</p>
+                                            <form method="POST" action="{{ route('operator.applications.documents.verify', [$application, $document]) }}" class="mt-2">
+                                                @csrf
+                                                <input type="hidden" name="result" value="tidak_memenuhi">
+                                                <textarea name="notes" rows="3" class="form-input text-xs" placeholder="Contoh: KTP tidak terbaca / KK tidak sesuai…" required>{{ $assessment?->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI ? $assessment->notes : '' }}</textarea>
+                                                <div class="mt-2 flex items-center justify-end gap-2">
+                                                    <button type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-800" @click="showTmsNotes = false">Batal</button>
+                                                    <button class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">Simpan TMS</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @empty
@@ -203,6 +269,47 @@
                 </div>
             </div>
         </div>
+
+        @if($application->documentVerifications->isNotEmpty())
+            <section class="card p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-xl font-bold">Riwayat Penilaian Dokumen</h2>
+                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">Putaran {{ $docVerificationRound }}</span>
+                </div>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Ringkasan penilaian berkas dari seluruh tahap verifikasi.</p>
+                <div class="mt-5 overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                                <th class="py-2 pr-4 font-semibold">Dokumen</th>
+                                <th class="py-2 pr-4 font-semibold">Tahap</th>
+                                <th class="py-2 pr-4 font-semibold">Hasil</th>
+                                <th class="py-2 font-semibold">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($docVerifications as $verification)
+                                <tr>
+                                    <td class="py-3 pr-4 font-semibold text-slate-800">{{ $verification->document?->type?->name }}</td>
+                                    <td class="py-3 pr-4 text-slate-600">{{ \App\Services\DocumentVerificationService::stageLabel($verification->stage) }}</td>
+                                    <td class="py-3 pr-4">
+                                        <span @class([
+                                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
+                                            'bg-emerald-50 text-emerald-700' => $verification->result === \App\Enums\DocumentVerificationResult::MEMENUHI,
+                                            'bg-red-50 text-red-700' => $verification->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI,
+                                            'bg-slate-100 text-slate-500' => $verification->result === \App\Enums\DocumentVerificationResult::BELUM_DINILAI,
+                                        ])>
+                                            {{ $verification->result->label() }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 text-slate-600">{{ $verification->notes ?: '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
 
         <section class="card p-6">
             <h2 class="text-xl font-bold">Riwayat Keputusan</h2>
@@ -280,7 +387,19 @@
                         </div>
                     @endif
 
-                    <button class="btn-primary w-full justify-center" onclick="return confirm('Simpan keputusan verifikasi ini?')">
+                    @php
+                        $hasRejectedDocuments = $application->documents->contains(
+                            fn ($document) => $document->verifications
+                                ->where('stage', $docVerificationStage)
+                                ->where('result', \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI)
+                                ->isNotEmpty()
+                        );
+                    @endphp
+
+                    <button
+                        class="btn-primary w-full justify-center"
+                        onclick="return confirm('{{ $hasRejectedDocuments ? 'Masih ada dokumen yang ditandai TIDAK MEMENUHI SYARAT pada tahap ini. Tetap simpan keputusan ini?' : 'Simpan keputusan verifikasi ini?' }}')"
+                    >
                         Simpan Keputusan
                     </button>
                 </form>

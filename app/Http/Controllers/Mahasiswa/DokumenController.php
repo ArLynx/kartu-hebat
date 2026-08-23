@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dokumen;
 use App\Models\JenisDokumen;
 use App\Models\Pendaftaran;
+use App\Services\DocumentVerificationService;
 use App\Services\MahasiswaPendaftaranService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
@@ -98,7 +99,7 @@ class DokumenController extends Controller
         $originalName = basename(str_replace('\\', '/', $uploaded->getClientOriginalName()));
 
         try {
-            $document = DB::transaction(function () use ($pendaftaran, $jenisDokumen, $path, $uploaded, $originalName): Dokumen {
+            $document = DB::transaction(function () use ($pendaftaran, $jenisDokumen, $path, $uploaded, $originalName, $oldDocument): Dokumen {
                 $document = $pendaftaran->dokumens()->updateOrCreate(
                     ['jenis_dokumen_id' => $jenisDokumen->id],
                     [
@@ -111,6 +112,14 @@ class DokumenController extends Controller
                         'verified_at' => null,
                     ],
                 );
+
+                if ($oldDocument && $oldDocument->file_path !== $path) {
+                    $application = $pendaftaran->application;
+                    $application?->documents()
+                        ->where('document_type_id', $jenisDokumen->id)
+                        ->get()
+                        ->each(fn ($target) => app(DocumentVerificationService::class)->resetForDocument($target));
+                }
 
                 $pendaftaran->forceFill(['review_dikonfirmasi_at' => null])->save();
 

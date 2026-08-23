@@ -100,9 +100,28 @@
             </div>
             <div class="divide-y divide-slate-100 px-6 sm:px-8">
                 @forelse($requiredTypes as $type)
-                    @php($document = $pendaftaran->dokumens->firstWhere('jenis_dokumen_id', $type->id))
+                    @php
+                        $document = $pendaftaran->dokumens->firstWhere('jenis_dokumen_id', $type->id);
+                        $assessment = $document
+                            ? $pendaftaran->application?->documents
+                                ->firstWhere('document_type_id', $document->jenisDokumen->id)
+                                ?->verifications
+                                ->last()
+                            : null;
+                    @endphp
                     <div class="flex items-center justify-between gap-4 py-4">
-                        <div><p class="text-sm font-semibold">{{ $type->nama }}</p><p class="mt-1 text-xs text-slate-500">{{ $document?->nama_file_asli ?: 'Belum diunggah' }}</p></div>
+                        <div>
+                            <p class="text-sm font-semibold">{{ $type->nama }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $document?->nama_file_asli ?: 'Belum diunggah' }}</p>
+                            @if($assessment && $assessment->result !== \App\Enums\DocumentVerificationResult::BELUM_DINILAI)
+                                <p class="mt-1 text-xs font-semibold {{ $assessment->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI ? 'text-red-600' : 'text-emerald-600' }}">
+                                    {{ $assessment->result->label() }}
+                                    @if($assessment->notes)
+                                        — {{ $assessment->notes }}
+                                    @endif
+                                </p>
+                            @endif
+                        </div>
                         @if($document)
                             <a href="{{ route('mahasiswa.dokumen.download', $document) }}" class="text-sm font-semibold text-brand-700 hover:underline">Unduh</a>
                         @else

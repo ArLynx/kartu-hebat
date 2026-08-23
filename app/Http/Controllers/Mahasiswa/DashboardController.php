@@ -27,6 +27,8 @@ class DashboardController extends Controller
                 'orangTua',
                 'dokumens',
                 'application.verificationLogs.actor',
+                'application.documents.type',
+                'application.documents.verifications',
             ])
             ->latest('id')
             ->first();

@@ -17,7 +17,9 @@ class MahasiswaPendaftaranService
     {
         return Pendaftaran::query()
             ->where('user_id', $user->getKey())
+            ->whereHas('periode', fn ($query) => $query->aktif())
             ->latest('id')
+            ->with(['application.documents.type', 'application.documents.verifications'])
             ->first();
     }
 
@@ -60,6 +62,8 @@ class MahasiswaPendaftaranService
             'prestasis',
             'orangTua',
             'dokumens',
+            'application.documents.type',
+            'application.documents.verifications',
         ]);
 
         $data = $pendaftaran->dataPribadi;

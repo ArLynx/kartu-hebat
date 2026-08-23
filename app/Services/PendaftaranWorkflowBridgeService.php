@@ -21,6 +21,11 @@ class PendaftaranWorkflowBridgeService
     ) {
     }
 
+    private function resetDocumentVerifications(Application $application): void
+    {
+        app(DocumentVerificationService::class)->resetForApplication($application);
+    }
+
     public function submit(Pendaftaran $pendaftaran, User $student): Application
     {
         if ((int) $pendaftaran->user_id !== (int) $student->getKey()) {
@@ -44,6 +49,13 @@ class PendaftaranWorkflowBridgeService
 
         $this->synchronizeStudentProfile($pendaftaran, $student, $village);
         $application = $this->synchronizeApplication($pendaftaran, $student, $applicationType);
+
+        // Pengiriman ulang setelah BTL membuka putaran baru: penilaian dokumen
+        // lama dibersihkan agar tahap yang sama menilai ulang dari awal.
+        if ($application->verificationLogs()->where('action', 'submitted')->exists()) {
+            $this->resetDocumentVerifications($application);
+        }
+
         $this->synchronizeDocuments($pendaftaran, $application, $student, $applicationType);
 
         return $this->workflow->submit($application->fresh(), $student->fresh());
@@ -111,21 +123,9 @@ class PendaftaranWorkflowBridgeService
             return $type;
         }
 
-        $identity = Str::lower(trim(
-            ($pendaftaran->kategoriBeasiswa?->kode ?? '').' '.($pendaftaran->kategoriBeasiswa?->nama ?? '')
-        ));
-
-        if (Str::contains($identity, ['tidak mampu', 'kurang mampu', 'afirmasi', 'sosial ekonomi'])) {
-            return ApplicationType::TIDAK_MAMPU;
-        }
-
-        if (Str::contains($identity, ['akademik', 'prestasi'])) {
-            return ApplicationType::AKADEMIK;
-        }
-
-        $default = (string) config('kartu_hebat.integration.default_application_type', ApplicationType::AKADEMIK->value);
-
-        return ApplicationType::tryFrom($default) ?? ApplicationType::AKADEMIK;
+        throw ValidationException::withMessages([
+            'application_type' => 'Jalur pengajuan pada kategori beasiswa belum dikonfigurasi dengan benar.',
+        ]);
     }
 
     private function synchronizeStudentProfile(
@@ -203,7 +203,6 @@ class PendaftaranWorkflowBridgeService
             $application = new Application([
                 'mahasiswa_id' => $student->id,
                 'status' => ApplicationStatus::DRAFT,
-                'current_step' => 1,
             ]);
         }
 
@@ -226,6 +225,7 @@ class PendaftaranWorkflowBridgeService
     ): void {
         $diskName = (string) config('kartu_hebat.document_disk', 'local');
         $disk = Storage::disk($diskName);
+        $syncedDocumentTypeIds = [];
 
         foreach ($pendaftaran->dokumens as $index => $source) {
             $sourceType = $source->jenisDokumen;
@@ -254,11 +254,19 @@ class PendaftaranWorkflowBridgeService
             }
 
             $documentType->save();
+            $syncedDocumentTypeIds[] = $documentType->id;
 
             $existing = $application->documents()
                 ->where('document_type_id', $documentType->id)
                 ->first();
             $contents = $disk->get($source->file_path);
+            $version = $existing && $existing->path === $source->file_path
+                ? $existing->version
+                : ($existing?->version ?? 0) + 1;
+
+            if ($existing && $existing->path !== $source->file_path) {
+                app(DocumentVerificationService::class)->resetForDocument($existing);
+            }
 
             $application->documents()->updateOrCreate(
                 ['document_type_id' => $documentType->id],
@@ -269,13 +277,16 @@ class PendaftaranWorkflowBridgeService
                     'mime_type' => $source->mime_type ?: 'application/octet-stream',
                     'size' => $source->ukuran_file ?: strlen($contents),
                     'checksum' => hash('sha256', $contents),
-                    'version' => $existing && $existing->path === $source->file_path
-                        ? $existing->version
-                        : ($existing?->version ?? 0) + 1,
+                    'version' => $version,
                     'verified_at' => $source->verified_at,
                 ],
             );
         }
+
+        $application->documents()
+            ->when($syncedDocumentTypeIds !== [], fn ($query) => $query->whereNotIn('document_type_id', $syncedDocumentTypeIds))
+            ->when($syncedDocumentTypeIds === [], fn ($query) => $query)
+            ->delete();
     }
 
     private function documentApplicationType(string $code, ApplicationType $applicationType): ?string

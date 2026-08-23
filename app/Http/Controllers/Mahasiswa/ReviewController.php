@@ -32,6 +32,8 @@ class ReviewController extends Controller
             'prestasis',
             'orangTua',
             'dokumens.jenisDokumen',
+            'application.documents.type',
+            'application.documents.verifications',
         ]);
 
         return view('mahasiswa.review.index', [
