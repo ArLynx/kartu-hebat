@@ -440,6 +440,14 @@
                                 ->where('result', \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI)
                                 ->isNotEmpty()
                         );
+
+                        $verifiedDocs = $application->documents->filter(function ($doc) use ($docVerificationStage) {
+                            return $doc->verifications->where('stage', $docVerificationStage)->isNotEmpty();
+                        });
+                        $hasAllDocsVerified = $verifiedDocs->isNotEmpty() && $verifiedDocs->count() === $application->documents->count();
+                        $allDocsMs = $hasAllDocsVerified && $verifiedDocs->every(function ($doc) use ($docVerificationStage) {
+                            return $doc->verifications->where('stage', $docVerificationStage)->first()->result === \App\Enums\DocumentVerificationResult::MEMENUHI;
+                        });
                     @endphp
 
                     <button
@@ -447,6 +455,8 @@
                         class="btn-primary w-full justify-center"
                         @if($hasUnverifiedDocs)
                             onclick="return handleVerificationSubmit(event)"
+                        @elseif($allDocsMs)
+                            onclick="return handleAllDocsMsSubmit(event)"
                         @else
                             onclick="return confirm('{{ $hasRejectedDocuments ? 'Masih ada dokumen yang ditandai TIDAK MEMENUHI SYARAT pada tahap ini. Tetap simpan keputusan ini?' : 'Simpan keputusan verifikasi ini?' }}')"
                         @endif
@@ -454,13 +464,21 @@
                         Simpan Keputusan
                     </button>
 
-                    @if($hasUnverifiedDocs)
+                    @if($hasUnverifiedDocs || $allDocsMs)
                     <script>
                         function handleVerificationSubmit(event) {
                             const decision = document.querySelector('input[name="decision"]:checked');
                             if (decision && decision.value === 'MS') {
                                 alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Memenuhi Syarat (MS).');
                                 return false;
+                            }
+                            return confirm('Simpan keputusan verifikasi ini?');
+                        }
+
+                        function handleAllDocsMsSubmit(event) {
+                            const decision = document.querySelector('input[name="decision"]:checked');
+                            if (decision && decision.value === 'BTL') {
+                                return confirm('SEMUA dokumen sudah dinilai Memenuhi Syarat (MS). Apakah Anda yakin ingin memilih Butuh Perbaikan?');
                             }
                             return confirm('Simpan keputusan verifikasi ini?');
                         }
