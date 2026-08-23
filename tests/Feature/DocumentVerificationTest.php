@@ -90,10 +90,16 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInVillageQueue();
         $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
-        $document = $application->documents->first();
+
+        $documentVerificationService = app(DocumentVerificationService::class);
+        foreach ($application->documents as $document) {
+            $documentVerificationService->save($application, $document, $villageOperator, DocumentVerificationResult::MEMENUHI);
+        }
 
         $workflow = app(ApplicationWorkflowService::class);
         $workflow->verify($application, $villageOperator, VerificationDecision::MS);
+
+        $document = $application->documents->first();
 
         $this->actingAs($villageOperator)
             ->from(route('operator.applications.show', $application))

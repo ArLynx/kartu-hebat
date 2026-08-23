@@ -24,34 +24,6 @@ class ApplicationWorkflowService
     ) {
     }
 
-    public function getOrCreateCurrent(User $student): Application
-    {
-        $period = config('kartu_hebat.current_period');
-
-        $existing = $student->applications()->where('periode', $period)->latest()->first();
-
-        if ($existing) {
-            return $existing;
-        }
-
-        return DB::transaction(function () use ($student, $period): Application {
-            $application = $student->applications()->create([
-                'nomor_pengajuan' => 'TEMP-'.str()->uuid(),
-                'periode' => $period,
-                'application_type' => null,
-                'status' => ApplicationStatus::DRAFT,
-            ]);
-
-            $application->update([
-                'nomor_pengajuan' => sprintf('KHM-%s-%06d', now()->format('Y'), $application->id),
-            ]);
-
-            $this->log($application, null, ApplicationStatus::DRAFT, 'application_created', 'Pengajuan dibuat.');
-
-            return $application;
-        });
-    }
-
     public function submit(Application $application, User $student): Application
     {
         if (
@@ -94,18 +66,18 @@ class ApplicationWorkflowService
             ]);
         }
 
-        $requiredIds = DocumentType::query()
+        $application->loadMissing('pendaftaran.kategoriBeasiswa.jenisDokumens');
+        $requiredSourceTypes = collect($application->pendaftaran?->kategoriBeasiswa?->jenisDokumens ?? [])
+            ->where('aktif', true)
+            ->values();
+        $requiredTypes = DocumentType::query()
+            ->whereIn('code', $requiredSourceTypes->pluck('kode'))
             ->where('is_active', true)
-            ->where('is_required', true)
-            ->where(function ($query) use ($application): void {
-                $query
-                    ->whereNull('application_type')
-                    ->orWhere('application_type', $application->application_type->value);
-            })
-            ->pluck('id');
+            ->get();
+        $requiredIds = $requiredTypes->pluck('id');
 
         $uploadedIds = $application->documents()->pluck('document_type_id');
-        $missing = DocumentType::query()
+        $missing = $requiredTypes
             ->whereIn('id', $requiredIds->diff($uploadedIds))
             ->pluck('name')
             ->all();
@@ -138,7 +110,6 @@ class ApplicationWorkflowService
 
             $application->update([
                 'status' => $target,
-                'current_step' => $target === ApplicationStatus::VERIFIKASI_DESA ? 4 : 5,
                 'submitted_at' => $application->submitted_at ?? now(),
                 'locked_at' => now(),
                 'catatan' => null,
@@ -166,6 +137,10 @@ class ApplicationWorkflowService
             ]);
         }
 
+        if ($decision === VerificationDecision::MS) {
+            $this->assertAllDocumentsVerified($application, $operator);
+        }
+
         return DB::transaction(function () use ($application, $operator, $decision, $notes, $score, $desil): Application {
             $from = $application->status;
             $target = $this->storeVerificationAndResolveTarget(
@@ -180,7 +155,6 @@ class ApplicationWorkflowService
             if ($target !== null && $target !== $from) {
                 $application->update([
                     'status' => $target,
-                    'current_step' => $this->currentStep($target),
                     'catatan' => $decision === VerificationDecision::MS ? null : $notes,
                     'locked_at' => $target->isEditableByStudent() ? null : now(),
                 ]);
@@ -282,7 +256,7 @@ class ApplicationWorkflowService
         VerificationDecision $decision,
         ?string $notes,
     ): ApplicationStatus {
-        if (!in_array($application->status, [ApplicationStatus::MS_DESA, ApplicationStatus::VERIFIKASI_KECAMATAN], true)) {
+        if ($application->status !== ApplicationStatus::VERIFIKASI_KECAMATAN) {
             throw ValidationException::withMessages(['decision' => 'Pengajuan tidak berada pada antrean verifikasi kecamatan.']);
         }
 
@@ -427,34 +401,53 @@ class ApplicationWorkflowService
         });
     }
 
+    private function assertAllDocumentsVerified(Application $application, User $operator): void
+    {
+        $stage = DocumentVerificationService::stageFor($operator);
+
+        $documentIds = \App\Models\Document::query()
+            ->where('application_id', $application->id)
+            ->pluck('id');
+
+        if ($documentIds->isEmpty()) {
+            return;
+        }
+
+        $verifiedDocumentIds = \App\Models\DocumentVerification::query()
+            ->where('application_id', $application->id)
+            ->where('stage', $stage)
+            ->pluck('document_id');
+
+        $unverifiedIds = $documentIds->diff($verifiedDocumentIds);
+
+        if ($unverifiedIds->isNotEmpty()) {
+            $unverifiedNames = \App\Models\Document::query()
+                ->whereIn('id', $unverifiedIds)
+                ->with('type')
+                ->get()
+                ->pluck('type.name')
+                ->implode(', ');
+
+            throw ValidationException::withMessages([
+                'document_verification' => "Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan MS. Dokumen yang belum dinilai: {$unverifiedNames}.",
+            ]);
+        }
+    }
+
     private function isActiveApplicationPeriod(Application $application): bool
     {
         if ($application->pendaftaran_id) {
             $application->loadMissing('pendaftaran.periode');
 
-            return $application->pendaftaran?->periode?->status === 'aktif';
+            $period = $application->pendaftaran?->periode;
+            $today = today();
+
+            return $period?->status === 'aktif'
+                && $period->tanggal_mulai?->lte($today)
+                && $period->tanggal_selesai?->gte($today);
         }
 
         return $application->periode === config('kartu_hebat.current_period');
-    }
-
-    private function currentStep(ApplicationStatus $status): int
-    {
-        return match ($status) {
-            ApplicationStatus::DRAFT => 1,
-            ApplicationStatus::SUBMITTED,
-            ApplicationStatus::VERIFIKASI_DESA,
-            ApplicationStatus::BTL_DESA => 4,
-            ApplicationStatus::MS_DESA,
-            ApplicationStatus::VERIFIKASI_KECAMATAN,
-            ApplicationStatus::BTL_KECAMATAN => 5,
-            ApplicationStatus::MS,
-            ApplicationStatus::TMS,
-            ApplicationStatus::VERIFIKASI_DINAS,
-            ApplicationStatus::SELEKSI_KABUPATEN,
-            ApplicationStatus::DITERIMA,
-            ApplicationStatus::DITOLAK => 6,
-        };
     }
 
     private function log(
