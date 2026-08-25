@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -21,6 +22,14 @@ class Periode extends Model
             'tanggal_mulai' => 'date',
             'tanggal_selesai' => 'date',
         ];
+    }
+
+    public function scopeAktif(Builder $query): Builder
+    {
+        return $query
+            ->where('status', 'aktif')
+            ->whereDate('tanggal_mulai', '<=', today())
+            ->whereDate('tanggal_selesai', '>=', today());
     }
 
     public function kategoriBeasiswas(): HasMany

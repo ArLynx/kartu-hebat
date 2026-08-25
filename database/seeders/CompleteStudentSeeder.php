@@ -140,7 +140,6 @@ class CompleteStudentSeeder extends Seeder
                 'mahasiswa_id' => $user->id,
                 'nomor_pengajuan' => $payload['nomor_pendaftaran'],
                 'periode' => $periode->nama,
-                'current_step' => 7,
                 'application_type' => $payload['application_type'],
                 'status' => ApplicationStatus::DRAFT,
                 'submitted_at' => null,

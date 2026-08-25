@@ -3,16 +3,29 @@
 namespace App\Traits;
 
 use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 
 trait Auditable
 {
+    private static ?bool $tableExists = null;
+
     public static function bootAuditable(): void
     {
-        static::created(fn (Model $model) => static::writeAudit($model, 'created', [], $model->getAttributes()));
+        static::created(function (Model $model): void {
+            if (! $model->exists) {
+                return;
+            }
+
+            static::writeAudit($model, 'created', [], $model->getAttributes());
+        });
 
         static::updated(function (Model $model): void {
+            if (! $model->exists) {
+                return;
+            }
+
             static::writeAudit(
                 $model,
                 'updated',
@@ -21,18 +34,39 @@ trait Auditable
             );
         });
 
-        static::deleted(fn (Model $model) => static::writeAudit($model, 'deleted', $model->getOriginal(), []));
+        static::deleted(function (Model $model): void {
+            if ($model->exists) {
+                return;
+            }
+
+            static::writeAudit($model, 'deleted', $model->getOriginal(), []);
+        });
     }
 
     private static function writeAudit(Model $model, string $event, array $oldValues, array $newValues): void
     {
-        if (!Schema::hasTable('audit_logs')) {
+        self::$tableExists ??= Schema::hasTable('audit_logs');
+
+        if (! self::$tableExists) {
+            return;
+        }
+
+        // Guard hanya untuk kasus user memperbarui baris dirinya sendiri yang
+        // mungkin sudah dihapus di tempat lain (FK audit_logs.user_id ke users.id,
+        // mis. update remember_token setelah akun dihapus). Untuk penulisan lain
+        // baris pasti ada karena baru saja ditulis oleh instance yang sama.
+        if (
+            $event !== 'deleted'
+            && $model instanceof User
+            && (string) auth()->id() === (string) $model->getKey()
+            && User::query()->whereKey($model->getKey())->doesntExist()
+        ) {
             return;
         }
 
         $actorId = auth()->id();
 
-        if ($event === 'deleted' && $model instanceof \App\Models\User && $actorId === $model->getKey()) {
+        if ($event === 'deleted' && $model instanceof User && $actorId === $model->getKey()) {
             $actorId = null;
         }
 

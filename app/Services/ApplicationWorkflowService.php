@@ -9,7 +9,9 @@ use App\Enums\VerificationDecision;
 use App\Models\AgencyVerification;
 use App\Models\Application;
 use App\Models\DistrictVerification;
+use App\Models\Document;
 use App\Models\DocumentType;
+use App\Models\DocumentVerification;
 use App\Models\User;
 use App\Models\VerificationLog;
 use App\Models\VillageVerification;
@@ -21,8 +23,7 @@ class ApplicationWorkflowService
 {
     public function __construct(
         private readonly SelectionScoringService $scoring,
-    ) {
-    }
+    ) {}
 
     public function submit(Application $application, User $student): Application
     {
@@ -36,13 +37,13 @@ class ApplicationWorkflowService
             ]);
         }
 
-        if (!$application->application_type) {
+        if (! $application->application_type) {
             throw ValidationException::withMessages([
                 'application_type' => 'Pilih jalur pengajuan Akademik atau Tidak Mampu sebelum mengirim pengajuan.',
             ]);
         }
 
-        if (!$student->isProfileComplete()) {
+        if (! $student->isProfileComplete()) {
             throw ValidationException::withMessages([
                 'profile' => 'Lengkapi data diri, pendidikan, dan alamat sebelum mengirim pengajuan.',
             ]);
@@ -74,11 +75,19 @@ class ApplicationWorkflowService
             ->whereIn('code', $requiredSourceTypes->pluck('kode'))
             ->where('is_active', true)
             ->get();
-        $requiredIds = $requiredTypes->pluck('id');
+
+        $unmappedCodes = $requiredSourceTypes->pluck('kode')->diff($requiredTypes->pluck('code'));
+
+        if ($unmappedCodes->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'documents' => 'Jenis dokumen wajib '.$unmappedCodes->implode(', ')
+                    .' tidak ditemukan pada data master dokumen. Data master perlu disinkronkan oleh pengelola sebelum pengajuan dapat dikirim.',
+            ]);
+        }
 
         $uploadedIds = $application->documents()->pluck('document_type_id');
         $missing = $requiredTypes
-            ->whereIn('id', $requiredIds->diff($uploadedIds))
+            ->except($uploadedIds->all())
             ->pluck('name')
             ->all();
 
@@ -137,8 +146,8 @@ class ApplicationWorkflowService
             ]);
         }
 
-        if ($decision === VerificationDecision::MS) {
-            $this->assertAllDocumentsVerified($application, $operator);
+        if (in_array($decision, [VerificationDecision::MS, VerificationDecision::TMS], true)) {
+            $this->assertAllDocumentsVerified($application, $operator, $decision);
         }
 
         return DB::transaction(function () use ($application, $operator, $decision, $notes, $score, $desil): Application {
@@ -229,7 +238,7 @@ class ApplicationWorkflowService
         VerificationDecision $decision,
         ?string $notes,
     ): ApplicationStatus {
-        if (!in_array($application->status, [ApplicationStatus::SUBMITTED, ApplicationStatus::VERIFIKASI_DESA], true)) {
+        if (! in_array($application->status, [ApplicationStatus::SUBMITTED, ApplicationStatus::VERIFIKASI_DESA], true)) {
             throw ValidationException::withMessages(['decision' => 'Pengajuan tidak berada pada antrean verifikasi desa.']);
         }
 
@@ -291,7 +300,7 @@ class ApplicationWorkflowService
 
         if (
             $decision !== VerificationDecision::MS
-            || !in_array($operator->role, [UserRole::OPERATOR_SOSIAL, UserRole::OPERATOR_PENDIDIKAN], true)
+            || ! in_array($operator->role, [UserRole::OPERATOR_SOSIAL, UserRole::OPERATOR_PENDIDIKAN], true)
         ) {
             $desil = null;
         }
@@ -401,11 +410,11 @@ class ApplicationWorkflowService
         });
     }
 
-    private function assertAllDocumentsVerified(Application $application, User $operator): void
+    private function assertAllDocumentsVerified(Application $application, User $operator, VerificationDecision $decision): void
     {
         $stage = DocumentVerificationService::stageFor($operator);
 
-        $documentIds = \App\Models\Document::query()
+        $documentIds = Document::query()
             ->where('application_id', $application->id)
             ->pluck('id');
 
@@ -413,7 +422,7 @@ class ApplicationWorkflowService
             return;
         }
 
-        $verifiedDocumentIds = \App\Models\DocumentVerification::query()
+        $verifiedDocumentIds = DocumentVerification::query()
             ->where('application_id', $application->id)
             ->where('stage', $stage)
             ->pluck('document_id');
@@ -421,7 +430,7 @@ class ApplicationWorkflowService
         $unverifiedIds = $documentIds->diff($verifiedDocumentIds);
 
         if ($unverifiedIds->isNotEmpty()) {
-            $unverifiedNames = \App\Models\Document::query()
+            $unverifiedNames = Document::query()
                 ->whereIn('id', $unverifiedIds)
                 ->with('type')
                 ->get()
@@ -429,7 +438,7 @@ class ApplicationWorkflowService
                 ->implode(', ');
 
             throw ValidationException::withMessages([
-                'document_verification' => "Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan MS. Dokumen yang belum dinilai: {$unverifiedNames}.",
+                'document_verification' => "Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan {$decision->label()}. Dokumen yang belum dinilai: {$unverifiedNames}.",
             ]);
         }
     }

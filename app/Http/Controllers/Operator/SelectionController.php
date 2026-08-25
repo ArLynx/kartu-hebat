@@ -19,26 +19,10 @@ use Illuminate\Validation\ValidationException;
 
 class SelectionController extends Controller
 {
-    public function index(Request $request, SelectionScoringService $scoring)
+    public function index(Request $request)
     {
-        $kabupatenId = $request->user()->kabupaten_id;
         $selectedType = ApplicationType::tryFrom($request->string('application_type')->toString())
             ?? ApplicationType::AKADEMIK;
-
-        Application::query()
-            ->visibleTo($request->user())
-            ->where('periode', config('kartu_hebat.current_period'))
-            ->whereIn('status', [
-                ApplicationStatus::SELEKSI_KABUPATEN->value,
-                ApplicationStatus::DITERIMA->value,
-                ApplicationStatus::DITOLAK->value,
-            ])
-            ->whereNotNull('application_type')
-            ->with('mahasiswa.profile')
-            ->get()
-            ->each(fn (Application $application) => $scoring->calculate($application, $request->user()->id));
-
-        $scoring->recalculateRanking($kabupatenId);
 
         $query = Application::query()
             ->visibleTo($request->user())
@@ -111,7 +95,7 @@ class SelectionController extends Controller
         $target = ApplicationStatus::from($data['decision']);
         $existingSelection = $application->selection;
 
-        if (!$application->application_type) {
+        if (! $application->application_type) {
             throw ValidationException::withMessages([
                 'decision' => 'Jalur pengajuan kandidat belum ditetapkan.',
             ]);
@@ -123,25 +107,16 @@ class SelectionController extends Controller
             ]);
         }
 
-        $acceptedCount = Selection::query()
-            ->whereHas('application', fn ($query) => $query
-                ->visibleTo($request->user())
-                ->where('periode', config('kartu_hebat.current_period'))
-                ->where('application_type', $application->application_type->value))
-            ->where('manual_decision', ApplicationStatus::DITERIMA->value)
-            ->when($existingSelection, fn ($query) => $query->where('id', '!=', $existingSelection->id))
-            ->count();
+        DB::transaction(function () use ($request, $application, $data, $target, $scoring, $existingSelection): void {
+            if ($target === ApplicationStatus::DITERIMA && ! $this->quotaAvailable($request, $application, $existingSelection)) {
+                throw ValidationException::withMessages([
+                    'decision' => 'Kuota jalur '.$application->application_type->label().' sudah terpenuhi.',
+                ]);
+            }
 
-        if ($target === ApplicationStatus::DITERIMA && $acceptedCount >= $application->application_type->quota()) {
-            throw ValidationException::withMessages([
-                'decision' => 'Kuota jalur '.$application->application_type->label().' sudah terpenuhi.',
-            ]);
-        }
-
-        DB::transaction(function () use ($request, $application, $data, $target, $scoring): void {
             $selection = $application->selection;
 
-            if (!$selection) {
+            if (! $selection) {
                 $selection = $scoring->calculate($application, $request->user()->id);
             }
 
@@ -175,6 +150,26 @@ class SelectionController extends Controller
         return back()->with('success', 'Keputusan internal kandidat berhasil disimpan.');
     }
 
+    /**
+     * Dibaca dengan lockForUpdate di dalam transaksi agar dua keputusan
+     * konkuren pada jalur yang sama terserialisasi dan kuota tidak terlewati:
+     * locking read selalu melihat commit terbaru, bukan snapshot lama.
+     */
+    private function quotaAvailable(Request $request, Application $application, ?Selection $existingSelection): bool
+    {
+        $acceptedCount = Selection::query()
+            ->whereHas('application', fn ($query) => $query
+                ->visibleTo($request->user())
+                ->where('periode', config('kartu_hebat.current_period'))
+                ->where('application_type', $application->application_type->value))
+            ->where('manual_decision', ApplicationStatus::DITERIMA->value)
+            ->when($existingSelection, fn ($query) => $query->where('id', '!=', $existingSelection->id))
+            ->lockForUpdate()
+            ->count();
+
+        return $acceptedCount < $application->application_type->quota();
+    }
+
     public function publish(Request $request)
     {
         $decided = Selection::query()
@@ -201,7 +196,6 @@ class SelectionController extends Controller
                 $selection->update(['published_at' => $publishedAt]);
                 $application->update([
                     'status' => $target,
-                    'current_step' => 6,
                     'catatan' => $selection->notes,
                     'locked_at' => $publishedAt,
                 ]);

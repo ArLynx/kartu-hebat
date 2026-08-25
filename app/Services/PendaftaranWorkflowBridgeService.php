@@ -18,8 +18,7 @@ class PendaftaranWorkflowBridgeService
 {
     public function __construct(
         private readonly ApplicationWorkflowService $workflow,
-    ) {
-    }
+    ) {}
 
     private function resetDocumentVerifications(Application $application): void
     {
@@ -81,7 +80,18 @@ class PendaftaranWorkflowBridgeService
         $villageName = $this->normalizeRegionName($data->desa);
         $countyName = $this->normalizeRegionName($data->kabupaten);
 
+        $escapedLike = static fn (string $value): string => addcslashes($value, '\\%_');
+
         $matches = Village::query()
+            ->whereHas(
+                'kecamatan',
+                fn ($query) => $query->where('name', 'like', '%'.$escapedLike($districtName).'%')
+            )
+            ->whereHas(
+                'kecamatan.kabupaten',
+                fn ($query) => $query->where('name', 'like', '%'.$escapedLike($countyName).'%')
+            )
+            ->where('name', 'like', '%'.$escapedLike($villageName).'%')
             ->with('kecamatan.kabupaten')
             ->get()
             ->filter(function (Village $village) use ($districtName, $villageName, $countyName): bool {

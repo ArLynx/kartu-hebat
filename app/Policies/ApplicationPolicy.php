@@ -23,7 +23,7 @@ class ApplicationPolicy
 
         $village = $application->mahasiswa->profile?->village;
 
-        if (!$village) {
+        if (! $village) {
             return false;
         }
 
@@ -50,7 +50,7 @@ class ApplicationPolicy
     public function verify(User $user, Application $application): bool
     {
         if (
-            !$this->view($user, $application)
+            ! $this->view($user, $application)
             || $application->periode !== config('kartu_hebat.current_period')
         ) {
             return false;
@@ -61,10 +61,7 @@ class ApplicationPolicy
                 ApplicationStatus::SUBMITTED,
                 ApplicationStatus::VERIFIKASI_DESA,
             ], true),
-            UserRole::OPERATOR_KECAMATAN => in_array($application->status, [
-                ApplicationStatus::MS_DESA,
-                ApplicationStatus::VERIFIKASI_KECAMATAN,
-            ], true),
+            UserRole::OPERATOR_KECAMATAN => $application->status === ApplicationStatus::VERIFIKASI_KECAMATAN,
             UserRole::OPERATOR_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL,
             UserRole::OPERATOR_PENDIDIKAN => $application->status === ApplicationStatus::VERIFIKASI_DINAS,

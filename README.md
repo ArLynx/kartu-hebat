@@ -11,3 +11,15 @@ Implementasi Laravel untuk pendaftaran bantuan pendidikan mahasiswa dengan verif
 - Laravel Excel untuk ekspor XLSX
 - DOMPDF untuk laporan PDF
 
+## Alur Kerja (Ringkas)
+
+Mahasiswa mengisi wizard 7 langkah → application diverifikasi berjenjang:
+
+```
+Pendaftaran → Verifikasi Desa → Verifikasi Kecamatan → Verifikasi Lintas Dinas (3 dinas paralel) → Seleksi Kabupaten → Publikasi Hasil
+```
+
+Keputusan tiap operator: **MS** (lanjut), **BTL** (kembali ke mahasiswa untuk diperbaiki), **TMS** (ditolak).
+
+Dokumentasi lengkap: [docs/workflow.md](docs/workflow.md).
+

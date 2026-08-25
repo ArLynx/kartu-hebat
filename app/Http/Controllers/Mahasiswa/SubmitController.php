@@ -16,8 +16,7 @@ class SubmitController extends Controller
     public function __construct(
         private readonly MahasiswaPendaftaranService $flow,
         private readonly PendaftaranWorkflowBridgeService $bridge,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View|RedirectResponse
     {
@@ -52,6 +51,7 @@ class SubmitController extends Controller
         $result = DB::transaction(function () use ($request): array {
             $pendaftaran = Pendaftaran::query()
                 ->where('user_id', $request->user()->getKey())
+                ->whereHas('periode', fn ($query) => $query->aktif())
                 ->latest('id')
                 ->lockForUpdate()
                 ->first();

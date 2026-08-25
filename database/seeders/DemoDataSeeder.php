@@ -14,7 +14,6 @@ use App\Models\DocumentType;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\MahasiswaProfile;
-use App\Models\Selection;
 use App\Models\User;
 use App\Models\VerificationLog;
 use App\Models\Village;
@@ -111,7 +110,6 @@ class DemoDataSeeder extends Seeder
                 'nomor_pengajuan' => 'KHM-'.now()->format('Y').'-000128',
                 'application_type' => ApplicationType::AKADEMIK,
                 'status' => ApplicationStatus::BTL_DESA,
-                'current_step' => 4,
                 'catatan' => 'KHS semester terakhir belum terbaca dengan jelas. Silakan unggah ulang.',
                 'submitted_at' => now()->subDays(4),
             ],
@@ -187,7 +185,6 @@ class DemoDataSeeder extends Seeder
                 'periode' => config('kartu_hebat.current_period'),
                 'application_type' => $applicationType,
                 'status' => $status,
-                'current_step' => $status->progress() >= 75 ? 5 : 4,
                 'submitted_at' => now()->subDays(fake()->numberBetween(2, 35)),
                 'locked_at' => now(),
             ]);

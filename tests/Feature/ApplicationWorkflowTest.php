@@ -4,24 +4,25 @@ namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
 use App\Models\Application;
-use App\Models\KategoriBeasiswa;
 use App\Models\DocumentType;
 use App\Models\JenisDokumen;
-use App\Models\Kabupaten;
-use App\Models\Kecamatan;
+use App\Models\KategoriBeasiswa;
 use App\Models\MahasiswaProfile;
 use App\Models\Pendaftaran;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
 use App\Services\ApplicationWorkflowService;
+use App\Services\DocumentVerificationService;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ApplicationWorkflowTest extends TestCase
@@ -41,7 +42,7 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerificationService = app(\App\Services\DocumentVerificationService::class);
+        $documentVerificationService = app(DocumentVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -77,23 +78,23 @@ class ApplicationWorkflowTest extends TestCase
         $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
 
         foreach ($documents as $document) {
-            $documentVerificationService->save($application, $document, $villageOperator, \App\Enums\DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $villageOperator, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $villageOperator, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_KECAMATAN, $application->status);
 
         foreach ($documents as $document) {
-            $documentVerificationService->save($application, $document, $districtOperator, \App\Enums\DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $districtOperator, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $districtOperator, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         foreach ($documents as $document) {
-            $documentVerificationService->save($application, $document, $dukcapil, \App\Enums\DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $social, \App\Enums\DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $education, \App\Enums\DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $education, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS, score: 90);
@@ -159,9 +160,63 @@ class ApplicationWorkflowTest extends TestCase
             'status' => ApplicationStatus::DRAFT,
         ]);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
 
         $workflow->submit($application, $student);
+    }
+
+    public function test_submit_rejects_when_required_jenis_dokumen_has_no_master_match(): void
+    {
+        [$student] = $this->studentWithCompleteProfile();
+        $workflow = app(ApplicationWorkflowService::class);
+        $period = Periode::query()->create([
+            'tahun' => 2026,
+            'nama' => 'Periode Pengujian',
+            'tanggal_mulai' => '2026-01-01',
+            'tanggal_selesai' => '2026-12-31',
+            'status' => 'aktif',
+        ]);
+        $category = KategoriBeasiswa::query()->create([
+            'periode_id' => $period->id,
+            'kode' => 'AKADEMIK-ORPHAN',
+            'nama' => 'Akademik Orphan Test',
+            'application_type' => ApplicationType::AKADEMIK,
+            'kuota' => 10,
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+        $orphanType = JenisDokumen::query()->create([
+            'kode' => 'KODE-TANPA-PADANAN',
+            'nama' => 'Dokumen Tanpa Padanan',
+            'format_file' => 'pdf',
+            'maksimal_ukuran' => 2048,
+            'aktif' => true,
+        ]);
+        $this->assertFalse(DocumentType::query()->where('code', 'KODE-TANPA-PADANAN')->exists());
+        $category->jenisDokumens()->attach($orphanType->id, ['urutan' => 1]);
+        $registration = Pendaftaran::query()->create([
+            'user_id' => $student->id,
+            'periode_id' => $period->id,
+            'kategori_beasiswa_id' => $category->id,
+            'nomor_pendaftaran' => 'KHM-TEST-ORPHAN',
+            'status' => 'draft',
+        ]);
+        $application = Application::query()->create([
+            'pendaftaran_id' => $registration->id,
+            'nomor_pengajuan' => 'KHM-TEST-ORPHAN',
+            'mahasiswa_id' => $student->id,
+            'periode' => $period->nama,
+            'application_type' => ApplicationType::AKADEMIK,
+            'status' => ApplicationStatus::DRAFT,
+        ]);
+
+        try {
+            $workflow->submit($application, $student);
+            $this->fail('Submit harus gagal saat jenis dokumen wajib tidak punya padanan di data master.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('tidak ditemukan pada data master', $exception->errors()['documents'][0]);
+            $this->assertSame(ApplicationStatus::DRAFT, $application->fresh()->status);
+        }
     }
 
     public function test_cannot_verify_ms_without_document_assessment(): void
@@ -196,7 +251,7 @@ class ApplicationWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Semua dokumen harus dinilai terlebih dahulu');
 
         $workflow->verify($application, $villageOperator, VerificationDecision::MS);
@@ -242,7 +297,7 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerification = app(\App\Services\DocumentVerificationService::class);
+        $documentVerification = app(DocumentVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -273,7 +328,7 @@ class ApplicationWorkflowTest extends TestCase
         $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
 
         foreach ($documents as $document) {
-            $documentVerification->save($application, $document, $villageOperator, \App\Enums\DocumentVerificationResult::MEMENUHI);
+            $documentVerification->save($application, $document, $villageOperator, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $villageOperator, VerificationDecision::MS);

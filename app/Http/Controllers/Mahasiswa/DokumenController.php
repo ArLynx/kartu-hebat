@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\DocumentType;
 use App\Models\Dokumen;
 use App\Models\JenisDokumen;
 use App\Models\Pendaftaran;
@@ -24,9 +25,10 @@ class DokumenController extends Controller
 {
     private const SAFE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png'];
 
-    public function __construct(private readonly MahasiswaPendaftaranService $flow)
-    {
-    }
+    public function __construct(
+        private readonly MahasiswaPendaftaranService $flow,
+        private readonly DocumentVerificationService $documentVerifications,
+    ) {}
 
     public function index(Request $request): View|RedirectResponse
     {
@@ -114,11 +116,19 @@ class DokumenController extends Controller
                 );
 
                 if ($oldDocument && $oldDocument->file_path !== $path) {
-                    $application = $pendaftaran->application;
-                    $application?->documents()
-                        ->where('document_type_id', $jenisDokumen->id)
-                        ->get()
-                        ->each(fn ($target) => app(DocumentVerificationService::class)->resetForDocument($target));
+                    $documentTypeId = DocumentType::query()
+                        ->where('code', $jenisDokumen->kode)
+                        ->value('id');
+
+                    $target = $documentTypeId === null
+                        ? null
+                        : $pendaftaran->application?->documents()
+                            ->where('document_type_id', $documentTypeId)
+                            ->first();
+
+                    if ($target) {
+                        $this->documentVerifications->resetForDocument($target);
+                    }
                 }
 
                 $pendaftaran->forceFill(['review_dikonfirmasi_at' => null])->save();

@@ -120,9 +120,7 @@ class PendaftaranController extends Controller
     private function periodeAktif(): ?Periode
     {
         return Periode::query()
-            ->where('status', 'aktif')
-            ->whereDate('tanggal_mulai', '<=', today())
-            ->whereDate('tanggal_selesai', '>=', today())
+            ->aktif()
             ->orderByDesc('tanggal_mulai')
             ->first();
     }

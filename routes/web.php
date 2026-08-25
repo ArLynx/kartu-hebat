@@ -161,6 +161,8 @@ Route::middleware([
                 Route::post('/pengajuan/{application}/verifikasi', [VerificationController::class, 'store'])->name('applications.verify');
                 Route::post('/pengajuan/{application}/dokumen/{document}/penilaian', [DocumentVerificationController::class, 'store'])
                     ->name('applications.documents.verify');
+                Route::delete('/pengajuan/{application}/dokumen/{document}/penilaian', [DocumentVerificationController::class, 'destroy'])
+                    ->name('applications.documents.verify.destroy');
 
                 Route::middleware('role:operator_kecamatan,operator_kabupaten')->group(function (): void {
                     Route::get('/laporan/rekap-excel', [ReportController::class, 'recap'])->name('reports.recap');

@@ -472,11 +472,19 @@
                                 alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Memenuhi Syarat (MS).');
                                 return false;
                             }
+                            if (decision && decision.value === 'TMS') {
+                                alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Tidak Memenuhi Syarat (TMS).');
+                                return false;
+                            }
                             return confirm('Simpan keputusan verifikasi ini?');
                         }
 
                         function handleAllDocsMsSubmit(event) {
                             const decision = document.querySelector('input[name="decision"]:checked');
+                            if (decision && decision.value === 'TMS') {
+                                alert('Keputusan Tidak Memenuhi Syarat tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS). Batalkan penilaian dokumen terlebih dahulu jika diperlukan.');
+                                return false;
+                            }
                             if (decision && decision.value === 'BTL') {
                                 return confirm('SEMUA dokumen sudah dinilai Memenuhi Syarat (MS). Apakah Anda yakin ingin memilih Butuh Perbaikan?');
                             }

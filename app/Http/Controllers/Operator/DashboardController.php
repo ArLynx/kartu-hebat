@@ -6,7 +6,6 @@ use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -24,7 +23,6 @@ class DashboardController extends Controller
                 ApplicationStatus::VERIFIKASI_DESA->value,
             ],
             UserRole::OPERATOR_KECAMATAN => [
-                ApplicationStatus::MS_DESA->value,
                 ApplicationStatus::VERIFIKASI_KECAMATAN->value,
             ],
             UserRole::OPERATOR_DUKCAPIL,
@@ -42,7 +40,6 @@ class DashboardController extends Controller
                 ApplicationStatus::BTL_KECAMATAN->value,
             ])->count(),
             'completed' => (clone $base)->whereIn('status', [
-                ApplicationStatus::MS->value,
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,
                 ApplicationStatus::DITOLAK->value,
