@@ -18,11 +18,12 @@ class PendaftaranWorkflowBridgeService
 {
     public function __construct(
         private readonly ApplicationWorkflowService $workflow,
+        private readonly DocumentVerificationService $documentVerification,
     ) {}
 
     private function resetDocumentVerifications(Application $application): void
     {
-        app(DocumentVerificationService::class)->resetForApplication($application);
+        $this->documentVerification->resetForApplication($application);
     }
 
     public function submit(Pendaftaran $pendaftaran, User $student): Application
@@ -269,14 +270,15 @@ class PendaftaranWorkflowBridgeService
             $existing = $application->documents()
                 ->where('document_type_id', $documentType->id)
                 ->first();
-            $contents = $disk->get($source->file_path);
             $version = $existing && $existing->path === $source->file_path
                 ? $existing->version
                 : ($existing?->version ?? 0) + 1;
 
             if ($existing && $existing->path !== $source->file_path) {
-                app(DocumentVerificationService::class)->resetForDocument($existing);
+                $this->documentVerification->resetForDocument($existing);
             }
+
+            $unchanged = $existing && $existing->path === $source->file_path;
 
             $application->documents()->updateOrCreate(
                 ['document_type_id' => $documentType->id],
@@ -285,8 +287,10 @@ class PendaftaranWorkflowBridgeService
                     'path' => $source->file_path,
                     'original_name' => $source->nama_file_asli ?: basename($source->file_path),
                     'mime_type' => $source->mime_type ?: 'application/octet-stream',
-                    'size' => $source->ukuran_file ?: strlen($contents),
-                    'checksum' => hash('sha256', $contents),
+                    'size' => $source->ukuran_file ?: $disk->size($source->file_path),
+                    'checksum' => $unchanged
+                        ? $existing->checksum
+                        : $disk->checksum($source->file_path, ['checksum_algo' => 'sha256']),
                     'version' => $version,
                     'verified_at' => $source->verified_at,
                 ],

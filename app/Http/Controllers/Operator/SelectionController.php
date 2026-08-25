@@ -50,20 +50,21 @@ class SelectionController extends Controller
                 ->where('periode', config('kartu_hebat.current_period'))
                 ->where('application_type', $selectedType->value));
 
-        $typeCounts = collect(ApplicationType::cases())->mapWithKeys(function (ApplicationType $type) use ($request): array {
-            $count = Application::query()
-                ->visibleTo($request->user())
-                ->where('periode', config('kartu_hebat.current_period'))
-                ->where('application_type', $type->value)
-                ->whereIn('status', [
-                    ApplicationStatus::SELEKSI_KABUPATEN->value,
-                    ApplicationStatus::DITERIMA->value,
-                    ApplicationStatus::DITOLAK->value,
-                ])
-                ->count();
+        $typeCounts = Application::query()
+            ->visibleTo($request->user())
+            ->where('periode', config('kartu_hebat.current_period'))
+            ->whereIn('status', [
+                ApplicationStatus::SELEKSI_KABUPATEN->value,
+                ApplicationStatus::DITERIMA->value,
+                ApplicationStatus::DITOLAK->value,
+            ])
+            ->selectRaw('application_type, count(*) as total')
+            ->groupBy('application_type')
+            ->pluck('total', 'application_type');
 
-            return [$type->value => $count];
-        });
+        $typeCounts = collect(ApplicationType::cases())->mapWithKeys(
+            fn (ApplicationType $type): array => [$type->value => (int) ($typeCounts[$type->value] ?? 0)],
+        );
 
         return view('operator.selection', [
             'applications' => $query

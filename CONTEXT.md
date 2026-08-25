@@ -34,3 +34,7 @@ _Avoid_: County selection
 
 **current_step**:
 Kolom lama pada applications yang mencatat langkah wizard; tidak pernah dibaca dan telah dihapus. Langkah wizard mahasiswa tetap dilacak di dalam modul pendaftaran.
+
+## Keterbatasan yang disengaja
+
+**Audit & mass delete**: Trait `Auditable` mencatat event Eloquent (`created`/`updated`/`deleted`). `Model::query()->delete()` (mass delete) melewati event Eloquent sehingga tidak tercatat di `audit_logs`. Disengaja: baris dihapus massal hanya lewat relasi `cascadeOnDelete` atau pembersihan terskala; jika jejak audit mass delete kelak dianggap kritikal, gunakan loop per-instance `->delete()` atau catat sebelum mass delete di titik yang memicu.

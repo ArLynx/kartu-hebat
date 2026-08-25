@@ -12,10 +12,5 @@ Hasil review file utama (services, controllers, models) pada sesi 2026-08-25: bu
 - **#03 selection-page-scoring-on-get** — `SelectionController::index()` tidak lagi backfill skor / `recalculateRanking()` di GET (read-only); scoring tetap di `ApplicationWorkflowService::verifyAgency` dan `SelectionController::store`; jaring pengaman `selection:rescore` (--kabupaten/--type/--period); test di `SelectionPageScoringTest` (merah->hijau).
 - **#2 audit-trait-extra-queries-per-write** — `Schema::hasTable` dicache statis; guard `fresh()` diganti cek `doesntExist()` hanya untuk update baris User sendiri; test di `AuditableTraitTest`.
 - **#04 village-lookup-full-table-scan** — `PendaftaranWorkflowBridgeService::resolveVillage()` tidak lagi `Village::get()` seluruh tabel; kandidat dibatasi di DB (`whereHas('kecamatan')` + `whereHas('kecamatan.kabupaten')` + `where('name','like',...)` pada input ternormalisasi yang di-escape), presisi eksak PHP tetap berlaku atas kandidat tersisa; test merah→hijau di `VillageLookupTest` (4 test, termasuk `DB::listen` yang memastikan query villages ber-WHERE).
-
-## Tiket terbuka
-
-| # | Tiket | Ringkas |
-|---|-------|---------|
-| 05 | document-sync-reads-file-per-submit | Isi file dibaca penuh tiap submit hanya untuk size/checksum |
-| 06 | minor-hygiene-bundle | DI via constructor, import FQCN, COUNT groupBy, konfirmasi scope superadmin |
+- **#05 document-sync-reads-file-per-submit** — `PendaftaranWorkflowBridgeService::synchronizeDocuments()` tidak lagi membaca seluruh isi file (`$disk->get()`) hanya untuk size/checksum. Ukuran pakai `$source->ukuran_file ?: $disk->size($path)`; checksum dihitung hanya saat file baru/berubah via `$disk->checksum($path, ['checksum_algo' => 'sha256'])` (streaming `hash_file`), dipertahankan saat path sama; test merah→hijau di `DocumentSyncOptimizationTest` (3 test).
+- **#06 minor-hygiene-bundle** — `PendaftaranWorkflowBridgeService` menerima `DocumentVerificationService` via constructor DI (dua `app(...)` dihapus); import FQCN di `ApplicationWorkflowService` sudah bersih sejak awal; `SelectionController::index()` menghitung `typeCounts` dengan satu query `groupBy('application_type')` menggantikan 1 COUNT per jalur; batasan audit mass delete didokumentasikan di `CONTEXT.md`. Konfirmasi scope superadmin (#4) dibiarkan terbuka — jalur `whereRaw('1 = 0')` hanya tercapai dari route `role:operator_*`. Test merah→hijau di `HygieneBundleTest` (3 test, termasuk `DB::listen` yang memastikan satu query groupBy).
