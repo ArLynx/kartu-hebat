@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
 use App\Models\AgencyVerification;
@@ -148,6 +149,10 @@ class ApplicationWorkflowService
 
         if (in_array($decision, [VerificationDecision::MS, VerificationDecision::TMS], true)) {
             $this->assertAllDocumentsVerified($application, $operator, $decision);
+        }
+
+        if ($decision === VerificationDecision::BTL) {
+            $this->assertBtlHasRejectedDocument($application, $operator);
         }
 
         return DB::transaction(function () use ($application, $operator, $decision, $notes, $score, $desil): Application {
@@ -413,6 +418,7 @@ class ApplicationWorkflowService
     private function assertAllDocumentsVerified(Application $application, User $operator, VerificationDecision $decision): void
     {
         $stage = DocumentVerificationService::stageFor($operator);
+        $round = DocumentVerificationService::currentRound($application);
 
         $documentIds = Document::query()
             ->where('application_id', $application->id)
@@ -425,6 +431,7 @@ class ApplicationWorkflowService
         $verifiedDocumentIds = DocumentVerification::query()
             ->where('application_id', $application->id)
             ->where('stage', $stage)
+            ->where('round', $round)
             ->pluck('document_id');
 
         $unverifiedIds = $documentIds->diff($verifiedDocumentIds);
@@ -439,6 +446,33 @@ class ApplicationWorkflowService
 
             throw ValidationException::withMessages([
                 'document_verification' => "Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan {$decision->label()}. Dokumen yang belum dinilai: {$unverifiedNames}.",
+            ]);
+        }
+    }
+
+    private function assertBtlHasRejectedDocument(Application $application, User $operator): void
+    {
+        $stage = DocumentVerificationService::stageFor($operator);
+        $round = DocumentVerificationService::currentRound($application);
+
+        $documentIds = Document::query()
+            ->where('application_id', $application->id)
+            ->pluck('id');
+
+        if ($documentIds->isEmpty()) {
+            return;
+        }
+
+        $hasRejected = DocumentVerification::query()
+            ->where('application_id', $application->id)
+            ->where('stage', $stage)
+            ->where('round', $round)
+            ->where('result', DocumentVerificationResult::TIDAK_MEMENUHI->value)
+            ->exists();
+
+        if (! $hasRejected) {
+            throw ValidationException::withMessages([
+                'document_verification' => 'Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi / Butuh Perbaikan pada tahap ini. Tandai dokumen yang perlu diperbaiki terlebih dahulu.',
             ]);
         }
     }

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
+use App\Models\Application;
 use App\Models\DataPribadi;
 use App\Models\Dokumen;
 use App\Models\Kabupaten;
@@ -123,6 +124,57 @@ class VillageLookupTest extends TestCase
                 '/\bwhere\b/i',
                 $sql,
                 'Pencarian desa harus dibatasi WHERE di DB, bukan memuat seluruh tabel villages: '.$sql,
+            );
+        }
+    }
+
+    public function test_double_submit_does_not_create_duplicate_application(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->completeDraft($user, 'valid');
+        $bridge = app(PendaftaranWorkflowBridgeService::class);
+
+        $first = $bridge->submit($pendaftaran, $user);
+
+        try {
+            $bridge->submit($pendaftaran->fresh(), $user);
+            $this->fail('Submit kedua saat berstatus verifikasi harus ditolak.');
+        } catch (ValidationException) {
+        }
+
+        $applications = Application::query()->where('mahasiswa_id', $user->id)->get();
+        $this->assertCount(1, $applications);
+        $this->assertSame($first->id, $applications->sole()->id);
+    }
+
+    public function test_data_pribadi_villages_are_scoped_to_configured_kabupaten(): void
+    {
+        $user = User::factory()->create();
+        $this->completeDraft($user, 'valid');
+
+        $villageQueries = [];
+        DB::listen(function ($query) use (&$villageQueries): void {
+            if (preg_match('/\bfrom\s+"?villages"?\b/i', $query->sql)) {
+                $villageQueries[] = $query->sql;
+            }
+        });
+
+        $response = $this->actingAs($user)->get(route('mahasiswa.data-pribadi.index'));
+
+        $response->assertOk();
+
+        $villages = $response->viewData('villages');
+        $this->assertNotEmpty($villages);
+
+        foreach ($villages as $village) {
+            $this->assertSame(config('kartu_hebat.kabupaten_code'), $village->kabupaten->code);
+        }
+
+        foreach ($villageQueries as $sql) {
+            $this->assertMatchesRegularExpression(
+                '/\bwhere\b/i',
+                $sql,
+                'Dropdown desa harus dibatasi WHERE per kabupaten, bukan memuat seluruh tabel villages: '.$sql,
             );
         }
     }

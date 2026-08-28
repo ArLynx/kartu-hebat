@@ -42,16 +42,15 @@ Artisan::command(
             return Command::FAILURE;
         }
 
-        $user = User::query()->updateOrCreate(
-            ['email' => $email],
-            [
-                'name' => $name,
-                'password' => Hash::make($password),
-                'email_verified_at' => now(),
-                'role' => UserRole::SUPERADMIN,
-                'status' => 'active',
-            ],
-        );
+        $user = User::query()->firstOrNew(['email' => $email]);
+        $user->fill([
+            'name' => $name,
+            'password' => Hash::make($password),
+        ])->forceFill([
+            'email_verified_at' => now(),
+            'role' => UserRole::SUPERADMIN,
+            'status' => 'active',
+        ])->save();
 
         $this->info('Akun Superadmin berhasil dibuat/diperbarui: '.$user->email);
         $this->warn('Superadmin wajib mengaktifkan 2FA saat login pertama.');
@@ -99,7 +98,7 @@ Artisan::command(
 
                 $success++;
                 $this->line('Terintegrasi: '.$pendaftaran->nomor_pendaftaran);
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 $failed++;
                 $this->error($pendaftaran->nomor_pendaftaran.': '.$exception->getMessage());
             }

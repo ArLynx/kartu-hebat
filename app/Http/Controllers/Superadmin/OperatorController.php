@@ -4,10 +4,14 @@ namespace App\Http\Controllers\Superadmin;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\AgencyVerification;
+use App\Models\DistrictVerification;
+use App\Models\DocumentVerification;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\User;
 use App\Models\Village;
+use App\Models\VillageVerification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,16 +74,19 @@ class OperatorController extends Controller
         $generatedPassword = $data['password'];
 
         DB::transaction(function () use ($data, &$created): void {
-            $created = User::query()->create([
+            $created = new User([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
+            ]);
+
+            $created->forceFill([
                 'role' => $data['role'],
                 'status' => $data['status'] ?? 'active',
                 'village_id' => $data['village_id'] ?? null,
                 'kecamatan_id' => $data['kecamatan_id'] ?? null,
                 'kabupaten_id' => $data['kabupaten_id'] ?? null,
-            ]);
+            ])->save();
 
             $created->forceFill(['email_verified_at' => now()])->save();
         });
@@ -114,15 +121,16 @@ class OperatorController extends Controller
         $data = $this->validateOperator($request, $operator);
 
         DB::transaction(function () use ($operator, $data): void {
-            $operator->update([
+            $operator->fill([
                 'name' => $data['name'],
                 'email' => $data['email'],
+            ])->forceFill([
                 'role' => $data['role'],
                 'status' => $data['status'] ?? 'active',
                 'village_id' => $data['village_id'] ?? null,
                 'kecamatan_id' => $data['kecamatan_id'] ?? null,
                 'kabupaten_id' => $data['kabupaten_id'] ?? null,
-            ]);
+            ])->save();
 
             if (! empty($data['password'])) {
                 $operator->forceFill([
@@ -142,9 +150,10 @@ class OperatorController extends Controller
     {
         abort_unless($this->isOperatorRole($operator->role), 404);
 
-        $hasHistory = \App\Models\VillageVerification::where('verifier_id', $operator->id)->exists()
-            || \App\Models\DistrictVerification::where('verifier_id', $operator->id)->exists()
-            || \App\Models\AgencyVerification::where('verifier_id', $operator->id)->exists();
+        $hasHistory = VillageVerification::where('verifier_id', $operator->id)->exists()
+            || DistrictVerification::where('verifier_id', $operator->id)->exists()
+            || AgencyVerification::where('verifier_id', $operator->id)->exists()
+            || DocumentVerification::where('verifier_id', $operator->id)->exists();
 
         if ($hasHistory) {
             return back()->with(

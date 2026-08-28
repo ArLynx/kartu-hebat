@@ -86,6 +86,21 @@ class HygieneBundleTest extends TestCase
         $this->assertSame(1, $groupedCountQueries, 'typeCounts harus dihitung dari satu query groupBy, bukan satu COUNT per jalur.');
     }
 
+    public function test_user_privileged_columns_are_not_mass_assignable(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::MAHASISWA]);
+
+        $user->fill([
+            'role' => UserRole::OPERATOR_KABUPATEN,
+            'status' => 'inactive',
+            'kabupaten_id' => 999,
+        ])->save();
+
+        $fresh = $user->fresh();
+        $this->assertSame(UserRole::MAHASISWA, $fresh->role);
+        $this->assertSame('active', $fresh->status);
+    }
+
     private function documentVerificationServiceOf(PendaftaranWorkflowBridgeService $bridge): ?string
     {
         $property = new \ReflectionProperty($bridge, 'documentVerification');

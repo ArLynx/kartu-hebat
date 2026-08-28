@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
 use App\Models\DataPribadi;
@@ -16,6 +17,7 @@ use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
 use App\Services\ApplicationWorkflowService;
+use App\Services\DocumentVerificationService;
 use App\Services\MahasiswaPendaftaranService;
 use App\Services\PendaftaranWorkflowBridgeService;
 use Database\Seeders\BeasiswaMasterSeeder;
@@ -63,6 +65,9 @@ class DocumentSyncOptimizationTest extends TestCase
             'village_id' => $village->id,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
+
+        $doc = $application->documents()->firstOrFail();
+        app(DocumentVerificationService::class)->save($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
         app(ApplicationWorkflowService::class)->verify(
             $application,
@@ -112,6 +117,8 @@ class DocumentSyncOptimizationTest extends TestCase
             'village_id' => $village->id,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
+
+        app(DocumentVerificationService::class)->save($application, $document, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
         app(ApplicationWorkflowService::class)->verify(
             $application,
@@ -166,6 +173,9 @@ class DocumentSyncOptimizationTest extends TestCase
             'village_id' => $village->id,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
+
+        $doc = $application->documents()->firstOrFail();
+        app(DocumentVerificationService::class)->save($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
         app(ApplicationWorkflowService::class)->verify(
             $application,

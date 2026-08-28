@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Enums\UserRole;
+use App\Models\Application;
 use App\Models\DocumentType;
+use App\Models\DocumentVerification;
 use App\Models\JenisDokumen;
 use App\Models\KategoriBeasiswa;
 use App\Models\Periode;
@@ -125,6 +128,64 @@ class SuperadminMasterDataTest extends TestCase
             'jenis_dokumen_id' => $khs->id,
             'urutan' => 2,
         ]);
+    }
+
+    public function test_operator_with_document_assessment_history_cannot_be_deleted(): void
+    {
+        $superadmin = $this->superadmin();
+        $operator = User::factory()->create([
+            'role' => UserRole::OPERATOR_DESA,
+            'two_factor_confirmed_at' => now(),
+        ]);
+
+        $student = User::factory()->create(['role' => UserRole::MAHASISWA]);
+        $application = Application::query()->create([
+            'nomor_pengajuan' => 'KHM-TEST-'.fake()->unique()->numerify('######'),
+            'mahasiswa_id' => $student->id,
+            'periode' => config('kartu_hebat.current_period'),
+            'application_type' => null,
+            'status' => ApplicationStatus::DRAFT,
+        ]);
+        $type = DocumentType::query()->create(['code' => 'TEST-TYPE', 'name' => 'Tes Tipe Dokumen']);
+        $document = $application->documents()->create([
+            'document_type_id' => $type->id,
+            'uploaded_by' => $student->id,
+            'path' => 'applications/'.$application->id.'/TEST-TYPE/test.pdf',
+            'original_name' => 'test.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 4,
+            'checksum' => hash('sha256', 'test'),
+        ]);
+        DocumentVerification::query()->create([
+            'application_id' => $application->id,
+            'document_id' => $document->id,
+            'verifier_id' => $operator->id,
+            'stage' => 'desa',
+            'result' => 'memenuhi',
+            'verified_at' => now(),
+        ]);
+
+        $this->actingAs($superadmin)
+            ->delete(route('superadmin.operators.destroy', $operator))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('users', ['id' => $operator->id]);
+    }
+
+    public function test_operator_without_history_can_be_deleted(): void
+    {
+        $superadmin = $this->superadmin();
+        $operator = User::factory()->create([
+            'role' => UserRole::OPERATOR_KECAMATAN,
+            'two_factor_confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($superadmin)
+            ->delete(route('superadmin.operators.destroy', $operator))
+            ->assertRedirect(route('superadmin.operators.index'));
+
+        $this->assertDatabaseMissing('users', ['id' => $operator->id]);
     }
 
     private function superadmin(): User

@@ -97,7 +97,7 @@
                     <th>Wilayah</th>
                     <th>Skor</th>
                     <th>Status</th>
-                    <th>Keputusan Manual</th>
+                    <th>Keputusan</th>
                 </tr>
             </thead>
             <tbody>

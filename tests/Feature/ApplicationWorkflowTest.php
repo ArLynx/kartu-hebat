@@ -257,7 +257,7 @@ class ApplicationWorkflowTest extends TestCase
         $workflow->verify($application, $villageOperator, VerificationDecision::MS);
     }
 
-    public function test_can_verify_btl_without_document_assessment(): void
+    public function test_can_verify_btl_with_rejected_document(): void
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
@@ -289,8 +289,54 @@ class ApplicationWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
 
+        $document = $application->documents()->firstOrFail();
+        app(DocumentVerificationService::class)->save(
+            $application,
+            $document,
+            $villageOperator,
+            DocumentVerificationResult::TIDAK_MEMENUHI,
+            'Dokumen belum lengkap',
+        );
+
         $application = $workflow->verify($application, $villageOperator, VerificationDecision::BTL, 'Dokumen belum lengkap');
         $this->assertSame(ApplicationStatus::BTL_DESA, $application->status);
+    }
+
+    public function test_cannot_verify_btl_without_rejected_document(): void
+    {
+        [$student, $village] = $this->studentWithCompleteProfile();
+        $workflow = app(ApplicationWorkflowService::class);
+        $application = $this->draftApplication($student);
+        $application->update(['application_type' => ApplicationType::AKADEMIK]);
+
+        foreach (DocumentType::query()
+            ->where('is_required', true)
+            ->where(function ($query): void {
+                $query->whereNull('application_type')
+                    ->orWhere('application_type', ApplicationType::AKADEMIK->value);
+            })
+            ->get() as $type) {
+            $path = 'applications/'.$application->id.'/'.$type->code.'/test.pdf';
+            Storage::disk('local')->put($path, 'test');
+            $application->documents()->create([
+                'document_type_id' => $type->id,
+                'uploaded_by' => $student->id,
+                'path' => $path,
+                'original_name' => 'test.pdf',
+                'mime_type' => 'application/pdf',
+                'size' => 4,
+                'checksum' => hash('sha256', 'test'),
+            ]);
+        }
+
+        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
+
+        $application = $workflow->submit($application, $student);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+
+        $this->expectException(ValidationException::class);
+
+        $workflow->verify($application, $villageOperator, VerificationDecision::BTL, 'Dokumen belum lengkap');
     }
 
     public function test_can_verify_ms_after_all_documents_assessed(): void

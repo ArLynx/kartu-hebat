@@ -10,6 +10,7 @@ use App\Models\MahasiswaProfile;
 use App\Models\Pendaftaran;
 use App\Models\User;
 use App\Models\Village;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -200,32 +201,36 @@ class PendaftaranWorkflowBridgeService
     ): Application {
         $period = $pendaftaran->periode?->nama ?: (string) $pendaftaran->periode?->tahun;
 
-        $application = Application::query()
-            ->where('pendaftaran_id', $pendaftaran->id)
-            ->orWhere(function ($query) use ($student, $period): void {
-                $query
-                    ->where('mahasiswa_id', $student->id)
-                    ->where('periode', $period);
-            })
-            ->lockForUpdate()
-            ->first();
+        // lockForUpdate hanya efektif di dalam transaksi; tanpa ini submit
+        // ganda bersamaan bisa membuat application duplikat.
+        return DB::transaction(function () use ($pendaftaran, $student, $period, $applicationType): Application {
+            $application = Application::query()
+                ->where('pendaftaran_id', $pendaftaran->id)
+                ->orWhere(function ($query) use ($student, $period): void {
+                    $query
+                        ->where('mahasiswa_id', $student->id)
+                        ->where('periode', $period);
+                })
+                ->lockForUpdate()
+                ->first();
 
-        if (! $application) {
-            $application = new Application([
+            if (! $application) {
+                $application = new Application([
+                    'mahasiswa_id' => $student->id,
+                    'status' => ApplicationStatus::DRAFT,
+                ]);
+            }
+
+            $application->forceFill([
+                'pendaftaran_id' => $pendaftaran->id,
+                'nomor_pengajuan' => $pendaftaran->nomor_pendaftaran,
                 'mahasiswa_id' => $student->id,
-                'status' => ApplicationStatus::DRAFT,
-            ]);
-        }
+                'periode' => $period,
+                'application_type' => $applicationType,
+            ])->save();
 
-        $application->forceFill([
-            'pendaftaran_id' => $pendaftaran->id,
-            'nomor_pengajuan' => $pendaftaran->nomor_pendaftaran,
-            'mahasiswa_id' => $student->id,
-            'periode' => $period,
-            'application_type' => $applicationType,
-        ])->save();
-
-        return $application;
+            return $application;
+        });
     }
 
     private function synchronizeDocuments(

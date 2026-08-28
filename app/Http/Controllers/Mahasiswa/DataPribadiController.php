@@ -14,9 +14,7 @@ use Illuminate\View\View;
 
 class DataPribadiController extends Controller
 {
-    public function __construct(private readonly MahasiswaPendaftaranService $flow)
-    {
-    }
+    public function __construct(private readonly MahasiswaPendaftaranService $flow) {}
 
     public function index(Request $request): View|RedirectResponse
     {
@@ -31,7 +29,8 @@ class DataPribadiController extends Controller
         $pendaftaran->load(['dataPribadi.village.kecamatan.kabupaten', 'periode', 'kategoriBeasiswa']);
 
         $villages = Village::query()
-            ->with(['kecamatan.kabupaten'])
+            ->whereHas('kabupaten', fn ($query) => $query->where('code', config('kartu_hebat.kabupaten_code')))
+            ->with(['kecamatan', 'kabupaten'])
             ->orderBy('name')
             ->get()
             ->sortBy(fn (Village $village): string => implode('|', [
@@ -78,7 +77,7 @@ class DataPribadiController extends Controller
         ]);
 
         $village = Village::query()
-            ->with(['kecamatan.kabupaten'])
+            ->with(['kecamatan', 'kabupaten'])
             ->findOrFail($validated['village_id']);
 
         $validated['kabupaten'] = $village->kabupaten->name;

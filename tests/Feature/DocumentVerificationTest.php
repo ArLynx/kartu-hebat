@@ -69,6 +69,51 @@ class DocumentVerificationTest extends TestCase
         $this->assertDatabaseMissing('document_verifications', ['document_id' => $document->id]);
     }
 
+    public function test_assessment_cancellable_while_stage_active(): void
+    {
+        [$student, $village, $application] = $this->applicationInVillageQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        $document = $application->documents->first();
+
+        app(DocumentVerificationService::class)->save(
+            $application,
+            $document,
+            $operator,
+            DocumentVerificationResult::MEMENUHI,
+        );
+
+        $this->actingAs($operator)
+            ->delete(route('operator.applications.documents.verify.destroy', [$application, $document]))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('document_verifications', ['document_id' => $document->id]);
+    }
+
+    public function test_assessment_not_deletable_after_application_advances(): void
+    {
+        [$student, $village, $application] = $this->applicationInVillageQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        $document = $application->documents->first();
+
+        app(DocumentVerificationService::class)->save(
+            $application,
+            $document,
+            $operator,
+            DocumentVerificationResult::MEMENUHI,
+        );
+        $application->update(['status' => ApplicationStatus::VERIFIKASI_KECAMATAN]);
+
+        $this->actingAs($operator)
+            ->from(route('operator.applications.show', $application))
+            ->delete(route('operator.applications.documents.verify.destroy', [$application, $document]))
+            ->assertSessionHasErrors('document_verification');
+
+        $this->assertDatabaseHas('document_verifications', [
+            'document_id' => $document->id,
+            'stage' => 'desa',
+        ]);
+    }
+
     public function test_assessment_editable_only_during_own_stage(): void
     {
         [$student, $village, $application] = $this->applicationInVillageQueue();

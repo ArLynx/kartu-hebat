@@ -10,6 +10,7 @@ use App\Models\Document;
 use App\Models\DocumentVerification;
 use App\Services\DocumentVerificationService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class DocumentVerificationController extends Controller
 {
@@ -43,9 +44,17 @@ class DocumentVerificationController extends Controller
 
         abort_unless((int) $document->application_id === (int) $application->id, 404);
 
+        $stage = DocumentVerificationService::stageFor($request->user());
+
+        if (! DocumentVerificationService::canVerifyStage($application, $stage)) {
+            throw ValidationException::withMessages([
+                'document_verification' => 'Penilaian dokumen hanya dapat dibatalkan saat aplikasi berada pada tahap penilaian ini.',
+            ]);
+        }
+
         DocumentVerification::query()
             ->where('document_id', $document->id)
-            ->where('stage', DocumentVerificationService::stageFor($request->user()))
+            ->where('stage', $stage)
             ->where('round', DocumentVerificationService::currentRound($application))
             ->delete();
 

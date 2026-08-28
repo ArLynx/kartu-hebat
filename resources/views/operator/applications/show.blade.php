@@ -419,21 +419,7 @@
                             return $doc->verifications->where('stage', $docVerificationStage)->isNotEmpty();
                         });
                         $hasUnverifiedDocs = $unverifiedDocs->isNotEmpty();
-                    @endphp
 
-                    @if($hasUnverifiedDocs && $canEditChecklist)
-                        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                            <p class="font-semibold">Peringatan: Masih ada dokumen yang belum dinilai.</p>
-                            <p class="mt-1 text-xs">Dokumen yang belum dinilai:
-                                @foreach($unverifiedDocs as $doc)
-                                    <span class="font-medium">{{ $doc->type->name }}</span>{{ $loop->last ? '' : ', ' }}
-                                @endforeach
-                            </p>
-                            <p class="mt-1 text-xs">Anda harus menilai semua dokumen terlebih dahulu sebelum bisa mengajukan keputusan Memenuhi Syarat (MS).</p>
-                        </div>
-                    @endif
-
-                    @php
                         $hasRejectedDocuments = $application->documents->contains(
                             fn ($document) => $document->verifications
                                 ->where('stage', $docVerificationStage)
@@ -450,48 +436,66 @@
                         });
                     @endphp
 
+                    @if($hasUnverifiedDocs && $canEditChecklist)
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                            <p class="font-semibold">Peringatan: Masih ada dokumen yang belum dinilai.</p>
+                            <p class="mt-1 text-xs">Dokumen yang belum dinilai:
+                                @foreach($unverifiedDocs as $doc)
+                                    <span class="font-medium">{{ $doc->type->name }}</span>{{ $loop->last ? '' : ', ' }}
+                                @endforeach
+                            </p>
+                            <p class="mt-1 text-xs">Anda harus menilai semua dokumen terlebih dahulu sebelum bisa mengajukan keputusan Memenuhi Syarat (MS) atau Tidak Memenuhi Syarat (TMS).</p>
+                        </div>
+                    @endif
+
+                    @if(! $hasRejectedDocuments && $canEditChecklist)
+                        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p class="font-semibold">Catatan: Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi.</p>
+                            <p class="mt-1 text-xs">Tandai dokumen yang perlu diperbaiki (✕ BTL) terlebih dahulu sebelum memilih BTL.</p>
+                        </div>
+                    @endif
+
                     <button
                         type="submit"
                         class="btn-primary w-full justify-center"
-                        @if($hasUnverifiedDocs)
-                            onclick="return handleVerificationSubmit(event)"
-                        @elseif($allDocsMs)
-                            onclick="return handleAllDocsMsSubmit(event)"
-                        @else
-                            onclick="return confirm('{{ $hasRejectedDocuments ? 'Masih ada dokumen yang ditandai TIDAK MEMENUHI SYARAT pada tahap ini. Tetap simpan keputusan ini?' : 'Simpan keputusan verifikasi ini?' }}')"
-                        @endif
+                        onclick="return handleVerificationSubmit(event)"
                     >
                         Simpan Keputusan
                     </button>
 
-                    @if($hasUnverifiedDocs || $allDocsMs)
                     <script>
                         function handleVerificationSubmit(event) {
                             const decision = document.querySelector('input[name="decision"]:checked');
-                            if (decision && decision.value === 'MS') {
+                            if (!decision) {
+                                alert('Pilih keputusan terlebih dahulu.');
+                                return false;
+                            }
+                            const hasUnverified = {{ $hasUnverifiedDocs ? 'true' : 'false' }};
+                            const hasRejected = {{ $hasRejectedDocuments ? 'true' : 'false' }};
+                            const allMs = {{ $allDocsMs ? 'true' : 'false' }};
+
+                            if (decision.value === 'BTL' && !hasRejected) {
+                                alert('Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi / Butuh Perbaikan pada tahap ini. Tandai dokumen yang perlu diperbaiki terlebih dahulu.');
+                                return false;
+                            }
+                            if (decision.value === 'MS' && hasUnverified) {
                                 alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Memenuhi Syarat (MS).');
                                 return false;
                             }
-                            if (decision && decision.value === 'TMS') {
+                            if (decision.value === 'TMS' && hasUnverified) {
                                 alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Tidak Memenuhi Syarat (TMS).');
                                 return false;
                             }
-                            return confirm('Simpan keputusan verifikasi ini?');
-                        }
-
-                        function handleAllDocsMsSubmit(event) {
-                            const decision = document.querySelector('input[name="decision"]:checked');
-                            if (decision && decision.value === 'TMS') {
-                                alert('Keputusan Tidak Memenuhi Syarat tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS). Batalkan penilaian dokumen terlebih dahulu jika diperlukan.');
+                            if (allMs && (decision.value === 'BTL' || decision.value === 'TMS')) {
+                                alert('Keputusan ' + decision.value + ' tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS). Batalkan penilaian dokumen terlebih dahulu jika diperlukan.');
                                 return false;
                             }
-                            if (decision && decision.value === 'BTL') {
-                                return confirm('SEMUA dokumen sudah dinilai Memenuhi Syarat (MS). Apakah Anda yakin ingin memilih Butuh Perbaikan?');
+                            if (hasRejected) {
+                                return confirm('Masih ada dokumen yang ditandai TIDAK MEMENUHI SYARAT pada tahap ini. Tetap simpan keputusan ini?');
                             }
                             return confirm('Simpan keputusan verifikasi ini?');
                         }
                     </script>
-                    @endif
                 </form>
             </section>
         @else

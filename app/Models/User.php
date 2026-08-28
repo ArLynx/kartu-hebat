@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use App\Traits\Auditable;
-use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,8 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use TwoFactorAuthenticatable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'status',
-        'village_id', 'kecamatan_id', 'kabupaten_id',
+        'name', 'email', 'password',
     ];
 
     protected $hidden = [

@@ -7,16 +7,13 @@ use App\Enums\ApplicationType;
 use App\Models\Application;
 use App\Models\Criterion;
 use App\Models\Selection;
-use App\Services\Scoring\ScoringStrategy;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SelectionScoringService
 {
-    public function __construct(private readonly ScoringStrategyResolver $resolver)
-    {
-    }
+    public function __construct(private readonly ScoringStrategyResolver $resolver) {}
 
     public function calculate(Application $application, ?int $scorerId = null): Selection
     {
@@ -24,7 +21,7 @@ class SelectionScoringService
         $profile = $application->mahasiswa->profile;
         $type = $application->application_type;
 
-        if (!$type) {
+        if (! $type) {
             throw ValidationException::withMessages([
                 'application_type' => 'Jalur pengajuan belum dipilih.',
             ]);
@@ -42,17 +39,31 @@ class SelectionScoringService
             ]);
         }
 
+        $totalWeight = round((float) $criteria->sum('weight'), 2);
+
+        if ($totalWeight !== 100.0) {
+            throw ValidationException::withMessages([
+                'criteria' => 'Total bobot kriteria seleksi untuk jalur '.$type->label().' harus 100, saat ini '.$totalWeight.'.',
+            ]);
+        }
+
         $strategy = $this->resolver->resolve($type);
         $values = $strategy->values($profile, $application);
 
-        return DB::transaction(function () use ($application, $criteria, $values, $scorerId): Selection {
+        return DB::transaction(function () use ($application, $criteria, $values, $scorerId, $type): Selection {
             $criterionIds = $criteria->modelKeys();
             $application->scores()->whereNotIn('criterion_id', $criterionIds)->delete();
 
             $total = 0.0;
 
             foreach ($criteria as $criterion) {
-                $value = $values[$criterion->code] ?? ['raw' => 0, 'normalized' => 0];
+                if (! array_key_exists($criterion->code, $values)) {
+                    throw ValidationException::withMessages([
+                        'criteria' => 'Kriteria "'.$criterion->code.'" tidak dikenal oleh strategi skoring jalur '.$type->label().'.',
+                    ]);
+                }
+
+                $value = $values[$criterion->code];
                 $normalized = (float) $value['normalized'];
                 $weighted = $normalized * ((float) $criterion->weight / 100);
                 $total += $weighted;
@@ -83,9 +94,9 @@ class SelectionScoringService
     ): Collection {
         $period ??= config('kartu_hebat.current_period');
         $types = $applicationType ? [$applicationType] : ApplicationType::cases();
-        $rankedIds = collect();
+        $ranks = [];
 
-        DB::transaction(function () use ($types, $kabupatenId, $period, $rankedIds): void {
+        DB::transaction(function () use ($types, $kabupatenId, $period, &$ranks): void {
             foreach ($types as $type) {
                 $selections = Selection::query()
                     ->whereHas('application', function ($application) use ($kabupatenId, $period, $type): void {
@@ -110,23 +121,35 @@ class SelectionScoringService
 
                 $selections
                     ->groupBy(fn (Selection $selection) => $selection->application->mahasiswa->profile?->village?->kabupaten_id)
-                    ->each(function (Collection $countySelections) use ($rankedIds): void {
+                    ->each(function (Collection $countySelections) use (&$ranks): void {
                         $countySelections
                             ->sort(function (Selection $left, Selection $right): int {
                                 return (float) $right->final_score <=> (float) $left->final_score
                                     ?: $left->application_id <=> $right->application_id;
                             })
                             ->values()
-                            ->each(function (Selection $selection, int $index) use ($rankedIds): void {
-                                $selection->update(['rank' => $index + 1]);
-                                $rankedIds->push($selection->id);
+                            ->each(function (Selection $selection, int $index) use (&$ranks): void {
+                                // application_id & final_score disertakan karena upsert pada
+                                // SQLite mengisi ulang seluruh kolom NOT NULL tanpa default.
+                                $ranks[] = [
+                                    'id' => $selection->id,
+                                    'application_id' => $selection->application_id,
+                                    'final_score' => $selection->final_score,
+                                    'rank' => $index + 1,
+                                ];
                             });
                     });
+            }
+
+            // ponytail: upsert melewati event Eloquent sehingga pergeseran rank tidak teraudit;
+            // jika jejak audit per-rank kelak dibutuhkan, kembalikan ke update per-baris.
+            if ($ranks !== []) {
+                Selection::query()->upsert($ranks, ['id'], ['rank']);
             }
         });
 
         return Selection::query()
-            ->whereKey($rankedIds->all())
+            ->whereKey(array_column($ranks, 'id'))
             ->orderBy('rank')
             ->get();
     }

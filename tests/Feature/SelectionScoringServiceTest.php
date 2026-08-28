@@ -6,6 +6,7 @@ use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Enums\UserRole;
 use App\Models\Application;
+use App\Models\Criterion;
 use App\Models\MahasiswaProfile;
 use App\Models\User;
 use App\Models\Village;
@@ -13,6 +14,8 @@ use App\Services\SelectionScoringService;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class SelectionScoringServiceTest extends TestCase
@@ -71,6 +74,87 @@ class SelectionScoringServiceTest extends TestCase
         $scoring->calculate($unable);
         $scoring->recalculateRanking();
 
+        $this->assertSame(1, $academic->selection()->firstOrFail()->rank);
+        $this->assertSame(1, $unable->selection()->firstOrFail()->rank);
+    }
+
+    public function test_rejects_criteria_weights_that_do_not_sum_to_100(): void
+    {
+        Criterion::query()->create([
+            'code' => 'bonus',
+            'name' => 'Bonus Uji',
+            'weight' => 25,
+            'application_type' => ApplicationType::AKADEMIK->value,
+            'is_active' => true,
+            'sort_order' => 99,
+        ]);
+
+        $application = $this->application(ApplicationType::AKADEMIK, [
+            'ipk' => 3.50,
+            'semester' => 5,
+        ]);
+
+        try {
+            app(SelectionScoringService::class)->calculate($application);
+            $this->fail('Bobot kriteria yang tidak berjumlah 100 harus ditolak.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('criteria', $exception->errors());
+            $this->assertStringContainsString('harus 100', $exception->errors()['criteria'][0]);
+        }
+    }
+
+    public function test_rejects_criterion_code_unknown_to_strategy(): void
+    {
+        Criterion::query()->create([
+            'code' => 'kode_tak_dikenal',
+            'name' => 'Kriteria Tak Dikenal',
+            'weight' => 0,
+            'application_type' => ApplicationType::AKADEMIK->value,
+            'is_active' => true,
+            'sort_order' => 99,
+        ]);
+
+        $application = $this->application(ApplicationType::AKADEMIK, [
+            'ipk' => 3.50,
+            'semester' => 5,
+        ]);
+
+        try {
+            app(SelectionScoringService::class)->calculate($application);
+            $this->fail('Kode kriteria yang tidak dikenal strategi harus gagal keras.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('criteria', $exception->errors());
+            $this->assertStringContainsString('kode_tak_dikenal', $exception->errors()['criteria'][0]);
+        }
+
+        $this->assertSame(0, $application->scores()->count());
+    }
+
+    public function test_ranking_recalculation_writes_all_ranks_in_one_statement(): void
+    {
+        $academic = $this->application(ApplicationType::AKADEMIK, [
+            'ipk' => 3.80,
+            'semester' => 6,
+        ]);
+        $unable = $this->application(ApplicationType::TIDAK_MAMPU, [
+            'desil_sosial' => 1,
+            'desil_pendidikan' => 2,
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($academic);
+        $scoring->calculate($unable);
+
+        $writeStatements = 0;
+        DB::listen(function ($query) use (&$writeStatements): void {
+            if (preg_match('/^(insert|update)\s/i', $query->sql) && str_contains($query->sql, 'selections')) {
+                $writeStatements++;
+            }
+        });
+
+        $scoring->recalculateRanking();
+
+        $this->assertLessThanOrEqual(1, $writeStatements, 'Rank harus ditulis dalam satu statement, bukan satu UPDATE per baris.');
         $this->assertSame(1, $academic->selection()->firstOrFail()->rank);
         $this->assertSame(1, $unable->selection()->firstOrFail()->rank);
     }

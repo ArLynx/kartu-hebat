@@ -77,7 +77,7 @@ class ApplicationController extends Controller
         $stage = null;
         $canEditChecklist = false;
 
-        if ($user->isOperator()) {
+        if ($user->isOperator() && $user->role !== UserRole::OPERATOR_KABUPATEN) {
             $stage = DocumentVerificationService::stageFor($user);
             $canEditChecklist = DocumentVerificationService::canVerifyStage($application, $stage);
         }

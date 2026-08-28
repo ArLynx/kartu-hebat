@@ -142,6 +142,15 @@ class BeasiswaRegistrationFlowTest extends TestCase
             'kabupaten_id' => $village->kabupaten_id,
         ]);
 
+        $document = $application->documents()->firstOrFail();
+        app(DocumentVerificationService::class)->save(
+            $application,
+            $document,
+            $villageOperator,
+            DocumentVerificationResult::TIDAK_MEMENUHI,
+            'Perbaiki dokumen identitas.',
+        );
+
         $application = app(ApplicationWorkflowService::class)->verify(
             $application,
             $villageOperator,
@@ -169,9 +178,8 @@ class BeasiswaRegistrationFlowTest extends TestCase
             ->keyBy(fn (Document $document): string => $document->type->code);
 
         $documentVerifier = app(DocumentVerificationService::class);
-        foreach (['KTP', 'KHS'] as $code) {
-            $documentVerifier->save($application, $documentsByCode[$code], $operator, DocumentVerificationResult::MEMENUHI);
-        }
+        $documentVerifier->save($application, $documentsByCode['KTP'], $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'KTP buram');
+        $documentVerifier->save($application, $documentsByCode['KHS'], $operator, DocumentVerificationResult::MEMENUHI);
 
         $this->assertSame(1, $documentsByCode['KTP']->verifications()->count());
         $this->assertSame(1, $documentsByCode['KHS']->verifications()->count());

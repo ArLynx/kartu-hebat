@@ -50,7 +50,9 @@ class VerificationRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
-            if (! in_array($this->input('decision'), [VerificationDecision::BTL->value, VerificationDecision::TMS->value], true)) {
+            $decisionValue = $this->input('decision');
+
+            if (! in_array($decisionValue, [VerificationDecision::BTL->value, VerificationDecision::TMS->value], true)) {
                 return;
             }
 
@@ -70,6 +72,24 @@ class VerificationRequest extends FormRequest
                 return;
             }
 
+            if ($decisionValue === VerificationDecision::BTL->value) {
+                $hasRejected = $documents->contains(function ($doc) use ($stage, $round) {
+                    return $doc->verifications
+                        ->where('stage', $stage)
+                        ->where('round', $round)
+                        ->contains('result', DocumentVerificationResult::TIDAK_MEMENUHI);
+                });
+
+                if (! $hasRejected) {
+                    $validator->errors()->add(
+                        'decision',
+                        'Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi / Butuh Perbaikan pada tahap ini. Tandai dokumen yang perlu diperbaiki terlebih dahulu.'
+                    );
+                }
+
+                return;
+            }
+
             $allMs = $documents->every(function ($doc) use ($stage, $round) {
                 return $doc->verifications
                     ->where('stage', $stage)
@@ -78,7 +98,7 @@ class VerificationRequest extends FormRequest
             });
 
             if ($allMs) {
-                $decision = VerificationDecision::from($this->input('decision'));
+                $decision = VerificationDecision::from($decisionValue);
                 $validator->errors()->add(
                     'decision',
                     "Keputusan {$decision->label()} tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS)."
