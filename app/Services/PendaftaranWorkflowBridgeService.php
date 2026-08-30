@@ -51,8 +51,8 @@ class PendaftaranWorkflowBridgeService
         $this->synchronizeStudentProfile($pendaftaran, $student, $village);
         $application = $this->synchronizeApplication($pendaftaran, $student, $applicationType);
 
-        // Pengiriman ulang setelah BTL membuka putaran baru: penilaian dokumen
-        // lama dibersihkan agar tahap yang sama menilai ulang dari awal.
+        // Pengiriman ulang setelah aplikasi dikembalikan ke draf membuka putaran
+        // baru: penilaian dokumen lama dibersihkan agar dinas menilai ulang.
         if ($application->verificationLogs()->where('action', 'submitted')->exists()) {
             $this->resetDocumentVerifications($application);
         }

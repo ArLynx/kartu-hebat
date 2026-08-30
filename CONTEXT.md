@@ -1,6 +1,6 @@
 # Kartu Hebat Mahasiswa
 
-Sistem beasiswa daerah (Kabupaten Murung Raya) tempat mahasiswa mendaftar beasiswa, lalu pengajuan diverifikasi berjenjang desa → kecamatan → lintas dinas → seleksi kabupaten hingga hasil dipublikasikan.
+Sistem beasiswa daerah (Kabupaten Murung Raya) tempat mahasiswa mendaftar beasiswa, lalu pengajuan diverifikasi lintas dinas → seleksi kabupaten hingga hasil dipublikasikan.
 
 ## Language
 
@@ -16,20 +16,14 @@ _Avoid_: Pengajuan, submission
 Kategori seleksi yang menentukan kriteria dan strategi skoring: AKADEMIK, TIDAK_MAMPU, DISABILITAS, NON_AKADEMIK.
 _Avoid_: Tipe pengajuan, track
 
-**Keputusan Verifikasi (MS/BTL/TMS)**:
-Hasil tunggal seorang operator terhadap sebuah application — MS (Memenuhi Syarat) meneruskan, BTL (Butuh Perbaikan) mengembalikan ke mahasiswa untuk disubmit ulang, TMS (Tidak Memenuhi Syarat) final menolak.
-
-**Verifikasi Desa**:
-Tahap pertama alur, dilakukan operator desa/kelurahan tempat mahasiswa berdomisili.
-
-**Verifikasi Kecamatan**:
-Tahap kedua alur, dilakukan operator kecamatan. Tidak ada status antara — application masuk langsung dari verifikasi desa.
+**Keputusan Verifikasi (MS/TMS)**:
+Hasil tunggal seorang operator dinas terhadap sebuah application — MS (Memenuhi Syarat) meneruskan, TMS (Tidak Memenuhi Syarat) final menolak. Tidak ada keputusan BTL.
 
 **Verifikasi Lintas Dinas**:
-Tahap ketiga alur, tiga dinas (Dukcapil, Sosial, Pendidikan) memverifikasi paralel. Semua dinas MS sebelum application lolos ke seleksi.
+Tahap verifikasi, tiga dinas (Dukcapil, Sosial, Pendidikan) memverifikasi paralel untuk semua jalur; Dinas Kesehatan (Dinkes) ikut memverifikasi untuk jalur Disabilitas saja. Semua dinas yang wajib (3 atau 4) harus MS sebelum application lolos ke seleksi; ada satu dinas TMS maka application menjadi TMS.
 
 **Seleksi Kabupaten**:
-Tahap keempat, operator kabupaten menghitung skor, menentukan peringkat, dan memutuskan DITERIMA/DITOLAK lalu memublikasikan hasil.
+Tahap akhir, operator kabupaten menghitung skor, menentukan peringkat, dan memutuskan DITERIMA/DITOLAK lalu memublikasikan hasil.
 _Avoid_: County selection
 
 **current_step**:
@@ -38,3 +32,5 @@ Kolom lama pada applications yang mencatat langkah wizard; tidak pernah dibaca d
 ## Keterbatasan yang disengaja
 
 **Audit & mass delete**: Trait `Auditable` mencatat event Eloquent (`created`/`updated`/`deleted`). `Model::query()->delete()` (mass delete) melewati event Eloquent sehingga tidak tercatat di `audit_logs`. Disengaja: baris dihapus massal hanya lewat relasi `cascadeOnDelete` atau pembersihan terskala; jika jejak audit mass delete kelak dianggap kritikal, gunakan loop per-instance `->delete()` atau catat sebelum mass delete di titik yang memicu.
+
+**Role desa & kecamatan**: role `operator_desa` dan `operator_kecamatan` masih tersedia (untuk laporan/riwayat) tetapi tidak lagi memverifikasi di alur utama. Tahap verifikasi desa/kecamatan dan status terkait (SUBMITTED, VERIFIKASI_DESA, VERIFIKASI_KECAMATAN, BTL_DESA, BTL_KECAMATAN) sudah dihapus.

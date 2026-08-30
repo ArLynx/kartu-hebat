@@ -63,7 +63,7 @@ class RegionalAuthorizationTest extends TestCase
             'mahasiswa_id' => $student->id,
             'periode' => '2026/2027 Ganjil',
             'application_type' => ApplicationType::AKADEMIK,
-            'status' => ApplicationStatus::VERIFIKASI_DESA,
+            'status' => ApplicationStatus::VERIFIKASI_DINAS,
         ]);
 
         $operatorA = User::factory()->create([

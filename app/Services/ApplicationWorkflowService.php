@@ -4,18 +4,15 @@ namespace App\Services;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
-use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
 use App\Models\AgencyVerification;
 use App\Models\Application;
-use App\Models\DistrictVerification;
 use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\DocumentVerification;
 use App\Models\User;
 use App\Models\VerificationLog;
-use App\Models\VillageVerification;
 use App\Notifications\ApplicationStatusChanged;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -98,36 +95,19 @@ class ApplicationWorkflowService
             ]);
         }
 
-        $target = match ($application->status) {
-            ApplicationStatus::BTL_DESA => ApplicationStatus::VERIFIKASI_DESA,
-            ApplicationStatus::BTL_KECAMATAN => ApplicationStatus::VERIFIKASI_KECAMATAN,
-            default => ApplicationStatus::VERIFIKASI_DESA,
-        };
-
-        return DB::transaction(function () use ($application, $student, $target): Application {
+        return DB::transaction(function () use ($application, $student): Application {
             $from = $application->status;
 
-            if ($from === ApplicationStatus::BTL_KECAMATAN) {
-                $application->agencyVerifications()->delete();
-                $application->scores()->delete();
-                $application->selection()->delete();
-                $student->profile?->update([
-                    'status_kependudukan' => 'belum_diverifikasi',
-                    'desil_sosial' => null,
-                    'desil_pendidikan' => null,
-                ]);
-            }
-
             $application->update([
-                'status' => $target,
+                'status' => ApplicationStatus::VERIFIKASI_DINAS,
                 'submitted_at' => $application->submitted_at ?? now(),
                 'locked_at' => now(),
                 'catatan' => null,
             ]);
 
-            $this->log($application, $from, $target, 'submitted', 'Pengajuan dikirim oleh mahasiswa.', $student);
-            $this->notifyStudent($application, 'Pengajuan berhasil dikirim', 'Berkas Anda masuk ke tahap '.$target->label().'.');
-            $this->notifyNextOperators($application, $target);
+            $this->log($application, $from, ApplicationStatus::VERIFIKASI_DINAS, 'submitted', 'Pengajuan dikirim oleh mahasiswa.', $student);
+            $this->notifyStudent($application, 'Pengajuan berhasil dikirim', 'Berkas Anda masuk ke tahap '.ApplicationStatus::VERIFIKASI_DINAS->label().'.');
+            $this->notifyNextOperators($application, ApplicationStatus::VERIFIKASI_DINAS);
 
             return $application->fresh();
         });
@@ -147,12 +127,18 @@ class ApplicationWorkflowService
             ]);
         }
 
-        if (in_array($decision, [VerificationDecision::MS, VerificationDecision::TMS], true)) {
-            $this->assertAllDocumentsVerified($application, $operator, $decision);
+        if ($application->status !== ApplicationStatus::VERIFIKASI_DINAS) {
+            throw ValidationException::withMessages(['decision' => 'Pengajuan tidak berada pada antrean verifikasi dinas.']);
         }
 
-        if ($decision === VerificationDecision::BTL) {
-            $this->assertBtlHasRejectedDocument($application, $operator);
+        if (! in_array($operator->role->agencyCode(), DocumentVerificationService::requiredAgencies($application), true)) {
+            throw ValidationException::withMessages([
+                'decision' => 'Dinas ini tidak berwenang menilai aplikasi jalur '.($application->application_type?->label() ?? 'ini').'.',
+            ]);
+        }
+
+        if (in_array($decision, [VerificationDecision::MS, VerificationDecision::TMS], true)) {
+            $this->assertAllDocumentsVerified($application, $operator, $decision);
         }
 
         return DB::transaction(function () use ($application, $operator, $decision, $notes, $score, $desil): Application {
@@ -219,11 +205,11 @@ class ApplicationWorkflowService
         ?int $desil,
     ): ?ApplicationStatus {
         return match ($operator->role) {
-            UserRole::OPERATOR_DESA => $this->verifyVillage($application, $operator, $decision, $notes),
-            UserRole::OPERATOR_KECAMATAN => $this->verifyDistrict($application, $operator, $decision, $notes),
             UserRole::OPERATOR_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL,
-            UserRole::OPERATOR_PENDIDIKAN => $this->verifyAgency(
+            UserRole::OPERATOR_PENDIDIKAN,
+            UserRole::OPERATOR_DINKES,
+            UserRole::OPERATOR_PARSEPOR => $this->verifyAgency(
                 $application,
                 $operator,
                 $decision,
@@ -237,60 +223,6 @@ class ApplicationWorkflowService
         };
     }
 
-    private function verifyVillage(
-        Application $application,
-        User $operator,
-        VerificationDecision $decision,
-        ?string $notes,
-    ): ApplicationStatus {
-        if (! in_array($application->status, [ApplicationStatus::SUBMITTED, ApplicationStatus::VERIFIKASI_DESA], true)) {
-            throw ValidationException::withMessages(['decision' => 'Pengajuan tidak berada pada antrean verifikasi desa.']);
-        }
-
-        VillageVerification::query()->updateOrCreate(
-            ['application_id' => $application->id],
-            [
-                'verifier_id' => $operator->id,
-                'decision' => $decision,
-                'notes' => $notes,
-                'verified_at' => now(),
-            ],
-        );
-
-        return match ($decision) {
-            VerificationDecision::MS => ApplicationStatus::VERIFIKASI_KECAMATAN,
-            VerificationDecision::BTL => ApplicationStatus::BTL_DESA,
-            VerificationDecision::TMS => ApplicationStatus::TMS,
-        };
-    }
-
-    private function verifyDistrict(
-        Application $application,
-        User $operator,
-        VerificationDecision $decision,
-        ?string $notes,
-    ): ApplicationStatus {
-        if ($application->status !== ApplicationStatus::VERIFIKASI_KECAMATAN) {
-            throw ValidationException::withMessages(['decision' => 'Pengajuan tidak berada pada antrean verifikasi kecamatan.']);
-        }
-
-        DistrictVerification::query()->updateOrCreate(
-            ['application_id' => $application->id],
-            [
-                'verifier_id' => $operator->id,
-                'decision' => $decision,
-                'notes' => $notes,
-                'verified_at' => now(),
-            ],
-        );
-
-        return match ($decision) {
-            VerificationDecision::MS => ApplicationStatus::VERIFIKASI_DINAS,
-            VerificationDecision::BTL => ApplicationStatus::BTL_KECAMATAN,
-            VerificationDecision::TMS => ApplicationStatus::TMS,
-        };
-    }
-
     private function verifyAgency(
         Application $application,
         User $operator,
@@ -299,10 +231,6 @@ class ApplicationWorkflowService
         ?float $score,
         ?int $desil,
     ): ?ApplicationStatus {
-        if ($application->status !== ApplicationStatus::VERIFIKASI_DINAS) {
-            throw ValidationException::withMessages(['decision' => 'Pengajuan tidak berada pada antrean verifikasi dinas.']);
-        }
-
         if (
             $decision !== VerificationDecision::MS
             || ! in_array($operator->role, [UserRole::OPERATOR_SOSIAL, UserRole::OPERATOR_PENDIDIKAN], true)
@@ -332,7 +260,6 @@ class ApplicationWorkflowService
                 UserRole::OPERATOR_DUKCAPIL => $profile->update([
                     'status_kependudukan' => match ($decision) {
                         VerificationDecision::MS => 'sesuai',
-                        VerificationDecision::BTL => 'perlu_perbaikan',
                         VerificationDecision::TMS => 'tidak_sesuai',
                     },
                 ]),
@@ -347,17 +274,14 @@ class ApplicationWorkflowService
         }
 
         $verifications = $application->agencyVerifications()->get();
+        $requiredAgencies = DocumentVerificationService::requiredAgencies($application);
 
-        if ($verifications->count() < count(config('kartu_hebat.agencies'))) {
+        if (count($verifications) < count($requiredAgencies)) {
             return null;
         }
 
         if ($verifications->contains(fn ($verification) => $verification->decision === VerificationDecision::TMS)) {
             return ApplicationStatus::TMS;
-        }
-
-        if ($verifications->contains(fn ($verification) => $verification->decision === VerificationDecision::BTL)) {
-            return ApplicationStatus::BTL_KECAMATAN;
         }
 
         $this->scoring->calculate($application, $operator->id);
@@ -386,18 +310,16 @@ class ApplicationWorkflowService
         $message = $application->nomor_pengajuan.' siap diproses.';
 
         match ($status) {
-            ApplicationStatus::VERIFIKASI_DESA => $query
-                ->where('role', UserRole::OPERATOR_DESA->value)
-                ->where('village_id', $application->mahasiswa->profile->village_id),
-            ApplicationStatus::VERIFIKASI_KECAMATAN => $query
-                ->where('role', UserRole::OPERATOR_KECAMATAN->value)
-                ->where('kecamatan_id', $application->mahasiswa->profile->village->kecamatan_id),
             ApplicationStatus::VERIFIKASI_DINAS => $query
-                ->whereIn('role', [
-                    UserRole::OPERATOR_DUKCAPIL->value,
-                    UserRole::OPERATOR_SOSIAL->value,
-                    UserRole::OPERATOR_PENDIDIKAN->value,
-                ])
+                ->whereIn('role', collect(UserRole::cases())
+                    ->filter(fn (UserRole $role) => $role->isAgency())
+                    ->filter(fn (UserRole $role) => in_array(
+                        $role->agencyCode(),
+                        DocumentVerificationService::requiredAgencies($application),
+                        true,
+                    ))
+                    ->pluck('value')
+                    ->all())
                 ->where('kabupaten_id', $application->mahasiswa->profile->village->kabupaten_id),
             ApplicationStatus::SELEKSI_KABUPATEN => $query
                 ->where('role', UserRole::OPERATOR_KABUPATEN->value)
@@ -446,33 +368,6 @@ class ApplicationWorkflowService
 
             throw ValidationException::withMessages([
                 'document_verification' => "Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan {$decision->label()}. Dokumen yang belum dinilai: {$unverifiedNames}.",
-            ]);
-        }
-    }
-
-    private function assertBtlHasRejectedDocument(Application $application, User $operator): void
-    {
-        $stage = DocumentVerificationService::stageFor($operator);
-        $round = DocumentVerificationService::currentRound($application);
-
-        $documentIds = Document::query()
-            ->where('application_id', $application->id)
-            ->pluck('id');
-
-        if ($documentIds->isEmpty()) {
-            return;
-        }
-
-        $hasRejected = DocumentVerification::query()
-            ->where('application_id', $application->id)
-            ->where('stage', $stage)
-            ->where('round', $round)
-            ->where('result', DocumentVerificationResult::TIDAK_MEMENUHI->value)
-            ->exists();
-
-        if (! $hasRejected) {
-            throw ValidationException::withMessages([
-                'document_verification' => 'Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi / Butuh Perbaikan pada tahap ini. Tandai dokumen yang perlu diperbaiki terlebih dahulu.',
             ]);
         }
     }

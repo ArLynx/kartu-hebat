@@ -28,7 +28,7 @@
     @foreach([
         ['users', 'Total Pengajuan', $stats['total'], 'Seluruh pengajuan wilayah'],
         ['clock', 'Perlu Diproses', $stats['queue'], 'Antrean aktif saat ini'],
-        ['warning', 'Butuh Perbaikan', $stats['revision'], 'Dikembalikan ke mahasiswa'],
+        ['warning', 'Belum Dikirim', $stats['revision'], 'Pengajuan yang masih draft'],
         ['check', 'Tahap Lanjut', $stats['completed'], 'Selesai atau siap seleksi'],
     ] as [$icon, $label, $value, $description])
         <div class="card p-5">

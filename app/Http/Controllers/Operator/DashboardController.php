@@ -17,17 +17,16 @@ class DashboardController extends Controller
             ->visibleTo($user)
             ->where('periode', config('kartu_hebat.current_period'));
 
+        if ($track = $user->role->verifiedTrack()) {
+            $base->where('application_type', $track->value);
+        }
+
         $queueStatuses = match ($user->role) {
-            UserRole::OPERATOR_DESA => [
-                ApplicationStatus::SUBMITTED->value,
-                ApplicationStatus::VERIFIKASI_DESA->value,
-            ],
-            UserRole::OPERATOR_KECAMATAN => [
-                ApplicationStatus::VERIFIKASI_KECAMATAN->value,
-            ],
             UserRole::OPERATOR_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL,
-            UserRole::OPERATOR_PENDIDIKAN => [ApplicationStatus::VERIFIKASI_DINAS->value],
+            UserRole::OPERATOR_PENDIDIKAN,
+            UserRole::OPERATOR_DINKES,
+            UserRole::OPERATOR_PARSEPOR => [ApplicationStatus::VERIFIKASI_DINAS->value],
             UserRole::OPERATOR_KABUPATEN => [ApplicationStatus::SELEKSI_KABUPATEN->value],
             default => [],
         };
@@ -35,10 +34,7 @@ class DashboardController extends Controller
         $stats = [
             'total' => (clone $base)->where('applications.status', '!=', ApplicationStatus::DRAFT->value)->count(),
             'queue' => (clone $base)->whereIn('status', $queueStatuses)->count(),
-            'revision' => (clone $base)->whereIn('status', [
-                ApplicationStatus::BTL_DESA->value,
-                ApplicationStatus::BTL_KECAMATAN->value,
-            ])->count(),
+            'revision' => (clone $base)->where('applications.status', '=', ApplicationStatus::DRAFT->value)->count(),
             'completed' => (clone $base)->whereIn('status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,

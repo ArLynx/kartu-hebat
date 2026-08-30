@@ -5,14 +5,9 @@ namespace App\Enums;
 enum ApplicationStatus: string
 {
     case DRAFT = 'DRAFT';
-    case SUBMITTED = 'SUBMITTED';
-    case VERIFIKASI_DESA = 'VERIFIKASI_DESA';
-    case BTL_DESA = 'BTL_DESA';
-    case VERIFIKASI_KECAMATAN = 'VERIFIKASI_KECAMATAN';
-    case BTL_KECAMATAN = 'BTL_KECAMATAN';
-    case TMS = 'TMS';
     case VERIFIKASI_DINAS = 'VERIFIKASI_DINAS';
     case SELEKSI_KABUPATEN = 'SELEKSI_KABUPATEN';
+    case TMS = 'TMS';
     case DITERIMA = 'DITERIMA';
     case DITOLAK = 'DITOLAK';
 
@@ -20,14 +15,9 @@ enum ApplicationStatus: string
     {
         return match ($this) {
             self::DRAFT => 'Draf',
-            self::SUBMITTED => 'Sudah Dikirim',
-            self::VERIFIKASI_DESA => 'Verifikasi Desa/Kelurahan',
-            self::BTL_DESA => 'Butuh Perbaikan dari Desa',
-            self::VERIFIKASI_KECAMATAN => 'Verifikasi Kecamatan',
-            self::BTL_KECAMATAN => 'Butuh Perbaikan dari Kecamatan/Dinas',
-            self::TMS => 'Tidak Memenuhi Syarat',
             self::VERIFIKASI_DINAS => 'Verifikasi Lintas Dinas',
             self::SELEKSI_KABUPATEN => 'Seleksi Kabupaten',
+            self::TMS => 'Tidak Memenuhi Syarat',
             self::DITERIMA => 'Diterima',
             self::DITOLAK => 'Ditolak',
         };
@@ -37,7 +27,6 @@ enum ApplicationStatus: string
     {
         return match ($this) {
             self::DITERIMA => 'success',
-            self::BTL_DESA, self::BTL_KECAMATAN => 'warning',
             self::TMS, self::DITOLAK => 'danger',
             self::SELEKSI_KABUPATEN, self::VERIFIKASI_DINAS => 'purple',
             self::DRAFT => 'neutral',
@@ -49,17 +38,15 @@ enum ApplicationStatus: string
     {
         return match ($this) {
             self::DRAFT => 15,
-            self::SUBMITTED, self::VERIFIKASI_DESA, self::BTL_DESA => 35,
-            self::VERIFIKASI_KECAMATAN, self::BTL_KECAMATAN => 55,
-            self::VERIFIKASI_DINAS => 75,
-            self::SELEKSI_KABUPATEN => 90,
+            self::VERIFIKASI_DINAS => 50,
+            self::SELEKSI_KABUPATEN => 85,
             self::DITERIMA, self::DITOLAK, self::TMS => 100,
         };
     }
 
     public function isEditableByStudent(): bool
     {
-        return in_array($this, [self::DRAFT, self::BTL_DESA, self::BTL_KECAMATAN], true);
+        return $this === self::DRAFT;
     }
 
     public function isFinal(): bool

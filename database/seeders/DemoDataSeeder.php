@@ -9,15 +9,13 @@ use App\Enums\VerificationDecision;
 use App\Models\AgencyVerification;
 use App\Models\Announcement;
 use App\Models\Application;
-use App\Models\DistrictVerification;
 use App\Models\DocumentType;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\MahasiswaProfile;
 use App\Models\User;
-use App\Models\VerificationLog;
 use App\Models\Village;
-use App\Models\VillageVerification;
+use App\Services\DocumentVerificationService;
 use App\Services\SelectionScoringService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -38,6 +36,8 @@ class DemoDataSeeder extends Seeder
             [UserRole::OPERATOR_DUKCAPIL, 'Operator Dukcapil', 'dukcapil@kartuhebat.test', null, null],
             [UserRole::OPERATOR_SOSIAL, 'Operator Dinas Sosial', 'sosial@kartuhebat.test', null, null],
             [UserRole::OPERATOR_PENDIDIKAN, 'Operator Dinas Pendidikan', 'pendidikan@kartuhebat.test', null, null],
+            [UserRole::OPERATOR_DINKES, 'Operator Dinas Kesehatan', 'dinkes@kartuhebat.test', null, null],
+            [UserRole::OPERATOR_PARSEPOR, 'Operator Dinas Parsepor', 'parsepor@kartuhebat.test', null, null],
             [UserRole::OPERATOR_KABUPATEN, 'Operator Kabupaten', 'kabupaten@kartuhebat.test', null, null],
         ];
 
@@ -109,28 +109,111 @@ class DemoDataSeeder extends Seeder
             [
                 'nomor_pengajuan' => 'KHM-'.now()->format('Y').'-000128',
                 'application_type' => ApplicationType::AKADEMIK,
-                'status' => ApplicationStatus::BTL_DESA,
-                'catatan' => 'KHS semester terakhir belum terbaca dengan jelas. Silakan unggah ulang.',
+                'status' => ApplicationStatus::VERIFIKASI_DINAS,
+                'catatan' => null,
                 'submitted_at' => now()->subDays(4),
-            ],
-        );
-
-        VerificationLog::query()->firstOrCreate(
-            ['application_id' => $demoApplication->id, 'action' => 'revision_requested'],
-            [
-                'actor_id' => $operatorUsers[UserRole::OPERATOR_DESA->value]->id,
-                'from_status' => ApplicationStatus::VERIFIKASI_DESA->value,
-                'to_status' => ApplicationStatus::BTL_DESA->value,
-                'notes' => $demoApplication->catatan,
-                'created_at' => now()->subDay(),
             ],
         );
 
         $this->seedDocuments($demoApplication, $demo);
 
+        $disabilityDemo = User::query()->updateOrCreate(
+            ['email' => 'mahasiswa.disabilitas@kartuhebat.test'],
+            [
+                'name' => 'Rina Kusuma',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'role' => UserRole::MAHASISWA,
+                'status' => 'active',
+                'village_id' => $village->id,
+                'kecamatan_id' => $village->kecamatan_id,
+                'kabupaten_id' => $village->kabupaten_id,
+            ],
+        );
+
+        MahasiswaProfile::query()->updateOrCreate(
+            ['user_id' => $disabilityDemo->id],
+            [
+                'nik' => '6212010101010002',
+                'nim' => 'KHM20260002',
+                'phone' => '081234567891',
+                'universitas' => 'Universitas Palangka Raya',
+                'program_studi' => 'Pendidikan Luar Biasa',
+                'semester' => 4,
+                'ipk' => 3.55,
+                'disability_type' => 'TUNANETRA',
+                'disability_grade' => 'SEDANG',
+                'disability_document_number' => 'DOK-DIS-2024-00123',
+                'alamat' => 'Jl. G. Obos No. 45, Kabupaten Murung Raya',
+                'village_id' => $village->id,
+                'status_kependudukan' => 'sesuai',
+                'penghasilan_keluarga' => 3500000,
+                'jumlah_tanggungan' => 3,
+                'desil_sosial' => null,
+                'desil_pendidikan' => null,
+            ],
+        );
+
+        $disabilityApplication = Application::query()->updateOrCreate(
+            ['mahasiswa_id' => $disabilityDemo->id, 'periode' => config('kartu_hebat.current_period')],
+            [
+                'nomor_pengajuan' => 'KHM-'.now()->format('Y').'-000129',
+                'application_type' => ApplicationType::DISABILITAS,
+                'status' => ApplicationStatus::VERIFIKASI_DINAS,
+                'catatan' => null,
+                'submitted_at' => now()->subDays(3),
+            ],
+        );
+
+        $this->seedDocuments($disabilityApplication, $disabilityDemo);
+
+        $prestasiDemo = User::query()->updateOrCreate(
+            ['email' => 'mahasiswa.prestasi@kartuhebat.test'],
+            [
+                'name' => 'Budi Hartono',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'role' => UserRole::MAHASISWA,
+                'status' => 'active',
+                'village_id' => $village->id,
+                'kecamatan_id' => $village->kecamatan_id,
+                'kabupaten_id' => $village->kabupaten_id,
+            ],
+        );
+
+        MahasiswaProfile::query()->updateOrCreate(
+            ['user_id' => $prestasiDemo->id],
+            [
+                'nik' => '6212010101010004',
+                'nim' => 'KHM20260004',
+                'phone' => '081234567894',
+                'universitas' => 'Universitas Palangka Raya',
+                'program_studi' => 'Ilmu Komunikasi',
+                'semester' => 5,
+                'ipk' => 3.61,
+                'alamat' => 'Jl. Yos Sudarso No. 88, Kabupaten Murung Raya',
+                'village_id' => $village->id,
+                'status_kependudukan' => 'sesuai',
+                'penghasilan_keluarga' => 5000000,
+                'jumlah_tanggungan' => 3,
+                'prestasi' => 'Juara 1 Debat Bahasa Indonesia Tingkat Nasional (2025)',
+            ],
+        );
+
+        $prestasiApplication = Application::query()->updateOrCreate(
+            ['mahasiswa_id' => $prestasiDemo->id, 'periode' => config('kartu_hebat.current_period')],
+            [
+                'nomor_pengajuan' => 'KHM-'.now()->format('Y').'-000130',
+                'application_type' => ApplicationType::NON_AKADEMIK,
+                'status' => ApplicationStatus::VERIFIKASI_DINAS,
+                'catatan' => null,
+                'submitted_at' => now()->subDays(2),
+            ],
+        );
+
+        $this->seedDocuments($prestasiApplication, $prestasiDemo);
+
         $statuses = [
-            ApplicationStatus::VERIFIKASI_DESA,
-            ApplicationStatus::VERIFIKASI_KECAMATAN,
             ApplicationStatus::VERIFIKASI_DINAS,
             ApplicationStatus::SELEKSI_KABUPATEN,
             ApplicationStatus::DITERIMA,
@@ -266,49 +349,34 @@ class DemoDataSeeder extends Seeder
 
     private function seedVerificationRecords(Application $application, ApplicationStatus $status, array $operators): void
     {
-        if ($status->progress() >= ApplicationStatus::VERIFIKASI_KECAMATAN->progress()) {
-            VillageVerification::query()->create([
-                'application_id' => $application->id,
-                'verifier_id' => $operators[UserRole::OPERATOR_DESA->value]->id,
-                'decision' => VerificationDecision::MS,
-                'notes' => 'Data kependudukan sesuai.',
-                'verified_at' => now()->subDays(3),
-            ]);
+        if ($status->progress() < ApplicationStatus::SELEKSI_KABUPATEN->progress()) {
+            return;
         }
 
-        if ($status->progress() >= ApplicationStatus::VERIFIKASI_DINAS->progress()) {
-            DistrictVerification::query()->create([
-                'application_id' => $application->id,
-                'verifier_id' => $operators[UserRole::OPERATOR_KECAMATAN->value]->id,
-                'decision' => VerificationDecision::MS,
-                'notes' => 'Berkas lengkap dan dapat diteruskan.',
-                'verified_at' => now()->subDays(2),
-            ]);
-        }
+        $required = DocumentVerificationService::requiredAgencies($application);
 
-        if ($status->progress() >= ApplicationStatus::SELEKSI_KABUPATEN->progress()) {
-            foreach ([
-                UserRole::OPERATOR_DUKCAPIL,
-                UserRole::OPERATOR_SOSIAL,
-                UserRole::OPERATOR_PENDIDIKAN,
-            ] as $role) {
-                $desil = match ($role) {
-                    UserRole::OPERATOR_SOSIAL => $application->mahasiswa->profile?->desil_sosial,
-                    UserRole::OPERATOR_PENDIDIKAN => $application->mahasiswa->profile?->desil_pendidikan,
-                    default => null,
-                };
-
-                AgencyVerification::query()->create([
-                    'application_id' => $application->id,
-                    'verifier_id' => $operators[$role->value]->id,
-                    'agency' => $role->agencyCode(),
-                    'decision' => VerificationDecision::MS,
-                    'score' => fake()->numberBetween(70, 95),
-                    'notes' => 'Hasil verifikasi instansi sesuai.',
-                    'metadata' => $desil === null ? [] : ['desil' => $desil],
-                    'verified_at' => now()->subDay(),
-                ]);
+        foreach ($operators as $roleValue => $operator) {
+            $role = UserRole::tryFrom($roleValue);
+            if (! $role?->isAgency() || ! in_array($role->agencyCode(), $required, true)) {
+                continue;
             }
+
+            $desil = match ($role) {
+                UserRole::OPERATOR_SOSIAL => $application->mahasiswa->profile?->desil_sosial,
+                UserRole::OPERATOR_PENDIDIKAN => $application->mahasiswa->profile?->desil_pendidikan,
+                default => null,
+            };
+
+            AgencyVerification::query()->create([
+                'application_id' => $application->id,
+                'verifier_id' => $operator->id,
+                'agency' => $role->agencyCode(),
+                'decision' => VerificationDecision::MS,
+                'score' => fake()->numberBetween(70, 95),
+                'notes' => 'Hasil verifikasi instansi sesuai.',
+                'metadata' => $desil === null ? [] : ['desil' => $desil],
+                'verified_at' => now()->subDay(),
+            ]);
         }
     }
 }

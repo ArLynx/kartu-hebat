@@ -33,10 +33,10 @@ class DocumentVerificationTest extends TestCase
         Storage::fake('local');
     }
 
-    public function test_operator_can_assess_documents_at_village_stage(): void
+    public function test_agency_can_assess_documents_at_its_stage(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $operator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
 
         $document = $application->documents->first();
 
@@ -47,15 +47,15 @@ class DocumentVerificationTest extends TestCase
 
         $this->assertDatabaseHas('document_verifications', [
             'document_id' => $document->id,
-            'stage' => 'desa',
+            'stage' => 'dukcapil',
             'result' => 'memenuhi',
         ]);
     }
 
     public function test_notes_required_when_document_rejected(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $operator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
         $response = $this->actingAs($operator)
@@ -71,8 +71,8 @@ class DocumentVerificationTest extends TestCase
 
     public function test_assessment_cancellable_while_stage_active(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $operator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
         app(DocumentVerificationService::class)->save(
@@ -91,8 +91,8 @@ class DocumentVerificationTest extends TestCase
 
     public function test_assessment_not_deletable_after_application_advances(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $operator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
         app(DocumentVerificationService::class)->save(
@@ -101,7 +101,7 @@ class DocumentVerificationTest extends TestCase
             $operator,
             DocumentVerificationResult::MEMENUHI,
         );
-        $application->update(['status' => ApplicationStatus::VERIFIKASI_KECAMATAN]);
+        $application->update(['status' => ApplicationStatus::SELEKSI_KABUPATEN]);
 
         $this->actingAs($operator)
             ->from(route('operator.applications.show', $application))
@@ -110,43 +110,68 @@ class DocumentVerificationTest extends TestCase
 
         $this->assertDatabaseHas('document_verifications', [
             'document_id' => $document->id,
-            'stage' => 'desa',
+            'stage' => 'dukcapil',
         ]);
     }
 
-    public function test_assessment_editable_only_during_own_stage(): void
+    public function test_assessment_editable_while_application_in_agency_queue(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
-        $districtOperator = $this->operator(UserRole::OPERATOR_KECAMATAN, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
 
         $document = $application->documents->first();
 
-        $this->actingAs($districtOperator)
-            ->from(route('operator.applications.show', $application))
+        $this->actingAs($dukcapil)
             ->post(
                 route('operator.applications.documents.verify', [$application, $document]),
                 ['result' => DocumentVerificationResult::MEMENUHI->value],
             )
-            ->assertSessionHasErrors('document_verification');
+            ->assertRedirect();
+
+        $this->actingAs($social)
+            ->post(
+                route('operator.applications.documents.verify', [$application, $document]),
+                ['result' => DocumentVerificationResult::MEMENUHI->value],
+            )
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('document_verifications', [
+            'document_id' => $document->id,
+            'stage' => 'dukcapil',
+            'result' => 'memenuhi',
+        ]);
+        $this->assertDatabaseHas('document_verifications', [
+            'document_id' => $document->id,
+            'stage' => 'sosial',
+            'result' => 'memenuhi',
+        ]);
     }
 
     public function test_submitting_verification_locks_document_assessments(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
+        $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
 
         $documentVerificationService = app(DocumentVerificationService::class);
         foreach ($application->documents as $document) {
-            $documentVerificationService->save($application, $document, $villageOperator, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $education, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow = app(ApplicationWorkflowService::class);
-        $workflow->verify($application, $villageOperator, VerificationDecision::MS);
+        $workflow->verify($application, $dukcapil, VerificationDecision::MS);
+        $workflow->verify($application, $social, VerificationDecision::MS);
+        $workflow->verify($application, $education, VerificationDecision::MS);
+
+        $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->fresh()->status);
 
         $document = $application->documents->first();
 
-        $this->actingAs($villageOperator)
+        $this->actingAs($dukcapil)
             ->from(route('operator.applications.show', $application))
             ->post(
                 route('operator.applications.documents.verify', [$application, $document]),
@@ -157,8 +182,8 @@ class DocumentVerificationTest extends TestCase
 
     public function test_round_increments_and_previous_round_kept_on_resubmit(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
         $workflow = app(ApplicationWorkflowService::class);
@@ -167,27 +192,22 @@ class DocumentVerificationTest extends TestCase
         app(DocumentVerificationService::class)->save(
             $application,
             $document,
-            $villageOperator,
+            $dukcapil,
             DocumentVerificationResult::TIDAK_MEMENUHI,
             'KTP buram',
         );
 
-        // BTL desa lalu resubmit oleh mahasiswa.
-        $workflow->verify($application->fresh(), $villageOperator, VerificationDecision::BTL, notes: 'perbaiki berkas');
-        $application = $application->fresh();
-        $this->assertSame(ApplicationStatus::BTL_DESA, $application->status);
-
+        // Aplikasi kembali menjadi draft lalu disubmit ulang oleh mahasiswa.
         $application->update(['status' => ApplicationStatus::DRAFT]);
         $workflow->submit($application, $student);
 
         $this->assertSame(2, DocumentVerificationService::currentRound($application->fresh()));
-        $this->assertDatabaseCount('verification_logs', 3);
     }
 
     public function test_operator_show_page_renders_with_assessment(): void
     {
-        [$student, $village, $application] = $this->applicationInVillageQueue();
-        $operator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
         app(DocumentVerificationService::class)->save(
@@ -206,7 +226,7 @@ class DocumentVerificationTest extends TestCase
             ->assertSee('KTP buram');
     }
 
-    private function applicationInVillageQueue(): array
+    private function applicationInAgencyQueue(): array
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);

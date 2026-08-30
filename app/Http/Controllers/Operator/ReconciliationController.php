@@ -6,6 +6,7 @@ use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Services\DocumentVerificationService;
 use Illuminate\Http\Request;
 
 class ReconciliationController extends Controller
@@ -24,7 +25,6 @@ class ReconciliationController extends Controller
                 ApplicationStatus::VERIFIKASI_DINAS->value,
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::TMS->value,
-                ApplicationStatus::BTL_KECAMATAN->value,
             ])
             ->latest('updated_at')
             ->paginate(15)
@@ -33,16 +33,19 @@ class ReconciliationController extends Controller
         $summary = [
             'total' => $applications->total(),
             'complete' => (clone $baseQuery)
-                ->has('agencyVerifications', '=', count(config('kartu_hebat.agencies')))
+                ->whereIn('status', [
+                    ApplicationStatus::VERIFIKASI_DINAS->value,
+                    ApplicationStatus::SELEKSI_KABUPATEN->value,
+                    ApplicationStatus::TMS->value,
+                ])
+                ->get()
+                ->filter(fn (Application $application) => $this->isComplete($application))
                 ->count(),
             'ready' => (clone $baseQuery)
                 ->where('status', ApplicationStatus::SELEKSI_KABUPATEN->value)
                 ->count(),
             'problem' => (clone $baseQuery)
-                ->whereIn('status', [
-                    ApplicationStatus::TMS->value,
-                    ApplicationStatus::BTL_KECAMATAN->value,
-                ])
+                ->where('status', ApplicationStatus::TMS->value)
                 ->count(),
         ];
 
@@ -50,6 +53,15 @@ class ReconciliationController extends Controller
             'applications' => $applications,
             'summary' => $summary,
             'applicationTypes' => ApplicationType::cases(),
+            'agencies' => array_keys(config('kartu_hebat.agencies')),
         ]);
+    }
+
+    private function isComplete(Application $application): bool
+    {
+        $required = DocumentVerificationService::requiredAgencies($application);
+
+        return count($required) > 0
+            && count($application->agencyVerifications) >= count($required);
     }
 }

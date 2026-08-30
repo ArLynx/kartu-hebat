@@ -19,7 +19,7 @@
                 <p class="section-kicker !text-blue-300">Portal bantuan pendidikan</p>
                 <h1 class="mt-4 text-4xl font-extrabold leading-tight text-white">Akses layanan beasiswa daerah secara aman dan transparan.</h1>
                 <p class="mt-5 text-base leading-7 text-slate-300">
-                    Lengkapi data, unggah dokumen, dan pantau proses verifikasi berjenjang melalui satu portal.
+                    Lengkapi data, unggah dokumen, dan pantau proses verifikasi lintas dinas melalui satu portal.
                 </p>
             </div>
             <p class="relative text-xs text-slate-400">{{ config('kartu_hebat.government') }}</p>

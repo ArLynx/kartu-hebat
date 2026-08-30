@@ -55,7 +55,7 @@ class VillageLookupTest extends TestCase
         $this->assertSame($expected->name, $data->desa);
         $this->assertSame($expected->kecamatan->name, $data->kecamatan);
         $this->assertSame($expected->kabupaten->name, $data->kabupaten);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
     }
 
     public function test_submit_rejects_unknown_village_text(): void

@@ -6,6 +6,7 @@ use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
 use App\Models\Application;
 use App\Models\User;
+use App\Services\DocumentVerificationService;
 
 class ApplicationPolicy
 {
@@ -57,16 +58,17 @@ class ApplicationPolicy
         }
 
         return match ($user->role) {
-            UserRole::OPERATOR_DESA => in_array($application->status, [
-                ApplicationStatus::SUBMITTED,
-                ApplicationStatus::VERIFIKASI_DESA,
-            ], true),
-            UserRole::OPERATOR_KECAMATAN => $application->status === ApplicationStatus::VERIFIKASI_KECAMATAN,
             UserRole::OPERATOR_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL,
-            UserRole::OPERATOR_PENDIDIKAN => $application->status === ApplicationStatus::VERIFIKASI_DINAS,
+            UserRole::OPERATOR_PENDIDIKAN,
+            UserRole::OPERATOR_DINKES,
+            UserRole::OPERATOR_PARSEPOR => $application->status === ApplicationStatus::VERIFIKASI_DINAS,
             default => false,
-        };
+        } && in_array(
+            $user->role->agencyCode(),
+            DocumentVerificationService::requiredAgencies($application),
+            true,
+        );
     }
 
     public function select(User $user, Application $application): bool

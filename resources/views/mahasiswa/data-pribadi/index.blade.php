@@ -100,7 +100,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <p class="mt-2 text-xs leading-5 text-slate-500">Pilihan ini menentukan antrean verifikator desa, kecamatan, lintas dinas, dan kabupaten.</p>
+                        <p class="mt-2 text-xs leading-5 text-slate-500">Pilihan ini menentukan antrean verifikator lintas dinas dan seleksi kabupaten.</p>
                     </div>
                     <div>
                         <label class="form-label">Kode Pos <span class="font-normal text-slate-400">(opsional)</span></label>

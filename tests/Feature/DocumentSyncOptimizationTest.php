@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Enums\ApplicationStatus;
 use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
-use App\Enums\VerificationDecision;
 use App\Models\DataPribadi;
 use App\Models\Document;
 use App\Models\Dokumen;
@@ -16,7 +15,6 @@ use App\Models\Pendidikan;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
-use App\Services\ApplicationWorkflowService;
 use App\Services\DocumentVerificationService;
 use App\Services\MahasiswaPendaftaranService;
 use App\Services\PendaftaranWorkflowBridgeService;
@@ -50,7 +48,7 @@ class DocumentSyncOptimizationTest extends TestCase
         $bridge = app(PendaftaranWorkflowBridgeService::class);
 
         $application = $bridge->submit($pendaftaran, $user);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         $before = $application->documents()->get()
             ->mapWithKeys(fn (Document $document): array => [$document->type->code => [
@@ -61,7 +59,7 @@ class DocumentSyncOptimizationTest extends TestCase
 
         $village = Village::query()->with(['kecamatan', 'kabupaten'])->firstOrFail();
         $operator = User::factory()->create([
-            'role' => UserRole::OPERATOR_DESA,
+            'role' => UserRole::OPERATOR_DUKCAPIL,
             'village_id' => $village->id,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
@@ -69,12 +67,7 @@ class DocumentSyncOptimizationTest extends TestCase
         $doc = $application->documents()->firstOrFail();
         app(DocumentVerificationService::class)->save($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
-        app(ApplicationWorkflowService::class)->verify(
-            $application,
-            $operator,
-            VerificationDecision::BTL,
-            'Perbaiki dokumen.',
-        );
+        $application->update(['status' => ApplicationStatus::DRAFT]);
 
         $pendaftaran->forceFill([
             'status' => 'revision',
@@ -82,7 +75,7 @@ class DocumentSyncOptimizationTest extends TestCase
         ])->save();
 
         $application = $bridge->submit($pendaftaran->fresh(), $user);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         $after = $application->documents()->get()
             ->mapWithKeys(fn (Document $document): array => [$document->type->code => [
@@ -105,7 +98,7 @@ class DocumentSyncOptimizationTest extends TestCase
         $bridge = app(PendaftaranWorkflowBridgeService::class);
 
         $application = $bridge->submit($pendaftaran, $user);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         $document = $application->documents()->with('type')->get()
             ->first(fn (Document $document): bool => $document->type->code === 'KTP');
@@ -113,19 +106,14 @@ class DocumentSyncOptimizationTest extends TestCase
 
         $village = Village::query()->with(['kecamatan', 'kabupaten'])->firstOrFail();
         $operator = User::factory()->create([
-            'role' => UserRole::OPERATOR_DESA,
+            'role' => UserRole::OPERATOR_DUKCAPIL,
             'village_id' => $village->id,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
 
         app(DocumentVerificationService::class)->save($application, $document, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
-        app(ApplicationWorkflowService::class)->verify(
-            $application,
-            $operator,
-            VerificationDecision::BTL,
-            'Perbaiki dokumen.',
-        );
+        $application->update(['status' => ApplicationStatus::DRAFT]);
 
         $pendaftaran->forceFill([
             'status' => 'revision',
@@ -152,7 +140,7 @@ class DocumentSyncOptimizationTest extends TestCase
         $bridge = app(PendaftaranWorkflowBridgeService::class);
 
         $application = $bridge->submit($pendaftaran, $user);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         $ktpDokumen = Dokumen::query()->where('pendaftaran_id', $pendaftaran->id)
             ->whereHas('jenisDokumen', fn ($query) => $query->where('kode', 'KTP'))
@@ -169,7 +157,7 @@ class DocumentSyncOptimizationTest extends TestCase
 
         $village = Village::query()->with(['kecamatan', 'kabupaten'])->firstOrFail();
         $operator = User::factory()->create([
-            'role' => UserRole::OPERATOR_DESA,
+            'role' => UserRole::OPERATOR_DUKCAPIL,
             'village_id' => $village->id,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
@@ -177,12 +165,7 @@ class DocumentSyncOptimizationTest extends TestCase
         $doc = $application->documents()->firstOrFail();
         app(DocumentVerificationService::class)->save($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
-        app(ApplicationWorkflowService::class)->verify(
-            $application,
-            $operator,
-            VerificationDecision::BTL,
-            'Perbaiki dokumen.',
-        );
+        $application->update(['status' => ApplicationStatus::DRAFT]);
 
         $pendaftaran->forceFill([
             'status' => 'revision',
@@ -190,7 +173,7 @@ class DocumentSyncOptimizationTest extends TestCase
         ])->save();
 
         $application = $bridge->submit($pendaftaran->fresh(), $user);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         $ktp = $application->documents()->with('type')->get()
             ->first(fn (Document $document): bool => $document->type->code === 'KTP');

@@ -8,7 +8,7 @@
     <div>
         <p class="section-kicker">Operator Kabupaten</p>
         <h1 class="mt-2 text-3xl font-extrabold">Rekonsiliasi Hasil Verifikasi</h1>
-        <p class="mt-2 text-sm text-slate-600">Konsolidasi keputusan Dukcapil, Dinas Sosial, dan Dinas Pendidikan per jalur.</p>
+        <p class="mt-2 text-sm text-slate-600">Konsolidasi keputusan lintas dinas per jalur. Dinas Kesehatan hanya terlibat pada jalur Disabilitas.</p>
     </div>
     <form method="GET" class="flex gap-2">
         <select name="application_type" class="form-input">
@@ -24,7 +24,7 @@
 <div class="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
     @foreach([
         ['users', 'Data Dipantau', $summary['total']],
-        ['check', 'Tiga Dinas Lengkap', $summary['complete']],
+        ['check', 'Dinas Lengkap', $summary['complete']],
         ['shield', 'Siap Seleksi', $summary['ready']],
         ['warning', 'Perlu Tindak Lanjut', $summary['problem']],
     ] as [$icon, $label, $value])
@@ -47,9 +47,9 @@
                 <tr>
                     <th>Mahasiswa</th>
                     <th>Jalur</th>
-                    <th>Dukcapil</th>
-                    <th>Dinas Sosial</th>
-                    <th>Dinas Pendidikan</th>
+                    @foreach($agencies as $code)
+                        <th>{{ \App\Services\DocumentVerificationService::stageLabel($code) }}</th>
+                    @endforeach
                     <th>Status Sistem</th>
                     <th></th>
                 </tr>
@@ -58,6 +58,7 @@
                 @forelse($applications as $application)
                     @php
                         $agency = $application->agencyVerifications->keyBy('agency');
+                        $required = \App\Services\DocumentVerificationService::requiredAgencies($application);
                     @endphp
                     <tr>
                         <td>
@@ -65,11 +66,13 @@
                             <p class="mt-1 text-xs text-slate-500">{{ $application->nomor_pengajuan }}</p>
                         </td>
                         <td><span class="status-chip status-info">{{ $application->application_type?->label() ?? '-' }}</span></td>
-                        @foreach(['dukcapil', 'sosial', 'pendidikan'] as $code)
+                        @foreach($agencies as $code)
                             <td>
-                                @if($agency->has($code))
+                                @if(! in_array($code, $required, true))
+                                    <span class="status-chip status-neutral">Tidak berlaku</span>
+                                @elseif($agency->has($code))
                                     @php $decision = $agency[$code]->decision; @endphp
-                                    <span class="status-chip {{ $decision->value === 'MS' ? 'status-success' : ($decision->value === 'BTL' ? 'status-warning' : 'status-danger') }}">
+                                    <span class="status-chip {{ $decision->value === 'MS' ? 'status-success' : 'status-danger' }}">
                                         {{ $decision->value }}
                                     </span>
                                     @if($agency[$code]->score !== null)
@@ -91,7 +94,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="py-14 text-center text-slate-500">Belum ada data rekonsiliasi.</td></tr>
+                    <tr><td colspan="{{ count($agencies) + 4 }}" class="py-14 text-center text-slate-500">Belum ada data rekonsiliasi.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -33,24 +33,50 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
         $applicationType = $category->application_type instanceof ApplicationType
             ? $category->application_type
             : ApplicationType::AKADEMIK;
+        $disabilityCategory = KategoriBeasiswa::query()
+            ->where('periode_id', $period->id)
+            ->where('aktif', true)
+            ->where('application_type', ApplicationType::DISABILITAS->value)
+            ->first();
+        $prestasiCategory = KategoriBeasiswa::query()
+            ->where('periode_id', $period->id)
+            ->where('aktif', true)
+            ->where('application_type', ApplicationType::NON_AKADEMIK->value)
+            ->first();
 
-        DB::transaction(function () use ($period, $village, $category, $applicationType): void {
+        DB::transaction(function () use (
+            $period,
+            $village,
+            $category,
+            $disabilityCategory,
+            $prestasiCategory,
+            $applicationType
+        ): void {
             $this->deleteApplicationsAndWorkflowData();
 
             $queues = [
-                [UserRole::OPERATOR_DESA, ApplicationStatus::VERIFIKASI_DESA],
-                [UserRole::OPERATOR_KECAMATAN, ApplicationStatus::VERIFIKASI_KECAMATAN],
-                [UserRole::OPERATOR_DUKCAPIL, ApplicationStatus::VERIFIKASI_DINAS],
-                [UserRole::OPERATOR_SOSIAL, ApplicationStatus::VERIFIKASI_DINAS],
-                [UserRole::OPERATOR_PENDIDIKAN, ApplicationStatus::VERIFIKASI_DINAS],
-                [UserRole::OPERATOR_KABUPATEN, ApplicationStatus::SELEKSI_KABUPATEN],
+                [UserRole::OPERATOR_DUKCAPIL, ApplicationStatus::VERIFIKASI_DINAS, $category, $applicationType],
+                [UserRole::OPERATOR_SOSIAL, ApplicationStatus::VERIFIKASI_DINAS, $category, $applicationType],
+                [UserRole::OPERATOR_PENDIDIKAN, ApplicationStatus::VERIFIKASI_DINAS, $category, $applicationType],
+                [UserRole::OPERATOR_DINKES, ApplicationStatus::VERIFIKASI_DINAS, $disabilityCategory ?? $category, ApplicationType::DISABILITAS],
+                [UserRole::OPERATOR_PARSEPOR, ApplicationStatus::VERIFIKASI_DINAS, $prestasiCategory ?? $category, ApplicationType::NON_AKADEMIK],
+                [UserRole::OPERATOR_KABUPATEN, ApplicationStatus::SELEKSI_KABUPATEN, $category, $applicationType],
             ];
 
-            foreach ($queues as $index => [$role, $status]) {
+            foreach ($queues as [$role, $status, $queueCategory, $queueType]) {
+                $seq = [
+                    'operator_dukcapil' => 1,
+                    'operator_sosial' => 2,
+                    'operator_pendidikan' => 3,
+                    'operator_dinkes' => 4,
+                    'operator_parsepor' => 5,
+                    'operator_kabupaten' => 6,
+                ][$role->value];
+
                 $student = User::query()->updateOrCreate(
                     ['email' => 'antrian.'.strtolower($role->value).'@kartuhebat.test'],
                     [
-                        'name' => 'Mahasiswa Antrian '.($index + 1),
+                        'name' => 'Mahasiswa Antrian '.$seq,
                         'password' => Hash::make('password'),
                         'email_verified_at' => now(),
                         'role' => UserRole::MAHASISWA,
@@ -64,9 +90,9 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
                 MahasiswaProfile::query()->updateOrCreate(
                     ['user_id' => $student->id],
                     [
-                        'nik' => '629999000000'.str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT),
-                        'nim' => 'ANTRIAN'.str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT),
-                        'phone' => '08129999000'.($index + 1),
+                        'nik' => '629999000000'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT),
+                        'nim' => 'ANTRIAN'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT),
+                        'phone' => '08129999000'.$seq,
                         'universitas' => 'Universitas Demo Murung Raya',
                         'program_studi' => 'Teknik Informatika',
                         'semester' => 5,
@@ -79,11 +105,11 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
                     ],
                 );
 
-                $number = sprintf('KHM-%s-QUEUE-%02d', $period->tahun, $index + 1);
+                $number = sprintf('KHM-%s-QUEUE-%02d', $period->tahun, $seq);
                 $registration = Pendaftaran::query()->create([
                     'user_id' => $student->id,
                     'periode_id' => $period->id,
-                    'kategori_beasiswa_id' => $category->id,
+                    'kategori_beasiswa_id' => $queueCategory->id,
                     'nomor_pendaftaran' => $number,
                     'status' => 'verification',
                     'submitted_at' => now()->subHour(),
@@ -94,7 +120,7 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
                     'nomor_pengajuan' => $number,
                     'mahasiswa_id' => $student->id,
                     'periode' => $period->nama ?: (string) $period->tahun,
-                    'application_type' => $applicationType,
+                    'application_type' => $queueType,
                     'status' => $status,
                     'submitted_at' => now()->subHour(),
                     'locked_at' => now(),
@@ -122,5 +148,20 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
         DB::table('pendidikans')->delete();
         DB::table('data_pribadis')->delete();
         DB::table('pendaftarans')->delete();
+
+        $queueUserIds = DB::table('users')
+            ->where('email', 'like', 'antrian.%@kartuhebat.test')
+            ->pluck('id');
+
+        if ($queueUserIds->isEmpty()) {
+            return;
+        }
+
+        DB::table('mahasiswa_profiles')->whereIn('user_id', $queueUserIds)->delete();
+        DB::table('passkeys')->whereIn('user_id', $queueUserIds)->delete();
+        DB::table('personal_access_tokens')->whereIn('tokenable_id', $queueUserIds)->delete();
+        DB::table('notifications')->whereIn('notifiable_id', $queueUserIds)->delete();
+        DB::table('audit_logs')->whereIn('user_id', $queueUserIds)->delete();
+        DB::table('users')->whereIn('id', $queueUserIds)->delete();
     }
 }

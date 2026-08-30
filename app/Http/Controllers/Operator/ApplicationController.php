@@ -22,6 +22,10 @@ class ApplicationController extends Controller
             ->with(['mahasiswa.profile.village.kecamatan', 'selection'])
             ->whereNot('status', ApplicationStatus::DRAFT->value);
 
+        if ($track = $user->role->verifiedTrack()) {
+            $query->where('application_type', $track->value);
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->string('status')->toString());
         } else {
@@ -77,7 +81,7 @@ class ApplicationController extends Controller
         $stage = null;
         $canEditChecklist = false;
 
-        if ($user->isOperator() && $user->role !== UserRole::OPERATOR_KABUPATEN) {
+        if ($user->role->isAgency()) {
             $stage = DocumentVerificationService::stageFor($user);
             $canEditChecklist = DocumentVerificationService::canVerifyStage($application, $stage);
         }
@@ -95,16 +99,11 @@ class ApplicationController extends Controller
     private function defaultQueueStatuses(UserRole $role): array
     {
         return match ($role) {
-            UserRole::OPERATOR_DESA => [
-                ApplicationStatus::SUBMITTED->value,
-                ApplicationStatus::VERIFIKASI_DESA->value,
-            ],
-            UserRole::OPERATOR_KECAMATAN => [
-                ApplicationStatus::VERIFIKASI_KECAMATAN->value,
-            ],
             UserRole::OPERATOR_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL,
-            UserRole::OPERATOR_PENDIDIKAN => [ApplicationStatus::VERIFIKASI_DINAS->value],
+            UserRole::OPERATOR_PENDIDIKAN,
+            UserRole::OPERATOR_DINKES,
+            UserRole::OPERATOR_PARSEPOR => [ApplicationStatus::VERIFIKASI_DINAS->value],
             UserRole::OPERATOR_KABUPATEN => [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,

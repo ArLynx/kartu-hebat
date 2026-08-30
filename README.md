@@ -1,6 +1,6 @@
 # Sistem Kartu Hebat
 
-Implementasi Laravel untuk pendaftaran bantuan pendidikan mahasiswa dengan verifikasi berjenjang berdasarkan wilayah administrasi. Antarmuka mengadaptasi desain Stitch yang disertakan, sedangkan domain, workflow, keamanan, basis data, reporting, dan notifikasi mengikuti dokumentasi proyek.
+Implementasi Laravel untuk pendaftaran bantuan pendidikan mahasiswa dengan verifikasi lintas dinas dan seleksi kabupaten. Antarmuka mengadaptasi desain Stitch yang disertakan, sedangkan domain, workflow, keamanan, basis data, reporting, dan notifikasi mengikuti dokumentasi proyek.
 
 ## Teknologi
 
@@ -13,13 +13,13 @@ Implementasi Laravel untuk pendaftaran bantuan pendidikan mahasiswa dengan verif
 
 ## Alur Kerja (Ringkas)
 
-Mahasiswa mengisi wizard 7 langkah → application diverifikasi berjenjang:
+Mahasiswa mengisi wizard 7 langkah → application diverifikasi lintas dinas:
 
 ```
-Pendaftaran → Verifikasi Desa → Verifikasi Kecamatan → Verifikasi Lintas Dinas (3 dinas paralel) → Seleksi Kabupaten → Publikasi Hasil
+Pendaftaran → Verifikasi Lintas Dinas (3 dinas paralel; 4 utk jalur Disabilitas) → Seleksi Kabupaten → Publikasi Hasil
 ```
 
-Keputusan tiap operator: **MS** (lanjut), **BTL** (kembali ke mahasiswa untuk diperbaiki), **TMS** (ditolak).
+Keputusan tiap operator dinas: **MS** (lanjut), **TMS** (ditolak).
 
 Dokumentasi lengkap: [docs/workflow.md](docs/workflow.md).
 

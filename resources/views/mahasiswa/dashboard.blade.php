@@ -7,7 +7,7 @@
 <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
     <div>
         <h1 class="text-3xl font-extrabold">Halo, {{ auth()->user()->name }}!</h1>
-        <p class="mt-2 text-sm text-slate-600">Pendaftaran terhubung langsung dengan verifikasi desa, kecamatan, lintas dinas, dan seleksi kabupaten.</p>
+        <p class="mt-2 text-sm text-slate-600">Pendaftaran terhubung langsung dengan verifikasi lintas dinas dan seleksi kabupaten.</p>
     </div>
     @if($pendaftaran)
         <div class="text-left sm:text-right">
@@ -44,7 +44,7 @@
     @if($pendaftaran->application)
         <section class="card mt-7 overflow-hidden">
             <div class="border-b border-slate-200 px-6 py-5 sm:px-8">
-                <p class="text-xs font-bold uppercase tracking-wider text-brand-700">Status Verifikasi Berjenjang</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-brand-700">Status Verifikasi</p>
                 <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h2 class="text-2xl font-extrabold">{{ $pendaftaran->application->status->label() }}</h2>

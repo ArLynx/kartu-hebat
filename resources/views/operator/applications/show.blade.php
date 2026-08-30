@@ -204,7 +204,7 @@
                                                     {{ $assessment?->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-700' }}"
                                                 @click="showTmsNotes = !showTmsNotes; showMsNotes = false"
                                             >
-                                                ✕ BTL
+                                                ✕ TMS
                                             </button>
                                         </div>
                                     @endif
@@ -212,7 +212,7 @@
                             </div>
                             @if($canEditChecklist)
                                 <div x-cloak x-show="showTmsNotes" class="mx-6 mb-5 rounded-xl border border-red-200 bg-red-50 p-4">
-                                    <p class="text-xs font-bold text-red-800">Alasan Butuh Perbaikan</p>
+                                    <p class="text-xs font-bold text-red-800">Alasan Tidak Memenuhi Syarat</p>
                                     <p class="mt-1 text-[10px] text-red-600">Catatan wajib diisi.</p>
                                     <form method="POST" action="{{ route('operator.applications.documents.verify', [$application, $document]) }}" class="mt-3">
                                         @csrf
@@ -220,7 +220,7 @@
                                         <textarea name="notes" rows="3" class="form-input text-xs" placeholder="Contoh: KTP tidak terbaca / KK tidak sesuai…" required>{{ $assessment?->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI ? $assessment->notes : '' }}</textarea>
                                         <div class="mt-3 flex items-center justify-end gap-2">
                                             <button type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-800" @click="showTmsNotes = false">Batal</button>
-                                            <button class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">Simpan BTL</button>
+                                            <button class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">Simpan TMS</button>
                                         </div>
                                     </form>
                                 </div>
@@ -372,7 +372,6 @@
                         <div class="space-y-3">
                             @foreach([
                                 ['MS', 'Memenuhi Syarat', 'emerald'],
-                                ['BTL', 'Butuh Perbaikan', 'amber'],
                                 ['TMS', 'Tidak Memenuhi Syarat', 'red'],
                             ] as [$value, $label, $tone])
                                 <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50">
@@ -401,7 +400,7 @@
 
                     <div>
                         <label class="form-label">Catatan Petugas</label>
-                        <textarea name="notes" rows="5" class="form-input" placeholder="Wajib diisi untuk keputusan BTL atau TMS.">{{ old('notes') }}</textarea>
+                        <textarea name="notes" rows="5" class="form-input" placeholder="Wajib diisi untuk keputusan TMS.">{{ old('notes') }}</textarea>
                     </div>
 
                     @if($errors->any())
@@ -448,13 +447,6 @@
                         </div>
                     @endif
 
-                    @if(! $hasRejectedDocuments && $canEditChecklist)
-                        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                            <p class="font-semibold">Catatan: Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi.</p>
-                            <p class="mt-1 text-xs">Tandai dokumen yang perlu diperbaiki (✕ BTL) terlebih dahulu sebelum memilih BTL.</p>
-                        </div>
-                    @endif
-
                     <button
                         type="submit"
                         class="btn-primary w-full justify-center"
@@ -474,10 +466,6 @@
                             const hasRejected = {{ $hasRejectedDocuments ? 'true' : 'false' }};
                             const allMs = {{ $allDocsMs ? 'true' : 'false' }};
 
-                            if (decision.value === 'BTL' && !hasRejected) {
-                                alert('Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi / Butuh Perbaikan pada tahap ini. Tandai dokumen yang perlu diperbaiki terlebih dahulu.');
-                                return false;
-                            }
                             if (decision.value === 'MS' && hasUnverified) {
                                 alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Memenuhi Syarat (MS).');
                                 return false;
@@ -486,8 +474,8 @@
                                 alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Tidak Memenuhi Syarat (TMS).');
                                 return false;
                             }
-                            if (allMs && (decision.value === 'BTL' || decision.value === 'TMS')) {
-                                alert('Keputusan ' + decision.value + ' tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS). Batalkan penilaian dokumen terlebih dahulu jika diperlukan.');
+                            if (allMs && decision.value === 'TMS') {
+                                alert('Keputusan TMS tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS). Batalkan penilaian dokumen terlebih dahulu jika diperlukan.');
                                 return false;
                             }
                             if (hasRejected) {

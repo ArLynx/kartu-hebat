@@ -67,28 +67,12 @@ class ApplicationWorkflowTest extends TestCase
             ]);
         }
 
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
-        $districtOperator = $this->operator(UserRole::OPERATOR_KECAMATAN, $village);
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
         $this->operator(UserRole::OPERATOR_KABUPATEN, $village);
 
         $application = $workflow->submit($application, $student);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
-
-        foreach ($documents as $document) {
-            $documentVerificationService->save($application, $document, $villageOperator, DocumentVerificationResult::MEMENUHI);
-        }
-
-        $application = $workflow->verify($application, $villageOperator, VerificationDecision::MS);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_KECAMATAN, $application->status);
-
-        foreach ($documents as $document) {
-            $documentVerificationService->save($application, $document, $districtOperator, DocumentVerificationResult::MEMENUHI);
-        }
-
-        $application = $workflow->verify($application, $districtOperator, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         foreach ($documents as $document) {
@@ -111,6 +95,56 @@ class ApplicationWorkflowTest extends TestCase
         $this->assertSame('sesuai', $student->profile->fresh()->status_kependudukan);
         $this->assertSame(2, $student->profile->fresh()->desil_sosial);
         $this->assertSame(3, $student->profile->fresh()->desil_pendidikan);
+    }
+
+    public function test_application_becomes_tms_when_any_agency_rejects(): void
+    {
+        [$student, $village] = $this->studentWithCompleteProfile();
+        $workflow = app(ApplicationWorkflowService::class);
+        $documentVerificationService = app(DocumentVerificationService::class);
+        $application = $this->draftApplication($student);
+        $application->update(['application_type' => ApplicationType::AKADEMIK]);
+
+        foreach (DocumentType::query()
+            ->where('is_required', true)
+            ->where(function ($query): void {
+                $query->whereNull('application_type')
+                    ->orWhere('application_type', ApplicationType::AKADEMIK->value);
+            })
+            ->get() as $type) {
+            $path = 'applications/'.$application->id.'/'.$type->code.'/test.pdf';
+            Storage::disk('local')->put($path, 'test');
+            $application->documents()->create([
+                'document_type_id' => $type->id,
+                'uploaded_by' => $student->id,
+                'path' => $path,
+                'original_name' => 'test.pdf',
+                'mime_type' => 'application/pdf',
+                'size' => 4,
+                'checksum' => hash('sha256', 'test'),
+            ]);
+        }
+
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
+        $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+
+        $application = $workflow->submit($application, $student);
+
+        foreach ($application->documents as $document) {
+            $documentVerificationService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->save($application, $document, $education, DocumentVerificationResult::TIDAK_MEMENUHI, 'Data tidak sesuai');
+        }
+
+        $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
+
+        $application = $workflow->verify($application, $social, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
+
+        $application = $workflow->verify($application, $education, VerificationDecision::TMS, 'Data pendidikan tidak sesuai');
+        $this->assertSame(ApplicationStatus::TMS, $application->status);
     }
 
     public function test_student_cannot_submit_without_required_documents(): void
@@ -246,97 +280,15 @@ class ApplicationWorkflowTest extends TestCase
             ]);
         }
 
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
 
         $application = $workflow->submit($application, $student);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Semua dokumen harus dinilai terlebih dahulu');
 
-        $workflow->verify($application, $villageOperator, VerificationDecision::MS);
-    }
-
-    public function test_can_verify_btl_with_rejected_document(): void
-    {
-        [$student, $village] = $this->studentWithCompleteProfile();
-        $workflow = app(ApplicationWorkflowService::class);
-        $application = $this->draftApplication($student);
-        $application->update(['application_type' => ApplicationType::AKADEMIK]);
-
-        foreach (DocumentType::query()
-            ->where('is_required', true)
-            ->where(function ($query): void {
-                $query->whereNull('application_type')
-                    ->orWhere('application_type', ApplicationType::AKADEMIK->value);
-            })
-            ->get() as $type) {
-            $path = 'applications/'.$application->id.'/'.$type->code.'/test.pdf';
-            Storage::disk('local')->put($path, 'test');
-            $application->documents()->create([
-                'document_type_id' => $type->id,
-                'uploaded_by' => $student->id,
-                'path' => $path,
-                'original_name' => 'test.pdf',
-                'mime_type' => 'application/pdf',
-                'size' => 4,
-                'checksum' => hash('sha256', 'test'),
-            ]);
-        }
-
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
-
-        $application = $workflow->submit($application, $student);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
-
-        $document = $application->documents()->firstOrFail();
-        app(DocumentVerificationService::class)->save(
-            $application,
-            $document,
-            $villageOperator,
-            DocumentVerificationResult::TIDAK_MEMENUHI,
-            'Dokumen belum lengkap',
-        );
-
-        $application = $workflow->verify($application, $villageOperator, VerificationDecision::BTL, 'Dokumen belum lengkap');
-        $this->assertSame(ApplicationStatus::BTL_DESA, $application->status);
-    }
-
-    public function test_cannot_verify_btl_without_rejected_document(): void
-    {
-        [$student, $village] = $this->studentWithCompleteProfile();
-        $workflow = app(ApplicationWorkflowService::class);
-        $application = $this->draftApplication($student);
-        $application->update(['application_type' => ApplicationType::AKADEMIK]);
-
-        foreach (DocumentType::query()
-            ->where('is_required', true)
-            ->where(function ($query): void {
-                $query->whereNull('application_type')
-                    ->orWhere('application_type', ApplicationType::AKADEMIK->value);
-            })
-            ->get() as $type) {
-            $path = 'applications/'.$application->id.'/'.$type->code.'/test.pdf';
-            Storage::disk('local')->put($path, 'test');
-            $application->documents()->create([
-                'document_type_id' => $type->id,
-                'uploaded_by' => $student->id,
-                'path' => $path,
-                'original_name' => 'test.pdf',
-                'mime_type' => 'application/pdf',
-                'size' => 4,
-                'checksum' => hash('sha256', 'test'),
-            ]);
-        }
-
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
-
-        $application = $workflow->submit($application, $student);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
-
-        $this->expectException(ValidationException::class);
-
-        $workflow->verify($application, $villageOperator, VerificationDecision::BTL, 'Dokumen belum lengkap');
+        $workflow->verify($application, $dukcapil, VerificationDecision::MS);
     }
 
     public function test_can_verify_ms_after_all_documents_assessed(): void
@@ -368,17 +320,17 @@ class ApplicationWorkflowTest extends TestCase
             ]);
         }
 
-        $villageOperator = $this->operator(UserRole::OPERATOR_DESA, $village);
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
 
         $application = $workflow->submit($application, $student);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         foreach ($documents as $document) {
-            $documentVerification->save($application, $document, $villageOperator, DocumentVerificationResult::MEMENUHI);
+            $documentVerification->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
         }
 
-        $application = $workflow->verify($application, $villageOperator, VerificationDecision::MS);
-        $this->assertSame(ApplicationStatus::VERIFIKASI_KECAMATAN, $application->status);
+        $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
     }
 
     private function draftApplication(User $student): Application

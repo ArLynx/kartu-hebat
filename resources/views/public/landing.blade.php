@@ -87,7 +87,7 @@
             ['user', 'Buat Akun', 'Registrasi menggunakan nama, email aktif, dan kata sandi yang aman.'],
             ['form', 'Isi Formulir', 'Lengkapi data kependudukan, pendidikan, dan sosial ekonomi.'],
             ['upload', 'Unggah Dokumen', 'Unggah berkas persyaratan sesuai format dan batas ukuran.'],
-            ['shield', 'Pantau Hasil', 'Ikuti status verifikasi desa, kecamatan, dinas, dan kabupaten.'],
+            ['shield', 'Pantau Hasil', 'Ikuti status verifikasi lintas dinas dan seleksi kabupaten.'],
         ] as $index => [$icon, $title, $description])
             <div class="relative text-center">
                 <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-navy-900">

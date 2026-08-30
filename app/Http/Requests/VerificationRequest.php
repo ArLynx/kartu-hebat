@@ -41,7 +41,7 @@ class VerificationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'notes.required_unless' => 'Catatan petugas wajib diisi untuk keputusan Butuh Perbaikan (BTL) atau Tidak Memenuhi Syarat (TMS).',
+            'notes.required_unless' => 'Catatan petugas wajib diisi untuk keputusan Tidak Memenuhi Syarat (TMS).',
             'notes.string' => 'Catatan petugas harus berupa teks.',
             'notes.max' => 'Catatan petugas maksimal 3000 karakter.',
         ];
@@ -50,9 +50,7 @@ class VerificationRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
-            $decisionValue = $this->input('decision');
-
-            if (! in_array($decisionValue, [VerificationDecision::BTL->value, VerificationDecision::TMS->value], true)) {
+            if ($this->input('decision') !== VerificationDecision::TMS->value) {
                 return;
             }
 
@@ -72,24 +70,6 @@ class VerificationRequest extends FormRequest
                 return;
             }
 
-            if ($decisionValue === VerificationDecision::BTL->value) {
-                $hasRejected = $documents->contains(function ($doc) use ($stage, $round) {
-                    return $doc->verifications
-                        ->where('stage', $stage)
-                        ->where('round', $round)
-                        ->contains('result', DocumentVerificationResult::TIDAK_MEMENUHI);
-                });
-
-                if (! $hasRejected) {
-                    $validator->errors()->add(
-                        'decision',
-                        'Keputusan Butuh Perbaikan (BTL) memerlukan minimal satu dokumen yang ditandai Tidak Memenuhi / Butuh Perbaikan pada tahap ini. Tandai dokumen yang perlu diperbaiki terlebih dahulu.'
-                    );
-                }
-
-                return;
-            }
-
             $allMs = $documents->every(function ($doc) use ($stage, $round) {
                 return $doc->verifications
                     ->where('stage', $stage)
@@ -98,10 +78,9 @@ class VerificationRequest extends FormRequest
             });
 
             if ($allMs) {
-                $decision = VerificationDecision::from($decisionValue);
                 $validator->errors()->add(
                     'decision',
-                    "Keputusan {$decision->label()} tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS)."
+                    'Keputusan Tidak Memenuhi Syarat (TMS) tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS).'
                 );
             }
         });

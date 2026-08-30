@@ -1,31 +1,21 @@
 # Workflow Sistem Kartu Hebat Mahasiswa
 
-Sistem beasiswa Kabupaten Murung Raya. Mahasiswa mendaftar, lalu pengajuan diverifikasi berjenjang desa → kecamatan → lintas dinas → seleksi kabupaten hingga hasil dipublikasikan.
+Sistem beasiswa Kabupaten Murung Raya. Mahasiswa mendaftar, lalu pengajuan diverifikasi lintas dinas (paralel) → seleksi kabupaten hingga hasil dipublikasikan.
 
 ## Ringkasan Alur
 
 ```mermaid
 stateDiagram-v2
     [*] --> PENDAFTARAN : wizard 7 langkah
-    PENDAFTARAN --> VERIFIKASI_DESA : submit
+    PENDAFTARAN --> VERIFIKASI_DINAS : submit
 
-    VERIFIKASI_DESA --> VERIFIKASI_KECAMATAN : MS
-    VERIFIKASI_DESA --> BTL_DESA : BTL
-    VERIFIKASI_DESA --> TMS : TMS
-
-    VERIFIKASI_KECAMATAN --> VERIFIKASI_DINAS : MS
-    VERIFIKASI_KECAMATAN --> BTL_KECAMATAN : BTL
-    VERIFIKASI_KECAMATAN --> TMS : TMS
-
-    VERIFIKASI_DINAS --> SELEKSI_KABUPATEN : semua MS (3 dinas paralel)
-    VERIFIKASI_DINAS --> BTL_KECAMATAN : ada BTL
+    VERIFIKASI_DINAS --> SELEKSI_KABUPATEN : semua dinas MS
     VERIFIKASI_DINAS --> TMS : ada TMS
 
     SELEKSI_KABUPATEN --> DITERIMA : skor & peringkat
     SELEKSI_KABUPATEN --> DITOLAK
 
-    BTL_DESA --> VERIFIKASI_DESA : submit ulang
-    BTL_KECAMATAN --> VERIFIKASI_KECAMATAN : submit ulang (reset dinas)
+    DRAFT --> VERIFIKASI_DINAS : submit ulang
 
     DITERIMA --> [*]
     DITOLAK --> [*]
@@ -38,16 +28,18 @@ Diagram teks (ASCII):
 PENDAFTARAN (wizard 7 langkah)
         │  submit
         ▼
-VERIFIKASI_DESA ──MS──► VERIFIKASI_KECAMATAN ──MS──► VERIFIKASI_DINAS
-      │ BTL/TMS                │ BTL/TMS                   │  (3 dinas paralel)
-      ▼                        ▼                           │
-BTL_DESA / TMS           BTL_KECAMATAN / TMS              semua MS
-                                                            ▼
-                                                  SELEKSI_KABUPATEN
-                                                            │
-                                                  DITERIMA / DITOLAK
-                                                            │
-                                                  PUBLIKASI HASIL
+VERIFIKASI_DINAS  (3 dinas paralel: Dukcapil, Sosial, Pendidikan;
+                   4 dinas utk jalur Disabilitas: + Dinkes;
+                   4 dinas utk jalur Prestasi: + Parsepor)
+      │
+      ├── ada TMS ─────► TMS
+      │
+      └── semua MS ────► SELEKSI_KABUPATEN
+                              │
+                              ├── DITERIMA
+                              └── DITOLAK
+                                    │
+                              PUBLIKASI HASIL
 ```
 
 ## Aktor (Role)
@@ -55,13 +47,15 @@ BTL_DESA / TMS           BTL_KECAMATAN / TMS              semua MS
 | Role | Tahap | Keputusan |
 |---|---|---|
 | `mahasiswa` | Pendaftaran | Mengisi wizard & submit |
-| `operator_desa` | Verifikasi Desa | MS / BTL / TMS |
-| `operator_kecamatan` | Verifikasi Kecamatan | MS / BTL / TMS |
-| `operator_dukcapil` | Lintas Dinas | MS / BTL / TMS (paralel) |
-| `operator_sosial` | Lintas Dinas | MS / BTL / TMS + desil sosial |
-| `operator_pendidikan` | Lintas Dinas | MS / BTL / TMS + desil pendidikan |
+| `operator_dukcapil` | Lintas Dinas | MS / TMS (paralel) |
+| `operator_sosial` | Lintas Dinas | MS / TMS + desil sosial |
+| `operator_pendidikan` | Lintas Dinas | MS / TMS + desil pendidikan |
+| `operator_dinkes` | Lintas Dinas (jalur Disabilitas saja) | MS / TMS |
+| `operator_parsepor` | Lintas Dinas (jalur Prestasi saja) | MS / TMS |
 | `operator_kabupaten` | Seleksi Kabupaten | Skoring, peringkat, DITERIMA/DITOLAK, publikasi |
 | `superadmin` | Konfigurasi | Kategori, jenis dokumen, operator |
+
+> **Catatan**: role `operator_desa` dan `operator_kecamatan` masih tersedia di sistem untuk kebutuhan laporan/riwayat, tetapi tidak lagi berperan dalam alur verifikasi. Tahap verifikasi desa & kecamatan sudah dihapus.
 
 ## 1. Pendaftaran
 
@@ -93,94 +87,38 @@ Saat submit, `PendaftaranWorkflowBridgeService` menjembatani pendaftaran ke work
 - Jalur `NON_AKADEMIK` tanpa minimal satu prestasi.
 - Dokumen wajib belum lengkap (dicocokkan per jalur).
 
-## 2. Keputusan Verifikasi (MS / BTL / TMS)
+## 2. Keputusan Verifikasi (MS / TMS)
 
-Setiap operator memberi **satu keputusan keseluruhan** (MS/BTL/TMS) atas aplikasi, **ditambah checklist per-berkas** (lihat ADR-0003): tiap dokumen dinilai `memenuhi` / `tidak_memenuhi` / `belum_dinilai` per tahap, tersimpan di `document_verifications`. Checklist adalah alat bantu + jejak audit; keputusan akhir tetap manual.
+Setiap operator dinas memberi **satu keputusan keseluruhan** (MS/TMS) atas aplikasi, **ditambah checklist per-berkas** (lihat ADR-0003): tiap dokumen dinilai `memenuhi` / `tidak_memenuhi` / `belum_dinilai` per tahap, tersimpan di `document_verifications`. Checklist adalah alat bantu + jejak audit; keputusan akhir tetap manual.
 
 | Keputusan | Arti | Efek |
 |---|---|---|
-| **MS** (Memenuhi Syarat) | Lanjut tahap berikutnya | Status naik |
-| **BTL** (Butuh Perbaikan) | Kembali ke mahasiswa | Status jadi `BTL_*`, pendaftaran jadi `revision` |
+| **MS** (Memenuhi Syarat) | Lanjut (jika semua dinas MS) | Status naik |
 | **TMS** (Tidak Memenuhi Syarat) | Final, ditolak | Status jadi `TMS` |
 
-## 3. Verifikasi Berjenjang
+## 3. Verifikasi Lintas Dinas (paralel)
 
 Inti logika ada di `ApplicationWorkflowService::verify()`, yang memilih handler berdasarkan role operator (`storeVerificationAndResolveTarget`).
 
-### 3.1 Verifikasi Desa
-
-- Prasyarat status: `SUBMITTED` atau `VERIFIKASI_DESA`.
-- Hasil disimpan di `village_verifications`.
-- Transisi: MS → `VERIFIKASI_KECAMATAN`, BTL → `BTL_DESA`, TMS → `TMS`.
-
-### 3.2 Verifikasi Kecamatan
-
-- Prasyarat status: `VERIFIKASI_KECAMATAN` (tidak ada status antara).
-- Hasil disimpan di `district_verifications`.
-- Transisi: MS → `VERIFIKASI_DINAS`, BTL → `BTL_KECAMATAN`, TMS → `TMS`.
-
-### 3.3 Verifikasi Lintas Dinas (paralel)
-
 - Prasyarat status: `VERIFIKASI_DINAS`.
-- Tiga dinas (Dukcapil, Sosial, Pendidikan) memverifikasi **paralel**, masing-masing menyimpan di `agency_verifications` (key: `application_id` + `agency`).
-- **Status application belum berubah** sampai semua dinas selesai (`return null` selama belum lengkap).
+- Dinas Dukcapil, Sosial, Pendidikan memverifikasi **paralel** untuk semua jalur; Dinas Kesehatan (**Dinkes**) hanya untuk jalur **DISABILITAS**, Dinas **Parsepor** hanya untuk jalur **NON_AKADEMIK** (Prestasi). Masing-masing menyimpan di `agency_verifications` (key: `application_id` + `agency`).
+- Jumlah dinas yang wajib memutuskan ditentukan per-jalur oleh `DocumentVerificationService::requiredAgencies()`: 3 untuk AKADEMIK/TIDAK_MAMPU, 4 (termasuk Dinkes) untuk DISABILITAS, 4 (termasuk Parsepor) untuk NON_AKADEMIK.
+- **Status application belum berubah** sampai semua dinas yang wajib selesai (`return null` selama belum lengkap).
 - Saat lengkap:
   - Ada TMS → `TMS`.
-  - Ada BTL → `BTL_KECAMATAN`.
   - Semua MS → hitung skor (`SelectionScoringService::calculate`) → `SELEKSI_KABUPATEN`.
 - Dinas juga menulis efek ke profil:
-  - Dukcapil → `status_kependudukan` (`sesuai` / `perlu_perbaikan` / `tidak_sesuai`).
+  - Dukcapil → `status_kependudukan` (`sesuai` / `tidak_sesuai`).
   - Sosial → `desil_sosial`.
   - Pendidikan → `desil_pendidikan`.
+  - Dinkes → tidak menulis efek skoring; hanya MS/TMS.
+  - Parsepor → tidak menulis efek skoring; hanya MS/TMS.
 
-## 4. Alur BTL (Butuh Perbaikan)
+## 4. Alur Perbaikan (draft)
 
-BTL mengembalikan application ke mahasiswa untuk diperbaiki dan disubmit ulang.
+Tidak ada keputusan BTL. Aplikasi yang perlu diperbaiki dikembalikan ke status `DRAFT` (secara administratif), mahasiswa memperbaiki data/dokumen lalu submit ulang — langsung masuk antrean `VERIFIKASI_DINAS` lagi.
 
-### Dua status BTL
-
-| Titik penolakan | Status | Label |
-|---|---|---|
-| Desa | `BTL_DESA` | Butuh Perbaikan dari Desa |
-| Kecamatan / Dinas | `BTL_KECAMATAN` | Butuh Perbaikan dari Kecamatan/Dinas |
-
-```mermaid
-stateDiagram-v2
-    VERIFIKASI_DESA --> BTL_DESA : operator desa memilih BTL
-    VERIFIKASI_KECAMATAN --> BTL_KECAMATAN : operator kecamatan memilih BTL
-    VERIFIKASI_DINAS --> BTL_KECAMATAN : salah satu dinas memilih BTL
-
-    BTL_DESA --> VERIFIKASI_DESA : mahasiswa perbaiki & submit ulang
-    BTL_KECAMATAN --> VERIFIKASI_KECAMATAN : mahasiswa perbaiki & submit ulang (reset dinas/skor/desil)
-```
-
-### Saat operator memilih BTL
-
-1. Status application jadi `BTL_DESA` / `BTL_KECAMATAN`, `catatan` diisi alasan.
-2. Observer `Application::booted()` mengubah status `pendaftaran` jadi `revision` → wizard mahasiswa terbuka kembali.
-3. `locked_at` di-reset (karena `isEditableByStudent()` true untuk `DRAFT`, `BTL_DESA`, `BTL_KECAMATAN`).
-
-### Saat mahasiswa submit ulang
-
-Status target ditentukan dari asal BTL:
-
-```
-BTL_DESA      → VERIFIKASI_DESA
-BTL_KECAMATAN → VERIFIKASI_KECAMATAN
-```
-
-Perbaikan **kembali ke tahap yang menolak**, bukan mengulang dari awal.
-
-### Reset menyeluruh untuk BTL_KECAMATAN
-
-Jika pernah lolos sampai lintas dinas lalu dikembalikan `BTL_KECAMATAN`, saat submit ulang sistem menghapus data downstream (lihat ADR-0002):
-
-- `agency_verifications`, `scores`, `selection` dihapus.
-- Profil di-reset: `status_kependudukan → belum_diverifikasi`, `desil_sosial` & `desil_pendidikan → null`.
-
-Alasan: nilai lintas dinas (skor/desil) tidak valid lagi setelah data berubah.
-
-> **Catatan**: pada alur dinas, BTL dari satu dinas kembali ke `BTL_KECAMATAN`, **bukan** `BTL_DINAS`. Jadi perbaikan melewati ulang kecamatan (kecamatan harus MS lagi) sebelum dinas re-verifikasi.
+Saat mahasiswa submit ulang, `ApplicationWorkflowService::submit()` menyetel status ke `VERIFIKASI_DINAS`. Penilaian dokumen lama dibersihkan agar dinas menilai ulang dari awal (putaran baru).
 
 ## 5. Seleksi & Skoring
 
@@ -206,13 +144,8 @@ Alasan: nilai lintas dinas (skor/desil) tidak valid lagi setelah data berubah.
 
 | Status | Keterangan |
 |---|---|
-| `DRAFT` | Belum dikirim |
-| `SUBMITTED` | Sudah dikirim (sebelum verifikasi desa) |
-| `VERIFIKASI_DESA` | Antrean verifikasi desa |
-| `BTL_DESA` | Butuh perbaikan dari desa |
-| `VERIFIKASI_KECAMATAN` | Antrean verifikasi kecamatan |
-| `BTL_KECAMATAN` | Butuh perbaikan dari kecamatan/dinas |
-| `VERIFIKASI_DINAS` | Verifikasi lintas dinas (3 dinas paralel) |
+| `DRAFT` | Belum dikirim / dikembalikan untuk diperbaiki |
+| `VERIFIKASI_DINAS` | Antrean verifikasi lintas dinas (3 dinas paralel; 4 utk Disabilitas/Prestasi) |
 | `SELEKSI_KABUPATEN` | Seleksi kabupaten (skoring & peringkat) |
 | `TMS` | Final — tidak memenuhi syarat |
 | `DITERIMA` | Final — diterima |
@@ -227,7 +160,7 @@ Alasan: nilai lintas dinas (skor/desil) tidak valid lagi setelah data berubah.
 | `app/Services/SelectionScoringService.php` | Perhitungan skor & peringkat |
 | `app/Services/Scoring/*` | Strategy skoring per jalur |
 | `app/Enums/ApplicationStatus.php` | Status + label + progres + flag |
-| `app/Enums/VerificationDecision.php` | MS / BTL / TMS |
+| `app/Enums/VerificationDecision.php` | MS / TMS |
 | `app/Enums/ApplicationType.php` | Jalur seleksi + mapping strategy |
 | `app/Enums/UserRole.php` | Role aktor |
 | `app/Models/Application.php` | Observer sinkronisasi status pendaftaran |

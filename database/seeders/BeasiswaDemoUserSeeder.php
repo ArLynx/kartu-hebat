@@ -34,6 +34,8 @@ class BeasiswaDemoUserSeeder extends Seeder
             ['dukcapil@kartuhebat.test', 'Operator Dukcapil', UserRole::OPERATOR_DUKCAPIL],
             ['sosial@kartuhebat.test', 'Operator Dinas Sosial', UserRole::OPERATOR_SOSIAL],
             ['pendidikan@kartuhebat.test', 'Operator Dinas Pendidikan', UserRole::OPERATOR_PENDIDIKAN],
+            ['dinkes@kartuhebat.test', 'Operator Dinas Kesehatan', UserRole::OPERATOR_DINKES],
+            ['parsepor@kartuhebat.test', 'Operator Dinas Parsepor', UserRole::OPERATOR_PARSEPOR],
             ['kabupaten@kartuhebat.test', 'Operator Kabupaten', UserRole::OPERATOR_KABUPATEN],
         ];
 

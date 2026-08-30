@@ -28,7 +28,6 @@ class Application extends Model
 
             $status = match ($application->status) {
                 ApplicationStatus::DRAFT => 'draft',
-                ApplicationStatus::BTL_DESA, ApplicationStatus::BTL_KECAMATAN => 'revision',
                 ApplicationStatus::DITERIMA => 'approved',
                 ApplicationStatus::TMS, ApplicationStatus::DITOLAK => 'rejected',
                 default => 'verification',
@@ -130,7 +129,7 @@ class Application extends Model
 
     public function documentCompletionPercentage(): int
     {
-        if (!$this->application_type) {
+        if (! $this->application_type) {
             return 0;
         }
 

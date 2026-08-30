@@ -26,7 +26,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         ]);
 
         $validator->after(function ($validator) use ($user, $input): void {
-            if (!$user->isStudent() || ($input['name'] ?? $user->name) === $user->name) {
+            if (! $user->isStudent() || ($input['name'] ?? $user->name) === $user->name) {
                 return;
             }
 
@@ -34,8 +34,6 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 ->where('periode', config('kartu_hebat.current_period'))
                 ->whereNotIn('status', [
                     ApplicationStatus::DRAFT->value,
-                    ApplicationStatus::BTL_DESA->value,
-                    ApplicationStatus::BTL_KECAMATAN->value,
                 ])
                 ->exists();
 

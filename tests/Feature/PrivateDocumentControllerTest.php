@@ -172,7 +172,7 @@ class PrivateDocumentControllerTest extends TestCase
             'mahasiswa_id' => $student->id,
             'periode' => config('kartu_hebat.current_period'),
             'application_type' => ApplicationType::AKADEMIK,
-            'status' => ApplicationStatus::VERIFIKASI_DESA,
+            'status' => ApplicationStatus::VERIFIKASI_DINAS,
         ]);
 
         $path = 'applications/'.$application->id.'/KK/document-preview';

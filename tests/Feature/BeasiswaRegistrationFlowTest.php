@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Enums\ApplicationStatus;
 use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
-use App\Enums\VerificationDecision;
 use App\Models\Application;
 use App\Models\Document;
 use App\Models\JenisDokumen;
@@ -14,7 +13,6 @@ use App\Models\Pendaftaran;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
-use App\Services\ApplicationWorkflowService;
 use App\Services\DocumentVerificationService;
 use App\Services\MahasiswaPendaftaranService;
 use Database\Seeders\BeasiswaMasterSeeder;
@@ -131,46 +129,20 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $this->assertNotNull($pendaftaran->submitted_at);
 
         $application = Application::query()->where('pendaftaran_id', $pendaftaran->id)->firstOrFail();
-        $this->assertSame(ApplicationStatus::VERIFIKASI_DESA, $application->status);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
         $this->assertSame($pendaftaran->nomor_pendaftaran, $application->nomor_pengajuan);
         $this->assertSame($village->id, $user->fresh()->profile?->village_id);
         $this->assertSame($requiredTypes->count(), $application->documents()->count());
-
-        $villageOperator = User::factory()->create([
-            'role' => UserRole::OPERATOR_DESA,
-            'village_id' => $village->id,
-            'kabupaten_id' => $village->kabupaten_id,
-        ]);
-
-        $document = $application->documents()->firstOrFail();
-        app(DocumentVerificationService::class)->save(
-            $application,
-            $document,
-            $villageOperator,
-            DocumentVerificationResult::TIDAK_MEMENUHI,
-            'Perbaiki dokumen identitas.',
-        );
-
-        $application = app(ApplicationWorkflowService::class)->verify(
-            $application,
-            $villageOperator,
-            VerificationDecision::BTL,
-            'Perbaiki dokumen identitas.',
-        );
-
-        $this->assertSame(ApplicationStatus::BTL_DESA, $application->status);
-        $this->assertSame('revision', $pendaftaran->fresh()->status);
     }
 
-    public function test_reuploading_document_after_btl_resets_only_that_document_verification(): void
+    public function test_reuploading_document_resets_only_that_document_verification(): void
     {
         $user = User::factory()->create();
         $application = $this->completeAndSubmit($user);
 
         $village = Village::query()->with(['kecamatan', 'kabupaten'])->firstOrFail();
         $operator = User::factory()->create([
-            'role' => UserRole::OPERATOR_DESA,
-            'village_id' => $village->id,
+            'role' => UserRole::OPERATOR_DUKCAPIL,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
 
@@ -184,12 +156,8 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $this->assertSame(1, $documentsByCode['KTP']->verifications()->count());
         $this->assertSame(1, $documentsByCode['KHS']->verifications()->count());
 
-        app(ApplicationWorkflowService::class)->verify(
-            $application,
-            $operator,
-            VerificationDecision::BTL,
-            'Perbaiki dokumen identitas.',
-        );
+        // Kembalikan ke draf agar dokumen dapat diubah oleh mahasiswa.
+        $application->update(['status' => ApplicationStatus::DRAFT]);
 
         $jenisKtp = JenisDokumen::query()->where('kode', 'KTP')->firstOrFail();
 
