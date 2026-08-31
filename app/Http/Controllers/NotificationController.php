@@ -21,7 +21,7 @@ class NotificationController extends Controller
 
         $url = $item->data['url'] ?? route('dashboard', absolute: false);
 
-        if (!is_string($url) || !Str::startsWith($url, '/') || Str::startsWith($url, '//')) {
+        if (! is_string($url) || ! Str::startsWith($url, '/') || Str::startsWith($url, '//')) {
             $url = route('dashboard', absolute: false);
         }
 

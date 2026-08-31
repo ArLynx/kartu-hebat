@@ -12,7 +12,7 @@ class EnsureProfileIsComplete
     {
         $user = $request->user();
 
-        if ($user?->isStudent() && !$user->isProfileComplete()) {
+        if ($user?->isStudent() && ! $user->isProfileComplete()) {
             return redirect()
                 ->route('student.application')
                 ->with('warning', 'Lengkapi profil mahasiswa sebelum melanjutkan.');

@@ -26,18 +26,25 @@ class DataPribadiController extends Controller
                 ->with('error', 'Buat pendaftaran beasiswa terlebih dahulu.');
         }
 
-        $pendaftaran->load(['dataPribadi.village.kecamatan.kabupaten', 'periode', 'kategoriBeasiswa']);
+        $pendaftaran->load([
+            'dataPribadi.village.kecamatan.kabupaten',
+            'periode',
+            'kategoriBeasiswa',
+        ]);
 
         $villages = Village::query()
             ->whereHas('kabupaten', fn ($query) => $query->where('code', config('kartu_hebat.kabupaten_code')))
             ->with(['kecamatan', 'kabupaten'])
             ->orderBy('name')
             ->get()
-            ->sortBy(fn (Village $village): string => implode('|', [
-                $village->kabupaten?->name,
-                $village->kecamatan?->name,
-                $village->name,
-            ]), SORT_NATURAL | SORT_FLAG_CASE)
+            ->sortBy(
+                fn (Village $village): string => implode('|', [
+                    $village->kabupaten?->name,
+                    $village->kecamatan?->name,
+                    $village->name,
+                ]),
+                SORT_NATURAL | SORT_FLAG_CASE
+            )
             ->values();
 
         return view('mahasiswa.data-pribadi.index', [
@@ -53,7 +60,12 @@ class DataPribadiController extends Controller
         $pendaftaran = $this->flow->currentFor($request->user());
 
         abort_unless($pendaftaran, 404);
-        abort_unless($this->flow->isEditable($pendaftaran), 403, 'Pendaftaran tidak dapat diubah.');
+
+        abort_unless(
+            $this->flow->isEditable($pendaftaran),
+            403,
+            'Pendaftaran tidak dapat diubah.'
+        );
 
         $dataPribadiId = $pendaftaran->dataPribadi?->id;
 
@@ -63,17 +75,109 @@ class DataPribadiController extends Controller
                 'digits:16',
                 Rule::unique('data_pribadis', 'nik')->ignore($dataPribadiId),
             ],
-            'nisn' => ['nullable', 'digits_between:8,12'],
-            'nama_lengkap' => ['required', 'string', 'max:150'],
-            'tempat_lahir' => ['required', 'string', 'max:100'],
-            'tanggal_lahir' => ['required', 'date', 'before:today'],
-            'jenis_kelamin' => ['required', Rule::in(['L', 'P'])],
-            'agama' => ['nullable', 'string', 'max:30'],
-            'no_hp' => ['required', 'string', 'max:25'],
-            'alamat' => ['required', 'string', 'max:2000'],
-            'provinsi' => ['required', 'string', 'max:100'],
-            'village_id' => ['required', 'integer', Rule::exists('villages', 'id')],
-            'kode_pos' => ['nullable', 'string', 'max:10'],
+
+            'nomor_rekening' => [
+                'required',
+                'string',
+                'regex:/^[0-9]+$/',
+            ],
+
+            'nama_lengkap' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'tempat_lahir' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'tanggal_lahir' => [
+                'required',
+                'date',
+                'before:today',
+            ],
+
+            'jenis_kelamin' => [
+                'required',
+                Rule::in(['L', 'P']),
+            ],
+
+            'agama' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+
+            'no_hp' => [
+                'required',
+                'string',
+                'max:25',
+            ],
+
+            'alamat' => [
+                'required',
+                'string',
+                'max:2000',
+            ],
+
+            'provinsi' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'village_id' => [
+                'required',
+                'integer',
+                Rule::exists('villages', 'id'),
+            ],
+
+            'kode_pos' => [
+                'required',
+                'string',
+                'max:10',
+            ],
+        ], [
+            'nik.required' => 'NIK wajib diisi.',
+
+            'nik.digits' => 'NIK harus terdiri dari 16 digit.',
+
+            'nik.unique' => 'NIK tersebut sudah digunakan pada pendaftaran lain.',
+
+            'nomor_rekening.required' => 'Nomor rekening Bank Kalteng wajib diisi.',
+
+            'nomor_rekening.regex' => 'Nomor rekening Bank Kalteng hanya boleh berisi angka.',
+
+            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
+
+            'nama_lengkap.max' => 'Nama lengkap maksimal 150 karakter.',
+
+            'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
+
+            'tanggal_lahir.required' => 'Tanggal lahir wajib diisi.',
+
+            'tanggal_lahir.before' => 'Tanggal lahir harus merupakan tanggal yang sudah lewat.',
+
+            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
+
+            'jenis_kelamin.in' => 'Jenis kelamin tidak valid.',
+
+            'agama.required' => 'Agama wajib dipilih.',
+
+            'no_hp.required' => 'Nomor HP/WhatsApp wajib diisi.',
+
+            'alamat.required' => 'Alamat lengkap wajib diisi.',
+
+            'provinsi.required' => 'Provinsi wajib diisi.',
+
+            'village_id.required' => 'Desa/Kelurahan wajib dipilih.',
+
+            'village_id.exists' => 'Desa/Kelurahan yang dipilih tidak valid.',
+
+            'kode_pos.required' => 'Kode pos wajib diisi.',
         ]);
 
         $village = Village::query()
@@ -84,10 +188,17 @@ class DataPribadiController extends Controller
         $validated['kecamatan'] = $village->kecamatan->name;
         $validated['desa'] = $village->name;
 
-        DB::transaction(function () use ($pendaftaran, $validated, $village, $request): void {
+        DB::transaction(function () use (
+            $pendaftaran,
+            $validated,
+            $village,
+            $request
+        ): void {
             DataPribadi::query()->updateOrCreate(
-                ['pendaftaran_id' => $pendaftaran->id],
-                $validated,
+                [
+                    'pendaftaran_id' => $pendaftaran->id,
+                ],
+                $validated
             );
 
             $request->user()->forceFill([
@@ -96,11 +207,18 @@ class DataPribadiController extends Controller
                 'kabupaten_id' => $village->kabupaten_id,
             ])->save();
 
-            $pendaftaran->forceFill(['review_dikonfirmasi_at' => null])->save();
+            $pendaftaran
+                ->forceFill([
+                    'review_dikonfirmasi_at' => null,
+                ])
+                ->save();
         });
 
         return redirect()
             ->route('mahasiswa.pendidikan.index')
-            ->with('success', 'Data pribadi berhasil disimpan. Lanjutkan ke tahap pendidikan.');
+            ->with(
+                'success',
+                'Data pribadi berhasil disimpan.'
+            );
     }
 }

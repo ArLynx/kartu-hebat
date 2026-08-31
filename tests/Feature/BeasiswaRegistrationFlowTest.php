@@ -7,6 +7,7 @@ use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Models\Application;
 use App\Models\Document;
+use App\Models\JalurBeasiswa;
 use App\Models\JenisDokumen;
 use App\Models\KategoriBeasiswa;
 use App\Models\Pendaftaran;
@@ -48,6 +49,7 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $this->actingAs($user)
             ->put(route('mahasiswa.data-pribadi.update'), [
                 'nik' => '6212123456789012',
+                'nomor_rekening' => '1234567890',
                 'nisn' => '1234567890',
                 'nama_lengkap' => 'Mahasiswa Pengujian',
                 'tempat_lahir' => 'Puruk Cahu',
@@ -66,7 +68,9 @@ class BeasiswaRegistrationFlowTest extends TestCase
             ->put(route('mahasiswa.pendidikan.update'), [
                 'nim' => 'KHM-TEST-001',
                 'universitas' => 'Universitas Pengujian',
+                'status_perguruan_tinggi' => 'negeri',
                 'fakultas' => 'Teknik',
+                'jurusan' => 'Teknik Informatika',
                 'program_studi' => 'Teknik Informatika',
                 'jenjang' => 'S1',
                 'semester' => 5,
@@ -74,6 +78,9 @@ class BeasiswaRegistrationFlowTest extends TestCase
                 'tahun_masuk' => 2024,
                 'tahun_lulus' => null,
                 'status_mahasiswa' => 'aktif',
+                'akreditasi_perguruan_tinggi' => 'A',
+                'alamat_perguruan_tinggi' => 'Jl. Kampus No. 1',
+                'no_telp_perguruan_tinggi' => '0812345678',
             ])
             ->assertRedirect(route('mahasiswa.prestasi.index'));
 
@@ -84,10 +91,12 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $this->actingAs($user)
             ->put(route('mahasiswa.orang-tua.update'), [
                 'nama_ayah' => 'Ayah Pengujian',
+                'status_ayah' => 'hidup',
                 'nik_ayah' => '6212123456789013',
                 'pekerjaan_ayah' => 'Petani',
                 'penghasilan_ayah' => 2000000,
                 'nama_ibu' => 'Ibu Pengujian',
+                'status_ibu' => 'hidup',
                 'nik_ibu' => '6212123456789014',
                 'pekerjaan_ibu' => 'Pedagang',
                 'penghasilan_ibu' => 1500000,
@@ -110,6 +119,20 @@ class BeasiswaRegistrationFlowTest extends TestCase
         }
 
         $this->actingAs($user)
+            ->post(route('mahasiswa.formulir.upload'), [
+                'jenis' => 'surat',
+                'file' => UploadedFile::fake()->create('surat-permohonan.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('mahasiswa.formulir.upload'), [
+                'jenis' => 'pakta',
+                'file' => UploadedFile::fake()->create('pakta-integritas.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
             ->get(route('mahasiswa.review.index'))
             ->assertOk();
 
@@ -122,7 +145,7 @@ class BeasiswaRegistrationFlowTest extends TestCase
                 'pernyataan_kebenaran' => '1',
                 'pernyataan_final' => '1',
             ])
-            ->assertRedirect(route('mahasiswa.dashboard'));
+            ->assertRedirect(route('mahasiswa.bukti-pendaftaran.index'));
 
         $pendaftaran->refresh();
         $this->assertSame('verification', $pendaftaran->status);
@@ -198,10 +221,15 @@ class BeasiswaRegistrationFlowTest extends TestCase
     {
         $periode = Periode::query()->firstOrFail();
         $kategori = KategoriBeasiswa::query()->firstOrFail();
+        $jalur = JalurBeasiswa::query()->firstOrCreate(
+            ['kode' => 'REGULER'],
+            ['nama' => 'Reguler', 'aktif' => true, 'urutan' => 1]
+        );
 
         return Pendaftaran::query()->create([
             'user_id' => $user->id,
             'periode_id' => $periode->id,
+            'jalur_beasiswa_id' => $jalur->id,
             'kategori_beasiswa_id' => $kategori->id,
             'nomor_pendaftaran' => 'KHM-2026-'.str_pad((string) $user->id, 6, '0', STR_PAD_LEFT),
             'status' => 'draft',
@@ -216,6 +244,7 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $this->actingAs($user)
             ->put(route('mahasiswa.data-pribadi.update'), [
                 'nik' => '6212123456789012',
+                'nomor_rekening' => '1234567890',
                 'nisn' => '1234567890',
                 'nama_lengkap' => 'Mahasiswa Pengujian',
                 'tempat_lahir' => 'Puruk Cahu',
@@ -234,7 +263,9 @@ class BeasiswaRegistrationFlowTest extends TestCase
             ->put(route('mahasiswa.pendidikan.update'), [
                 'nim' => 'KHM-TEST-001',
                 'universitas' => 'Universitas Pengujian',
+                'status_perguruan_tinggi' => 'negeri',
                 'fakultas' => 'Teknik',
+                'jurusan' => 'Teknik Informatika',
                 'program_studi' => 'Teknik Informatika',
                 'jenjang' => 'S1',
                 'semester' => 5,
@@ -242,6 +273,9 @@ class BeasiswaRegistrationFlowTest extends TestCase
                 'tahun_masuk' => 2024,
                 'tahun_lulus' => null,
                 'status_mahasiswa' => 'aktif',
+                'akreditasi_perguruan_tinggi' => 'A',
+                'alamat_perguruan_tinggi' => 'Jl. Kampus No. 1',
+                'no_telp_perguruan_tinggi' => '0812345678',
             ])
             ->assertRedirect(route('mahasiswa.prestasi.index'));
 
@@ -252,10 +286,12 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $this->actingAs($user)
             ->put(route('mahasiswa.orang-tua.update'), [
                 'nama_ayah' => 'Ayah Pengujian',
+                'status_ayah' => 'hidup',
                 'nik_ayah' => '6212123456789013',
                 'pekerjaan_ayah' => 'Petani',
                 'penghasilan_ayah' => 2000000,
                 'nama_ibu' => 'Ibu Pengujian',
+                'status_ibu' => 'hidup',
                 'nik_ibu' => '6212123456789014',
                 'pekerjaan_ibu' => 'Pedagang',
                 'penghasilan_ibu' => 1500000,
@@ -276,6 +312,20 @@ class BeasiswaRegistrationFlowTest extends TestCase
         }
 
         $this->actingAs($user)
+            ->post(route('mahasiswa.formulir.upload'), [
+                'jenis' => 'surat',
+                'file' => UploadedFile::fake()->create('surat-permohonan.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('mahasiswa.formulir.upload'), [
+                'jenis' => 'pakta',
+                'file' => UploadedFile::fake()->create('pakta-integritas.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
             ->post(route('mahasiswa.review.confirm'))
             ->assertRedirect(route('mahasiswa.submit.index'));
 
@@ -284,7 +334,7 @@ class BeasiswaRegistrationFlowTest extends TestCase
                 'pernyataan_kebenaran' => '1',
                 'pernyataan_final' => '1',
             ])
-            ->assertRedirect(route('mahasiswa.dashboard'));
+            ->assertRedirect(route('mahasiswa.bukti-pendaftaran.index'));
 
         return Application::query()->where('pendaftaran_id', $pendaftaran->id)->firstOrFail();
     }

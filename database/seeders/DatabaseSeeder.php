@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         if (app()->environment(['local', 'testing'])) {
             $this->call(BeasiswaDemoUserSeeder::class);
             $this->call(CompleteStudentSeeder::class);
+            $this->call(JalurBeasiswaSeeder::class);
         }
     }
 }

@@ -10,7 +10,7 @@ class TwoFactorSetupController extends Controller
 
         abort_unless($user, 401);
 
-        if (!$user->role->requiresTwoFactor() || $user->two_factor_confirmed_at) {
+        if (! $user->role->requiresTwoFactor() || $user->two_factor_confirmed_at) {
             return redirect()->route('dashboard');
         }
 

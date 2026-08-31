@@ -3,6 +3,7 @@
 namespace Tests\Feature\Mahasiswa;
 
 use App\Enums\UserRole;
+use App\Models\JalurBeasiswa;
 use App\Models\KategoriBeasiswa;
 use App\Models\Pendaftaran;
 use App\Models\Periode;
@@ -39,7 +40,10 @@ class BeasiswaRegistrationTest extends TestCase
             'urutan' => 1,
         ]);
 
+        $jalur = $this->createJalur();
+
         $response = $this->actingAs($user)->post(route('mahasiswa.pendaftaran.store'), [
+            'jalur_beasiswa_id' => $jalur->id,
             'kategori_beasiswa_id' => $kategori->id,
             'persetujuan' => '1',
         ]);
@@ -49,6 +53,7 @@ class BeasiswaRegistrationTest extends TestCase
         $this->assertDatabaseHas('pendaftarans', [
             'user_id' => $user->id,
             'periode_id' => $periode->id,
+            'jalur_beasiswa_id' => $jalur->id,
             'kategori_beasiswa_id' => $kategori->id,
             'status' => 'draft',
         ]);
@@ -63,10 +68,12 @@ class BeasiswaRegistrationTest extends TestCase
             'email_verified_at' => now(),
         ]);
         $periode = $this->createPeriode();
+        $jalur = $this->createJalur();
         $first = $this->createCategory($periode);
         $second = $this->createCategory($periode, 'ALTERNATIF');
 
         $this->actingAs($user)->post(route('mahasiswa.pendaftaran.store'), [
+            'jalur_beasiswa_id' => $jalur->id,
             'kategori_beasiswa_id' => $first->id,
             'persetujuan' => '1',
         ])->assertRedirect(route('mahasiswa.data-pribadi.index'));
@@ -76,6 +83,7 @@ class BeasiswaRegistrationTest extends TestCase
             ->assertSessionHas('warning');
 
         $this->actingAs($user)->post(route('mahasiswa.pendaftaran.store'), [
+            'jalur_beasiswa_id' => $jalur->id,
             'kategori_beasiswa_id' => $second->id,
             'persetujuan' => '1',
         ])->assertRedirect(route('mahasiswa.data-pribadi.index'));
@@ -126,6 +134,16 @@ class BeasiswaRegistrationTest extends TestCase
             'kode' => $code,
             'nama' => 'Beasiswa '.$code,
             'kuota' => 10,
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+    }
+
+    private function createJalur(string $code = 'REGULER'): JalurBeasiswa
+    {
+        return JalurBeasiswa::query()->create([
+            'kode' => $code,
+            'nama' => 'Jalur '.$code,
             'aktif' => true,
             'urutan' => 1,
         ]);

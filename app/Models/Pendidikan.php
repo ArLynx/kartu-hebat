@@ -20,6 +20,16 @@ class Pendidikan extends Model
         'tahun_lulus',
         'status_mahasiswa',
         'pddikti_verified_at',
+        'jurusan',
+        'status_perguruan_tinggi',
+        'akreditasi_perguruan_tinggi',
+        'akreditasi_program_studi',
+        'nama_ketua_prodi',
+        'nama_ketua_jurusan',
+        'nama_direktur',
+        'nama_rektor',
+        'alamat_perguruan_tinggi',
+        'no_telp_perguruan_tinggi',
     ];
 
     protected function casts(): array

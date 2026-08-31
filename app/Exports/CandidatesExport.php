@@ -11,13 +11,12 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class CandidatesExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize
+class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping
 {
     public function __construct(
         private readonly int $kabupatenId,
         private readonly ?ApplicationType $applicationType = null,
-    ) {
-    }
+    ) {}
 
     public function collection(): Collection
     {

@@ -15,8 +15,8 @@ class EnsureTwoFactorIsEnabled
         if (
             $user
             && $user->role->requiresTwoFactor()
-            && !$user->two_factor_confirmed_at
-            && !$request->routeIs('2fa.setup', 'profile.show', 'logout')
+            && ! $user->two_factor_confirmed_at
+            && ! $request->routeIs('2fa.setup', 'profile.show', 'logout')
         ) {
             return redirect()
                 ->route('2fa.setup')

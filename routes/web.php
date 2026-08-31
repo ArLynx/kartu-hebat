@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Mahasiswa\BuktiPendaftaranController;
 use App\Http\Controllers\Mahasiswa\DashboardController as MahasiswaDashboardController;
 use App\Http\Controllers\Mahasiswa\DataPribadiController;
 use App\Http\Controllers\Mahasiswa\DokumenController;
+use App\Http\Controllers\Mahasiswa\FormulirController;
+use App\Http\Controllers\Mahasiswa\LpjController;
 use App\Http\Controllers\Mahasiswa\OrangTuaController;
 use App\Http\Controllers\Mahasiswa\PendaftaranController;
 use App\Http\Controllers\Mahasiswa\PendidikanController;
@@ -43,11 +46,7 @@ Route::get('/pengumuman-hasil', [ResultController::class, 'index'])
     ->middleware('throttle:20,1')
     ->name('public.results');
 
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'nocache',
-])->group(function (): void {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])->group(function (): void {
     Route::get('/user/profile', [ProfileController::class, 'show'])->name('profile.show');
 
     Route::middleware('verified')->group(function (): void {
@@ -55,10 +54,8 @@ Route::middleware([
         Route::get('/2fa-setup', [TwoFactorSetupController::class, 'index'])->name('2fa.setup');
 
         Route::middleware('2fa.ensure')->group(function (): void {
-            Route::get('/dokumen/{document}/lihat', [PrivateDocumentController::class, 'preview'])
-                ->name('documents.preview');
-            Route::get('/dokumen/{document}/unduh', [PrivateDocumentController::class, 'download'])
-                ->name('documents.download');
+            Route::get('/dokumen/{document}/lihat', [PrivateDocumentController::class, 'preview'])->name('documents.preview');
+            Route::get('/dokumen/{document}/unduh', [PrivateDocumentController::class, 'download'])->name('documents.download');
         });
 
         Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
@@ -107,24 +104,32 @@ Route::middleware([
                 Route::post('/review/konfirmasi', [ReviewController::class, 'confirm'])->name('review.confirm');
                 Route::get('/submit', [SubmitController::class, 'index'])->name('submit.index');
                 Route::post('/submit', [SubmitController::class, 'store'])->name('submit.store');
+
+                Route::get('/bukti-pendaftaran', [BuktiPendaftaranController::class, 'index'])->name('bukti-pendaftaran.index');
+                Route::get('/bukti-pendaftaran/cetak', [BuktiPendaftaranController::class, 'pdf'])->name('bukti-pendaftaran.pdf');
+
+                Route::get('/formulir/surat-permohonan', [FormulirController::class, 'suratPermohonan'])->name('formulir.surat-permohonan');
+                Route::get('/formulir/pakta-integritas', [FormulirController::class, 'paktaIntegritas'])->name('formulir.pakta-integritas');
+                Route::post('/review/formulir/upload', [ReviewController::class, 'uploadFormulir'])->name('formulir.upload');
+                Route::delete('/review/formulir/delete', [ReviewController::class, 'deleteFormulir'])->name('formulir.delete');
+                Route::get('/review/formulir/{jenis}/download', [ReviewController::class, 'downloadFormulir'])->name('formulir.download');
+                Route::get('/review/formulir/{jenis}/lihat', [ReviewController::class, 'lihatFormulir'])->name('formulir.lihat');
+
+                Route::get('/lpj', [LpjController::class, 'index'])->name('lpj.index');
             });
 
         // Alias kompatibilitas untuk tautan lama. Semuanya diarahkan ke modul beasiswa.
-        Route::middleware('role:mahasiswa')->prefix('mahasiswa')->name('student.')->group(function (): void {
-            Route::get('/pendaftaran', fn () => redirect()->route('mahasiswa.dashboard'))
-                ->name('application');
-            Route::redirect('/riwayat-verifikasi', '/mahasiswa/dashboard')->name('history');
-            Route::put('/pendaftaran/profil', fn () => redirect()->route('mahasiswa.data-pribadi.index'))
-                ->name('profile.update');
-            Route::post('/pendaftaran/kirim', fn () => redirect()->route('mahasiswa.dashboard')
-                ->with('error', 'Pengiriman melalui alur lama dinonaktifkan. Gunakan modul pendaftaran beasiswa.'))
-                ->name('application.submit');
-            Route::post('/pendaftaran/{application}/dokumen', fn () => redirect()->route('mahasiswa.dashboard')
-                ->with('error', 'Unggah dokumen alur lama dinonaktifkan.'))
-                ->name('documents.store');
-            Route::delete('/pendaftaran/{application}/dokumen/{document}', fn () => redirect()->route('mahasiswa.dashboard'))
-                ->name('documents.destroy');
-        });
+        Route::middleware('role:mahasiswa')
+            ->prefix('mahasiswa')
+            ->name('student.')
+            ->group(function (): void {
+                Route::get('/pendaftaran', fn () => redirect()->route('mahasiswa.dashboard'))->name('application');
+                Route::redirect('/riwayat-verifikasi', '/mahasiswa/dashboard')->name('history');
+                Route::put('/pendaftaran/profil', fn () => redirect()->route('mahasiswa.data-pribadi.index'))->name('profile.update');
+                Route::post('/pendaftaran/kirim', fn () => redirect()->route('mahasiswa.dashboard')->with('error', 'Pengiriman melalui alur lama dinonaktifkan. Gunakan modul pendaftaran beasiswa.'))->name('application.submit');
+                Route::post('/pendaftaran/{application}/dokumen', fn () => redirect()->route('mahasiswa.dashboard')->with('error', 'Unggah dokumen alur lama dinonaktifkan.'))->name('documents.store');
+                Route::delete('/pendaftaran/{application}/dokumen/{document}', fn () => redirect()->route('mahasiswa.dashboard'))->name('documents.destroy');
+            });
 
         Route::middleware(['role:superadmin', '2fa.ensure'])
             ->prefix('superadmin')
@@ -144,8 +149,7 @@ Route::middleware([
                     ->except('show')
                     ->parameters(['operators' => 'operator']);
 
-                Route::post('operators/{operator}/reset-password', [SuperadminOperatorController::class, 'resetPassword'])
-                    ->name('operators.reset-password');
+                Route::post('operators/{operator}/reset-password', [SuperadminOperatorController::class, 'resetPassword'])->name('operators.reset-password');
             });
 
         Route::middleware([

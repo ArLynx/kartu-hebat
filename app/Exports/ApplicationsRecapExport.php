@@ -13,15 +13,14 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class ApplicationsRecapExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize
+class ApplicationsRecapExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping
 {
     public function __construct(
         private readonly string $role,
         private readonly ?int $villageId,
         private readonly ?int $kecamatanId,
         private readonly ?int $kabupatenId,
-    ) {
-    }
+    ) {}
 
     public static function forUser(User $user): self
     {

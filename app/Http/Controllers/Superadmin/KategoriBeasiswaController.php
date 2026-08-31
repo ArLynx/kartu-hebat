@@ -159,7 +159,7 @@ class KategoriBeasiswaController extends Controller
     }
 
     /**
-     * @param array<int, int|string> $documentIds
+     * @param  array<int, int|string>  $documentIds
      */
     private function syncDocuments(KategoriBeasiswa $category, array $documentIds): void
     {

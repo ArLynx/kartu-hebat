@@ -124,18 +124,18 @@ class BeasiswaMasterSeeder extends Seeder
                     'kuota' => $categoryDefinition['application_type']->quota(),
                     'aktif' => true,
                     'urutan' => $categoryDefinition['urutan'],
-                'icon' => match ($categoryDefinition['application_type']) {
-                    ApplicationType::AKADEMIK => 'school',
-                    ApplicationType::TIDAK_MAMPU => 'users',
-                    ApplicationType::DISABILITAS => 'heart',
-                    ApplicationType::NON_AKADEMIK => 'trophy',
-                },
-                'warna' => match ($categoryDefinition['application_type']) {
-                    ApplicationType::AKADEMIK => '#1E40AF',
-                    ApplicationType::TIDAK_MAMPU => '#047857',
-                    ApplicationType::DISABILITAS => '#B45309',
-                    ApplicationType::NON_AKADEMIK => '#7C3AED',
-                },
+                    'icon' => match ($categoryDefinition['application_type']) {
+                        ApplicationType::AKADEMIK => 'school',
+                        ApplicationType::TIDAK_MAMPU => 'users',
+                        ApplicationType::DISABILITAS => 'heart',
+                        ApplicationType::NON_AKADEMIK => 'trophy',
+                    },
+                    'warna' => match ($categoryDefinition['application_type']) {
+                        ApplicationType::AKADEMIK => '#1E40AF',
+                        ApplicationType::TIDAK_MAMPU => '#047857',
+                        ApplicationType::DISABILITAS => '#B45309',
+                        ApplicationType::NON_AKADEMIK => '#7C3AED',
+                    },
                 ],
             );
 

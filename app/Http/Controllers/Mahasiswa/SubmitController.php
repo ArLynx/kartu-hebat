@@ -80,10 +80,10 @@ class SubmitController extends Controller
 
         return match ($result['status']) {
             'submitted' => redirect()
-                ->route('mahasiswa.dashboard')
+                ->route('mahasiswa.bukti-pendaftaran.index')
                 ->with(
                     'success',
-                    'Pendaftaran berhasil dikirim dan masuk ke tahap '.$result['application_status'].'.'
+                    'Pendaftaran berhasil dikirim. Bukti pendaftaran Anda tersedia.'
                 ),
             'incomplete' => redirect()
                 ->route('mahasiswa.review.index')

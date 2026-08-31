@@ -12,8 +12,7 @@ class ApplicationStatusChanged extends Notification
         public string $title,
         public string $message,
         public ?string $url = null,
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {

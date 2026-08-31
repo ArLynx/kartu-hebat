@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureProfileIsComplete;
+use App\Http\Middleware\EnsureTwoFactorIsEnabled;
+use App\Http\Middleware\PreventBackHistory;
+use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,13 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            '2fa.ensure' => \App\Http\Middleware\EnsureTwoFactorIsEnabled::class,
-            'profile.complete' => \App\Http\Middleware\EnsureProfileIsComplete::class,
-            'nocache' => \App\Http\Middleware\PreventBackHistory::class,
+            'role' => RoleMiddleware::class,
+            '2fa.ensure' => EnsureTwoFactorIsEnabled::class,
+            'profile.complete' => EnsureProfileIsComplete::class,
+            'nocache' => PreventBackHistory::class,
         ]);
 
-        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->append(SecurityHeaders::class);
 
         // Trusted proxies TIDAK dikonfigurasi di sini. TrustProxies middleware
         // bawaan Laravel otomatis membaca config('trustedproxy.proxies')

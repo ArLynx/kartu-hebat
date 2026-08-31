@@ -18,6 +18,7 @@ class Pendaftaran extends Model
         'submitted_at',
         'prestasi_dikonfirmasi_at',
         'review_dikonfirmasi_at',
+        'jalur_beasiswa_id',
     ];
 
     protected function casts(): array
@@ -77,5 +78,25 @@ class Pendaftaran extends Model
     public function application(): HasOne
     {
         return $this->hasOne(Application::class);
+    }
+
+    public function jalurBeasiswa(): BelongsTo
+    {
+        return $this->belongsTo(JalurBeasiswa::class);
+    }
+
+    public function laporanPertanggungjawaban(): HasOne
+    {
+        return $this->hasOne(LaporanPertanggungjawaban::class);
+    }
+
+    public function blacklists(): HasMany
+    {
+        return $this->hasMany(Blacklist::class);
+    }
+
+    public function formulirPendaftaran(): HasOne
+    {
+        return $this->hasOne(FormulirPendaftaran::class);
     }
 }

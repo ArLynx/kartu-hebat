@@ -23,9 +23,7 @@ class PrestasiController extends Controller
 {
     private const CERTIFICATE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png'];
 
-    public function __construct(private readonly MahasiswaPendaftaranService $flow)
-    {
-    }
+    public function __construct(private readonly MahasiswaPendaftaranService $flow) {}
 
     public function index(Request $request): View|RedirectResponse
     {
@@ -60,9 +58,9 @@ class PrestasiController extends Controller
             DB::transaction(function () use ($pendaftaran, $validated): void {
                 $pendaftaran->prestasis()->create($validated);
                 $pendaftaran->forceFill([
-                'prestasi_dikonfirmasi_at' => now(),
-                'review_dikonfirmasi_at' => null,
-            ])->save();
+                    'prestasi_dikonfirmasi_at' => now(),
+                    'review_dikonfirmasi_at' => null,
+                ])->save();
             });
         } catch (Throwable $exception) {
             if ($path) {
@@ -92,9 +90,9 @@ class PrestasiController extends Controller
             DB::transaction(function () use ($prestasi, $pendaftaran, $validated): void {
                 $prestasi->update($validated);
                 $pendaftaran->forceFill([
-                'prestasi_dikonfirmasi_at' => now(),
-                'review_dikonfirmasi_at' => null,
-            ])->save();
+                    'prestasi_dikonfirmasi_at' => now(),
+                    'review_dikonfirmasi_at' => null,
+                ])->save();
             });
         } catch (Throwable $exception) {
             if ($newPath) {

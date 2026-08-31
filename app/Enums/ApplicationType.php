@@ -2,6 +2,11 @@
 
 namespace App\Enums;
 
+use App\Services\Scoring\AcademicScoring;
+use App\Services\Scoring\DesilScoring;
+use App\Services\Scoring\DisabilityScoring;
+use App\Services\Scoring\PrestasiScoring;
+
 enum ApplicationType: string
 {
     case AKADEMIK = 'AKADEMIK';
@@ -37,10 +42,10 @@ enum ApplicationType: string
     public function scoringStrategyClass(): string
     {
         return match ($this) {
-            self::AKADEMIK => \App\Services\Scoring\AcademicScoring::class,
-            self::TIDAK_MAMPU => \App\Services\Scoring\DesilScoring::class,
-            self::DISABILITAS => \App\Services\Scoring\DisabilityScoring::class,
-            self::NON_AKADEMIK => \App\Services\Scoring\PrestasiScoring::class,
+            self::AKADEMIK => AcademicScoring::class,
+            self::TIDAK_MAMPU => DesilScoring::class,
+            self::DISABILITAS => DisabilityScoring::class,
+            self::NON_AKADEMIK => PrestasiScoring::class,
         };
     }
 
