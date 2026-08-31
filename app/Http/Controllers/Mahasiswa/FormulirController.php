@@ -79,8 +79,12 @@ class FormulirController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $viewName = $jenisForm === 'B'
+            ? 'mahasiswa.formulir.surat-permohonan-b'
+            : 'mahasiswa.formulir.surat-permohonan-a';
+
         $pdf = Pdf::loadView(
-            'mahasiswa.formulir.surat-permohonan-a',
+            $viewName,
             [
                 'pendaftaran' => $pendaftaran,
                 'jenisForm' => $jenisForm,

@@ -3,1256 +3,671 @@
 
 <head>
     <meta charset="UTF-8">
-
-    <title>
-        Permohonan Beasiswa - Form B
-    </title>
+    <title>Surat Permohonan Beasiswa - Form B</title>
 
     <style>
         @page {
-            size: A4 portrait;
-            margin: 0;
+            margin: 3cm;
         }
 
         * {
             box-sizing: border-box;
         }
 
-        html,
         body {
             margin: 0;
             padding: 0;
             background: #ffffff;
-            color: #000000;
             font-family: "Times New Roman", Times, serif;
-            font-size: 12pt;
+            font-size: 11pt;
+            line-height: 1.25;
+            color: #000000;
         }
 
-        .page {
-            position: relative;
-            width: 210mm;
-            min-height: 297mm;
-
-            padding-top: 18mm;
-            padding-right: 20mm;
-            padding-bottom: 18mm;
-            padding-left: 20mm;
-
+        .page-break {
             page-break-after: always;
         }
 
-        .page:last-child {
-            page-break-after: auto;
-        }
-
-        .page-number {
-            text-align: center;
-            font-size: 11pt;
-            margin-bottom: 15mm;
-        }
-
-        .title {
+        /*
+        |--------------------------------------------------------------------------
+        | HALAMAN 1 - COVER
+        |--------------------------------------------------------------------------
+        */
+        .cover-title {
             text-align: center;
             font-weight: bold;
-            font-size: 14pt;
+            font-size: 13.5pt;
             line-height: 1.25;
-            margin-bottom: 10mm;
-        }
-
-        .subtitle {
-            text-align: center;
-            font-size: 12pt;
-            line-height: 1.35;
-            margin-bottom: 2mm;
-        }
-
-        .identitas-awal {
-            width: 100%;
-            margin-top: 15mm;
-            margin-left: 5mm;
-        }
-
-        .identitas-awal td {
-            vertical-align: top;
-            padding: 1px 0;
-            line-height: 1.25;
-        }
-
-        .identitas-awal .label {
-            width: 70mm;
-        }
-
-        .identitas-awal .colon {
-            width: 7mm;
-            text-align: center;
-        }
-
-        .identitas-awal .value {
-            width: auto;
-        }
-
-        .penutup-halaman-1 {
-            text-align: center;
-            margin-top: 14mm;
-            line-height: 1.35;
-        }
-
-        .surat-title {
-            text-align: center;
-            font-weight: bold;
-            font-size: 14pt;
-            margin-bottom: 8mm;
-        }
-
-        .tanggal {
-            text-align: center;
-            margin-bottom: 8mm;
-        }
-
-        .surat-meta {
-            width: 100%;
+            margin-top: 3mm;
             margin-bottom: 12mm;
         }
 
-        .surat-meta td {
+        .cover-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .cover-table td {
             vertical-align: top;
-            padding: 0;
+            padding: 1.5mm 0;
+            font-size: 11pt;
             line-height: 1.2;
         }
 
-        .surat-meta .label {
-            width: 22mm;
-        }
-
-        .surat-meta .colon {
-            width: 7mm;
-            text-align: center;
-        }
-
-        .surat-meta .value {
-            width: 67mm;
-        }
-
-        .kepada {
-            vertical-align: top;
-        }
-
-        .kepada-content {
+        .cover-label {
             width: 70mm;
-            line-height: 1.2;
+            font-weight: normal;
         }
 
-        .center {
-            text-align: center;
-        }
-
-        .isi-surat {
-            margin-top: 5mm;
-            line-height: 1.25;
-            text-align: justify;
-        }
-
-        .isi-surat p {
-            margin: 0 0 5mm 0;
-        }
-
-        .data-lengkap {
-            width: 100%;
-            margin-top: 3mm;
-            margin-bottom: 6mm;
-        }
-
-        .data-lengkap td {
-            vertical-align: top;
-            padding: 0;
-            line-height: 1.18;
-        }
-
-        .data-lengkap .no {
-            width: 9mm;
-        }
-
-        .data-lengkap .label {
-            width: 61mm;
-        }
-
-        .data-lengkap .colon {
-            width: 7mm;
-            text-align: center;
-        }
-
-        .data-lengkap .value {
-            width: auto;
-        }
-
-        .sub {
-            padding-left: 8mm !important;
-        }
-
-        .daftar-lampiran {
-            width: 100%;
-            margin-top: 4mm;
-        }
-
-        .daftar-lampiran td {
-            vertical-align: top;
-            padding: 0;
-            line-height: 1.22;
-        }
-
-        .daftar-lampiran .no {
-            width: 9mm;
-        }
-
-        .tanda-tangan {
-            margin-top: 12mm;
-            margin-left: 115mm;
-            width: 65mm;
+        .cover-colon {
+            width: 4mm;
             text-align: left;
         }
 
-        .tanda-tangan .space {
-            height: 28mm;
+        .cover-value {
+            width: auto;
         }
 
-        .tanda-tangan .garis {
-            white-space: nowrap;
+        .cover-footer {
+            text-align: center;
+            font-size: 11pt;
+            line-height: 1.35;
+            margin-top: 30mm;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | HALAMAN 2 - SURAT PERMOHONAN
+        |--------------------------------------------------------------------------
+        */
+        .letter-title {
+            text-align: center;
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 3.5mm;
+        }
+
+        .letter-header {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 3mm;
+        }
+
+        .letter-header td {
+            vertical-align: top;
+            font-size: 12pt;
+            line-height: 1.2;
+        }
+
+        .header-left {
+            width: 52%;
+        }
+
+        .header-right {
+            width: 48%;
+            padding-left: 6mm;
+        }
+
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .meta-table td {
+            padding: 0.3mm 0;
+            vertical-align: top;
+            font-size: 12pt;
+        }
+
+        .meta-label {
+            width: 18mm;
+        }
+
+        .meta-colon {
+            width: 4mm;
+            text-align: left;
+        }
+
+        .meta-value {
+            width: auto;
+        }
+
+        .greeting {
+            margin-top: 2mm;
+            margin-bottom: 1.5mm;
+            font-size: 12pt;
+        }
+
+        .identity-intro {
+            margin-bottom: 1.5mm;
+            font-size: 12pt;
+        }
+
+        .identity-table {
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: auto;
+        }
+
+        .identity-table td {
+            vertical-align: top;
+            padding: 0.3mm 0;
+            font-size: 12pt;
+            line-height: 1.15;
+        }
+
+        .id-no {
+            width: 6mm;
+        }
+
+        .id-label {
+            width: 54mm;
+        }
+
+        .id-colon {
+            width: 4mm;
+            text-align: left;
+        }
+
+        .id-val {
+            width: auto;
+        }
+
+        .statement {
+            text-align: justify;
+            margin: 2mm 0 1.5mm 0;
+            font-size: 12pt;
+            line-height: 1.2;
+        }
+
+        .attachment-intro {
+            text-align: justify;
+            margin: 0 0 1.5mm 0;
+            font-size: 12pt;
+            line-height: 1.2;
+        }
+
+        .attachment-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .attachment-table td {
+            vertical-align: top;
+            padding: 0.35mm 0;
+            font-size: 12pt;
+            line-height: 1.2;
+        }
+
+        .att-no {
+            width: 6mm;
+        }
+
+        .att-text {
+            width: auto;
+            text-align: justify;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | HALAMAN 3 - LANJUTAN & TANDA TANGAN
+        |--------------------------------------------------------------------------
+        */
+        .closing {
+            margin-top: 3mm;
+            text-align: justify;
+            font-size: 12pt;
+            line-height: 1.25;
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10mm;
+        }
+
+        .signature-table td {
+            vertical-align: top;
+            font-size: 12pt;
+        }
+
+        .signature-left {
+            width: 55%;
+        }
+
+        .signature-right {
+            width: 45%;
+            text-align: center;
+        }
+
+        .signature-title {
+            margin-bottom: 0;
+        }
+
+        .signature-space {
+            height: 25mm;
+        }
+
+        .signature-name {
+            font-weight: normal;
+        }
+
+        .signature-nim {
+            margin-top: 1mm;
+        }
+
+        tr {
+            page-break-inside: avoid;
         }
     </style>
 </head>
 
+@php
+    $dataPribadi = $pendaftaran->dataPribadi;
+    $pendidikan = $pendaftaran->pendidikan;
+    $orangTua = $pendaftaran->orangTua;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper data
+    |--------------------------------------------------------------------------
+    */
+    $namaMahasiswa = $dataPribadi?->nama_lengkap ?? '-';
+    $nim = $pendaftaran->user?->nim ?? ($pendidikan?->nim ?? '-');
+    $jenjang = $pendidikan?->jenjang ?? '-';
+
+    $akreditasi =
+        $pendidikan?->akreditasi_perguruan_tinggi ??
+        ($pendidikan?->akreditasi_universitas ?? ($pendidikan?->akreditasi ?? '-'));
+
+    $akreditasiProgramStudi = $pendidikan?->akreditasi_program_studi ?? '-';
+    $jurusan = $pendidikan?->jurusan ?? '-';
+    $programStudi = $pendidikan?->program_studi ?? '-';
+    $perguruanTinggi = $pendidikan?->universitas ?? '-';
+
+    $statusPerguruanTinggi = $pendidikan?->status_perguruan_tinggi
+        ? ucfirst(strtolower(trim($pendidikan->status_perguruan_tinggi)))
+        : '-';
+
+    $asalDesa = $dataPribadi?->desa ?? ($dataPribadi?->village?->name ?? '-');
+    $alamatPerguruanTinggi = $pendidikan?->alamat_perguruan_tinggi ?? '-';
+    $jalurBeasiswa = $pendaftaran->jalurBeasiswa?->nama ?? '-';
+    $kategoriBeasiswa = $pendaftaran->kategoriBeasiswa?->nama ?? '-';
+
+    $namaKetuaProdi = $pendidikan?->nama_ketua_prodi ?? '-';
+    $namaKetuaJurusan = $pendidikan?->nama_ketua_jurusan ?? '-';
+    $namaDirektur = $pendidikan?->nama_direktur ?? '-';
+    $namaRektor = $pendidikan?->nama_rektor ?? '-';
+    $noTelpPT = $pendidikan?->no_telp_perguruan_tinggi ?? ($pendidikan?->no_telp_pt ?? '-');
+
+    $tahunMulaiKuliah = $pendidikan?->tahun_masuk ?? ($pendidikan?->tahun_mulai_kuliah ?? '-');
+    $alamatMahasiswa = $dataPribadi?->alamat ?? '-';
+    $telpMahasiswa = $dataPribadi?->no_hp ?? '-';
+
+    $namaAyah = $orangTua?->nama_ayah ?? '-';
+    $namaIbu = $orangTua?->nama_ibu ?? '-';
+
+    $tanggalSurat = now()->translatedFormat('d F Y');
+    $tahunAnggaran = $pendaftaran->periode?->year ?? ($pendaftaran->periode?->tahun ?? now()->year);
+@endphp
+
 <body>
 
-    @php
-
-        $data = $pendaftaran->dataPribadi;
-
-        $pendidikan = $pendaftaran->pendidikan;
-
-        $orangTua = $pendaftaran->orangTua;
-
-        $periode = $pendaftaran->periode;
-
-        $jalur = $pendaftaran->jalurBeasiswa;
-
-        $kategori = $pendaftaran->kategoriBeasiswa;
-
-        $tahunAnggaran = $periode?->tahun ?? now()->year;
-
-        $jenisJalur = strtoupper(
-            $jalur?->kode
-                ?? $jalur?->nama
-                ?? ''
-        );
-
-        if (str_contains($jenisJalur, 'NON')) {
-            $jenisJalurLabel = 'Non Reguler';
-        } else {
-            $jenisJalurLabel = 'Reguler';
-        }
-
-        $namaKategori = $kategori?->nama ?? '-';
-
-        $ipk = $pendidikan?->ipk !== null
-            ? number_format((float) $pendidikan->ipk, 2)
-            : '-';
-
-        $namaKetuaProdi =
-            $pendidikan?->nama_ketua_prodi ?: '-';
-
-        $namaKetuaJurusan =
-            $pendidikan?->nama_ketua_jurusan ?: '-';
-
-        $namaDirektur =
-            $pendidikan?->nama_direktur ?: '-';
-
-        $namaRektor =
-            $pendidikan?->nama_rektor ?: '-';
-
-        $tanggalSurat =
-            now()->translatedFormat('d F Y');
-
-    @endphp
-
-
-    {{-- ============================================================
-         HALAMAN 1
-         ============================================================ --}}
-
-    <div class="page">
-
-        <div class="page-number">
-            14
-        </div>
-
-        <div class="title">
-
+    {{-- ================================================================
+         HALAMAN 1 - COVER
+         ================================================================= --}}
+    <div>
+        <div class="cover-title">
             PERMOHONAN BANTUAN BIAYA PENDIDIKAN<br>
-
             MELALUI PROGRAM KARTU HEBAT MAHASISWA
-
         </div>
 
-
-        <div class="subtitle">
-
-            Diajukan sebagai persyaratan permohonan untuk mendapatkan
-
-        </div>
-
-        <div class="subtitle">
-
-            Beasiswa Kartu Hebat Mahasiswa
-
-        </div>
-
-        <div class="subtitle">
-
-            Kabupaten Murung Raya
-
-        </div>
-
-        <div class="subtitle">
-
-            Tahun Anggaran {{ $tahunAnggaran }}
-
-        </div>
-
-
-        <table class="identitas-awal">
-
+        <table class="cover-table">
             <tr>
-
-                <td class="label">
-                    NAMA MAHASISWA
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $data?->nama_lengkap ?: '-' }}
-                </td>
-
+                <td class="cover-label">NAMA MAHASISWA</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $namaMahasiswa }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    NIM
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $pendidikan?->nim ?: '-' }}
-                </td>
-
+                <td class="cover-label">NIM</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $nim }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    JENJANG PROGRAM
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $pendidikan?->jenjang ?: '-' }}
-                </td>
-
+                <td class="cover-label">JENJANG PROGRAM</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $jenjang }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    AKREDITASI
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $pendidikan?->akreditasi_program_studi ?: '-' }}
-                </td>
-
+                <td class="cover-label">AKREDITASI</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $akreditasi }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    JURUSAN
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $pendidikan?->jurusan ?: '-' }}
-                </td>
-
+                <td class="cover-label">JURUSAN</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $jurusan }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    PERGURUAN TINGGI
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $pendidikan?->universitas ?: '-' }}
-                </td>
-
+                <td class="cover-label">PERGURUAN TINGGI</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $perguruanTinggi }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    ASAL DESA/KELURAHAN
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $data?->desa ?: '-' }}
-                </td>
-
+                <td class="cover-label">ASAL DESA/KELURAHAN</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $asalDesa }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    ALAMAT PERGURUAN TINGGI
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $pendidikan?->alamat_perguruan_tinggi ?: '-' }}
-                </td>
-
+                <td class="cover-label">ALAMAT PERGURUAN TINGGI</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $alamatPerguruanTinggi }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    KATEGORI BEASISWA
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $jenisJalurLabel }}
-                </td>
-
+                <td class="cover-label">KATEGORI BEASISWA</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $jalurBeasiswa }}</td>
             </tr>
-
-
             <tr>
-
-                <td class="label">
-                    JENIS BEASISWA
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    {{ $namaKategori }}
-                </td>
-
+                <td class="cover-label">JENIS BEASISWA</td>
+                <td class="cover-colon">:</td>
+                <td class="cover-value">{{ $kategoriBeasiswa }}</td>
             </tr>
-
         </table>
 
-
-        <div class="penutup-halaman-1">
-
+        <div class="cover-footer">
             Diajukan sebagai persyaratan permohonan untuk mendapatkan<br>
-
             Beasiswa Kartu Hebat Mahasiswa<br>
-
             Kabupaten Murung Raya<br>
-
             Tahun Anggaran {{ $tahunAnggaran }}
-
         </div>
-
     </div>
 
+    <div class="page-break"></div>
 
-
-    {{-- ============================================================
-         HALAMAN 2
-         ============================================================ --}}
-
-    <div class="page">
-
-        <div class="page-number">
-            20
-        </div>
-
-        <div class="surat-title">
+    {{-- ================================================================
+         HALAMAN 2 - SURAT PERMOHONAN + BIODATA + LAMPIRAN 1-7
+         ================================================================= --}}
+    <div>
+        <div class="letter-title">
             SURAT PERMOHONAN
         </div>
 
-
-        <div class="tanggal">
-
-            {{ $data?->tempat_lahir ?: '......' }},
-            {{ $tanggalSurat }}
-
-        </div>
-
-
-        <table class="surat-meta">
-
+        <table class="letter-header">
             <tr>
-
-                <td class="label">
-                    Nomor
+                {{-- KIRI --}}
+                <td class="header-left">
+                    <table class="meta-table">
+                        <tr>
+                            <td class="meta-label">Nomor</td>
+                            <td class="meta-colon">:</td>
+                            <td class="meta-value">Lepas</td>
+                        </tr>
+                        <tr>
+                            <td class="meta-label">Sifat</td>
+                            <td class="meta-colon">:</td>
+                            <td class="meta-value">Biasa</td>
+                        </tr>
+                        <tr>
+                            <td class="meta-label">Lampiran</td>
+                            <td class="meta-colon">:</td>
+                            <td class="meta-value">1 (satu) berkas</td>
+                        </tr>
+                        <tr>
+                            <td class="meta-label">Perihal</td>
+                            <td class="meta-colon">:</td>
+                            <td class="meta-value">
+                                Mohon Bantuan Biaya Pendidikan untuk Mahasiswa dari Kabupaten Murung Raya
+                            </td>
+                        </tr>
+                    </table>
                 </td>
 
-                <td class="colon">
-                    :
+                {{-- KANAN --}}
+                <td class="header-right">
+                    <div style="margin-bottom: 2.5mm;">
+                        Puruk Cahu, {{ $tanggalSurat }}
+                    </div>
+                    <div>Kepada</div>
+                    <div>Yth. Bapak Bupati Murung Raya</div>
+                    <div style="margin-left: 6mm;">di -</div>
+                    <div style="margin-left: 12mm;">Tempat</div>
                 </td>
-
-                <td class="value">
-                    Lepas
-                </td>
-
-                <td style="width: 10mm;"></td>
-
-                <td class="kepada-content">
-
-                    Kepada
-
-                    <br>
-
-                    Yth. Bapak Bupati Murung Raya
-
-                    <br>
-
-                    di -
-
-                    <br>
-
-                    Tempat
-
-                </td>
-
             </tr>
-
-
-            <tr>
-
-                <td class="label">
-                    Sifat
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    Biasa
-                </td>
-
-            </tr>
-
-
-            <tr>
-
-                <td class="label">
-                    Lampiran
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-                    1 (satu) berkas
-                </td>
-
-            </tr>
-
-
-            <tr>
-
-                <td class="label">
-                    Perihal
-                </td>
-
-                <td class="colon">
-                    :
-                </td>
-
-                <td class="value">
-
-                    Mohon Bantuan Biaya Pendidikan
-                    untuk Mahasiswa dari
-                    Kabupaten Murung Raya
-
-                </td>
-
-            </tr>
-
         </table>
 
-
-        <div class="isi-surat">
-
-            <p>
-                Dengan Hormat,
-            </p>
-
-            <p>
-                Yang bertanda tangan di bawah ini :
-            </p>
-
-
-            <table class="data-lengkap">
-
-                <tr>
-
-                    <td class="no">
-                        1.
-                    </td>
-
-                    <td class="label">
-                        Nama Mahasiswa
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $data?->nama_lengkap ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        2.
-                    </td>
-
-                    <td class="label">
-                        N I M
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->nim ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        3.
-                    </td>
-
-                    <td class="label">
-                        Jenjang Program
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->jenjang ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        4.
-                    </td>
-
-                    <td class="label">
-                        Program Studi
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->program_studi ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        5.
-                    </td>
-
-                    <td class="label">
-                        Jurusan
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->jurusan ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        6.
-                    </td>
-
-                    <td class="label">
-                        Perguruan Tinggi
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value"></td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        a. Nama Perguruan Tinggi
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->universitas ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        b. Status Perguruan Tinggi
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->status_perguruan_tinggi ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        c. Akreditasi Program Studi
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->akreditasi_program_studi ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        d. Nama Ketua Prodi
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $namaKetuaProdi }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        e. Nama Ketua Jurusan
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $namaKetuaJurusan }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        f. Nama Direktur
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $namaDirektur }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        g. Nama Rektor
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $namaRektor }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        h. Alamat Perguruan Tinggi
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->alamat_perguruan_tinggi ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        i. No.Telp/HP PT
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->no_telp_perguruan_tinggi ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        7.
-                    </td>
-
-                    <td class="label">
-                        Tahun Mulai Kuliah
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $pendidikan?->tahun_masuk ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        8.
-                    </td>
-
-                    <td class="label">
-                        Alamat Mahasiswa
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $data?->alamat ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        9.
-                    </td>
-
-                    <td class="label">
-                        Telp/HP Mahasiswa
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $data?->no_hp ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        10.
-                    </td>
-
-                    <td class="label">
-                        Nama
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value"></td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        a. Ayah
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $orangTua?->nama_ayah ?: '-' }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td></td>
-
-                    <td class="label sub">
-                        b. Ibu
-                    </td>
-
-                    <td class="colon">
-                        :
-                    </td>
-
-                    <td class="value">
-                        {{ $orangTua?->nama_ibu ?: '-' }}
-                    </td>
-
-                </tr>
-
-            </table>
-
-
-            <p>
-
-                Dengan ini mengajukan permohonan bantuan biaya pendidikan
-                untuk keperluan perkuliahan.
-
-            </p>
-
-
-            <p>
-
-                Sebagai bahan pertimbangan bagi Bapak Bupati, bersama ini
-                saya lampirkan berkas administrasi sebagai berikut :
-
-            </p>
-
-
-            <table class="daftar-lampiran">
-
-                <tr>
-
-                    <td class="no">
-                        1.
-                    </td>
-
-                    <td>
-                        Surat keterangan tidak mampu dari Kepala Desa/Lurah
-                        yang diketahui oleh Camat;
-                    </td>
-
-                </tr>
-
-            </table>
-
+        <div class="greeting">
+            Dengan Hormat,
         </div>
 
+        <div class="identity-intro">
+            Yang bertanda tangan di bawah ini :
+        </div>
+
+        {{-- DATA MAHASISWA --}}
+        <table class="identity-table">
+            <tr>
+                <td class="id-no">1.</td>
+                <td class="id-label">Nama Mahasiswa</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $namaMahasiswa }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">2.</td>
+                <td class="id-label">N I M</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $nim }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">3.</td>
+                <td class="id-label">Jenjang Program</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $jenjang }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">4.</td>
+                <td class="id-label">Program Studi</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $programStudi }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">5.</td>
+                <td class="id-label">Jurusan</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $jurusan }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">6.</td>
+                <td class="id-label" colspan="3">Perguruan Tinggi</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">a. Nama Perguruan Tinggi</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $perguruanTinggi }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">b. Status Perguruan Tinggi</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $statusPerguruanTinggi }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">c. Akreditasi Program Studi</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $akreditasiProgramStudi }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">d. Nama Ketua Prodi</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $namaKetuaProdi }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">e. Nama Ketua Jurusan</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $namaKetuaJurusan }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">f. Nama Direktur</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $namaDirektur }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">g. Nama Rektor</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $namaRektor }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">h. Alamat Perguruan Tinggi</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $alamatPerguruanTinggi }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">i. No.Telp/HP PT</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $noTelpPT }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">7.</td>
+                <td class="id-label">Tahun Mulai Kuliah</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $tahunMulaiKuliah }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">8.</td>
+                <td class="id-label">Alamat Mahasiswa</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $alamatMahasiswa }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">9.</td>
+                <td class="id-label">Telp/HP Mahasiswa</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $telpMahasiswa }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no">10.</td>
+                <td class="id-label" colspan="3">Nama</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">a. Ayah</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $namaAyah }}</td>
+            </tr>
+
+            <tr>
+                <td class="id-no"></td>
+                <td class="id-label" style="padding-left: 3mm;">b. Ibu</td>
+                <td class="id-colon">:</td>
+                <td class="id-val">{{ $namaIbu }}</td>
+            </tr>
+        </table>
+
+        <div class="statement">
+            Dengan ini mengajukan permohonan bantuan biaya pendidikan untuk keperluan perkuliahan.
+        </div>
+
+        <div class="attachment-intro">
+            Sebagai bahan pertimbangan bagi Bapak Bupati, bersama ini saya lampirkan berkas administrasi sebagai berikut :
+        </div>
+
+        <table class="attachment-table">
+            <tr>
+                <td class="att-no">1.</td>
+                <td class="att-text">Surat keterangan tidak mampu dari Kepala Desa/Lurah yang diketahui oleh Camat;</td>
+            </tr>
+            <tr>
+                <td class="att-no">2.</td>
+                <td class="att-text">fotokopi ijazah kelulusan SMA sederajat dan fotocopy rapot kelas XII atau Surat Keterangan Kelulusan dari Kepala Sekolah bagi calon penerima bantuan yang baru lulus SMA/sederajat;</td>
+            </tr>
+            <tr>
+                <td class="att-no">3.</td>
+                <td class="att-text">fotokopi Kartu Tanda Penduduk (KTP);</td>
+            </tr>
+            <tr>
+                <td class="att-no">4.</td>
+                <td class="att-text">fotokopi Kartu Keluarga (KK);</td>
+            </tr>
+            <tr>
+                <td class="att-no">5.</td>
+                <td class="att-text">surat keterangan lulus/diterima pada Perguruan Tinggi tempat mendaftar;</td>
+            </tr>
+            <tr>
+                <td class="att-no">6.</td>
+                <td class="att-text">fotokopi sertifikat akreditas Perguruan Tinggi;</td>
+            </tr>
+            <tr>
+                <td class="att-no">7.</td>
+                <td class="att-text">fotokopi Surat Keputusan tentang Penunjukan Kepengurusan Organisasi di Perguruan Tinggi;</td>
+            </tr>
+        </table>
     </div>
 
+    <div class="page-break"></div>
 
+    {{-- ================================================================
+         HALAMAN 3 - LAMPIRAN 8-9, PENUTUP & TANDA TANGAN
+         ================================================================= --}}
+    <div>
+        <table class="attachment-table">
+            <tr>
+                <td class="att-no">8.</td>
+                <td class="att-text">fotokopi Buku Rekening Tabungan PT. Bank Pembangunan Daerah Kalimantan Tengah;</td>
+            </tr>
+            <tr>
+                <td class="att-no">9.</td>
+                <td class="att-text">pakta integritas yang dibubuhi materai Rp. 10.000,- (Sepuluh Ribu Rupiah).</td>
+            </tr>
+        </table>
 
-    {{-- ============================================================
-         HALAMAN 3
-         ============================================================ --}}
-
-    <div class="page">
-
-        <div class="page-number">
-            21
+        <div class="closing">
+            Demikian Surat Permohonan ini diajukan, atas perhatian dan bantuan Bapak Bupati diucapkan terima kasih.
         </div>
 
-
-        <div class="isi-surat">
-
-            <table class="daftar-lampiran">
-
-                <tr>
-
-                    <td class="no">
-                        2.
-                    </td>
-
-                    <td>
-                        fotokopi ijazah kelulusan SMA sederajat dan fotocopy
-                        rapot kelas XII atau Surat Keterangan Kelulusan dari
-                        Kepala Sekolah bagi calon penerima bantuan yang baru
-                        lulus SMA/sederajat;
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        3.
-                    </td>
-
-                    <td>
-                        fotokopi Kartu Tanda Penduduk (KTP);
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        4.
-                    </td>
-
-                    <td>
-                        fotokopi Kartu Keluarga (KK);
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        5.
-                    </td>
-
-                    <td>
-                        surat keterangan lulus/diterima pada Perguruan Tinggi
-                        tempat mendaftar;
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        6.
-                    </td>
-
-                    <td>
-                        fotokopi sertifikat akreditasi Perguruan Tinggi;
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        7.
-                    </td>
-
-                    <td>
-                        fotokopi Surat Keputusan tentang Penunjukan
-                        Kepengurusan Organisasi di Perguruan Tinggi;
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        8.
-                    </td>
-
-                    <td>
-                        fotokopi Buku Rekening Tabungan PT. Bank Pembangunan
-                        Daerah Kalimantan Tengah;
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td class="no">
-                        9.
-                    </td>
-
-                    <td>
-                        pakta integritas yang dibubuhi materai Rp. 10.000,-
-                        (Sepuluh Ribu Rupiah).
-                    </td>
-
-                </tr>
-
-            </table>
-
-
-            <p style="margin-top: 10mm;">
-
-                Demikian Surat Permohonan ini diajukan, atas perhatian dan
-                bantuan Bapak Bupati diucapkan terima kasih.
-
-            </p>
-
-
-            <div class="tanda-tangan">
-
-                <div>
-                    Pemohon,
-                </div>
-
-                <div class="space"></div>
-
-                <div class="garis">
-                    ........................................
-                </div>
-
-                <div>
-                    NIM {{ $pendidikan?->nim ?: '........................' }}
-                </div>
-
-            </div>
-
-        </div>
-
+        <table class="signature-table">
+            <tr>
+                <td class="signature-left"></td>
+                <td class="signature-right">
+                    <div class="signature-title">
+                        Pemohon,
+                    </div>
+                    <div class="signature-space"></div>
+                    <div class="signature-name">
+                        {{ $namaMahasiswa }}
+                    </div>
+                    <div class="signature-nim">
+                        NIM {{ $nim }}
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
 </body>
