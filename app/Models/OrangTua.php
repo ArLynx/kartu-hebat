@@ -9,14 +9,22 @@ class OrangTua extends Model
 {
     protected $fillable = [
         'pendaftaran_id',
+
+        // Ayah
         'nama_ayah',
+        'status_ayah',
         'nik_ayah',
         'pekerjaan_ayah',
         'penghasilan_ayah',
+
+        // Ibu
         'nama_ibu',
+        'status_ibu',
         'nik_ibu',
         'pekerjaan_ibu',
         'penghasilan_ibu',
+
+        // Wali
         'memiliki_wali',
         'nama_wali',
         'nik_wali',

@@ -99,6 +99,11 @@ return [
 
     'key' => env('APP_KEY'),
 
+    'barcode_home_url' => env(
+        'BARCODE_HOME_URL',
+        env('APP_URL')
+    ),
+
     'previous_keys' => [
         ...array_filter(
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
@@ -122,5 +127,7 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    
 
 ];

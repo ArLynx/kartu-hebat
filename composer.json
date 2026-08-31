@@ -21,6 +21,7 @@
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^3.6.4",
         "maatwebsite/excel": "^3.1",
+        "picqer/php-barcode-generator": "^3.3",
         "setasign/fpdi": "^2.6"
     },
     "require-dev": {
