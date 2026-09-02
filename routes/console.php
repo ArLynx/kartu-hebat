@@ -3,7 +3,7 @@
 use App\Enums\UserRole;
 use App\Models\Pendaftaran;
 use App\Models\User;
-use App\Services\PendaftaranWorkflowBridgeService;
+use App\Services\ApplicationWorkflowService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -62,7 +62,7 @@ Artisan::command(
 Artisan::command(
     'kartu-hebat:integrate-pendaftarans {--id=* : Batasi pada ID pendaftaran tertentu}',
     function (): int {
-        $bridge = app(PendaftaranWorkflowBridgeService::class);
+        $workflow = app(ApplicationWorkflowService::class);
         $query = Pendaftaran::query()
             ->whereIn('status', ['submitted', 'verification'])
             ->whereDoesntHave('application')
@@ -89,11 +89,11 @@ Artisan::command(
         $success = 0;
         $failed = 0;
 
-        $query->eachById(function (Pendaftaran $pendaftaran) use ($bridge, &$success, &$failed): void {
+        $query->eachById(function (Pendaftaran $pendaftaran) use ($workflow, &$success, &$failed): void {
             try {
-                DB::transaction(function () use ($bridge, $pendaftaran): void {
+                DB::transaction(function () use ($workflow, $pendaftaran): void {
                     $locked = Pendaftaran::query()->lockForUpdate()->findOrFail($pendaftaran->id);
-                    $bridge->submit($locked, $pendaftaran->user);
+                    $workflow->submit($locked, $pendaftaran->user);
                 });
 
                 $success++;

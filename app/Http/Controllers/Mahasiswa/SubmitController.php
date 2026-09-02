@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pendaftaran;
+use App\Services\ApplicationWorkflowService;
 use App\Services\MahasiswaPendaftaranService;
-use App\Services\PendaftaranWorkflowBridgeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ class SubmitController extends Controller
 {
     public function __construct(
         private readonly MahasiswaPendaftaranService $flow,
-        private readonly PendaftaranWorkflowBridgeService $bridge,
+        private readonly ApplicationWorkflowService $workflow,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -70,7 +70,7 @@ class SubmitController extends Controller
                 return ['status' => 'incomplete', 'missing' => $missingStages];
             }
 
-            $application = $this->bridge->submit($pendaftaran, $request->user());
+            $application = $this->workflow->submit($pendaftaran, $request->user());
 
             return [
                 'status' => 'submitted',

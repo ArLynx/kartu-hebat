@@ -17,7 +17,13 @@ class SelectionScoringService
 
     public function calculate(Application $application, ?int $scorerId = null): Selection
     {
-        $application->loadMissing('mahasiswa.profile');
+        $application->loadMissing([
+            'mahasiswa.profile',
+            'pendaftaran.pendidikan',
+            'pendaftaran.dataPribadi',
+            'pendaftaran.prestasis',
+            'agencyVerifications',
+        ]);
         $profile = $application->mahasiswa->profile;
         $type = $application->application_type;
 

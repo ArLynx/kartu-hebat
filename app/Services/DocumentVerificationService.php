@@ -122,6 +122,21 @@ class DocumentVerificationService
         );
     }
 
+    public function cancel(
+        Application $application,
+        Document $document,
+        User $verifier,
+    ): void {
+        $stage = self::stageFor($verifier);
+        $this->assertCanVerifyStage($application, $stage);
+
+        DocumentVerification::query()
+            ->where('document_id', $document->id)
+            ->where('stage', $stage)
+            ->where('round', self::currentRound($application))
+            ->delete();
+    }
+
     public function resetForDocument(Document $document): void
     {
         DocumentVerification::query()

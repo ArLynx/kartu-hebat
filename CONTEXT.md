@@ -23,7 +23,7 @@ Hasil tunggal seorang operator dinas terhadap sebuah application — MS (Memenuh
 Tahap verifikasi, tiga dinas (Dukcapil, Sosial, Pendidikan) memverifikasi paralel untuk semua jalur; Dinas Kesehatan (Dinkes) ikut memverifikasi untuk jalur Disabilitas saja. Semua dinas yang wajib (3 atau 4) harus MS sebelum application lolos ke seleksi; ada satu dinas TMS maka application menjadi TMS.
 
 **Seleksi Kabupaten**:
-Tahap akhir, operator kabupaten menghitung skor, menentukan peringkat, dan memutuskan DITERIMA/DITOLAK lalu memublikasikan hasil.
+Tahap akhir di mana sistem secara otomatis menghitung skor dan menentukan peringkat kandidat. Operator mengunduh rekap Excel hasil pemeringkatan untuk ditinjau dan disetujui (ACC) oleh pimpinan. Setelah disetujui, operator mengunggah kembali berkas Excel keputusan final beserta dokumen PDF SK penetapan untuk memublikasikan hasil secara massal. Publikasi ini menetapkan status akhir DITERIMA/DITOLAK, membuat pengumuman resmi ke publik, dan mengirim notifikasi ke mahasiswa.
 _Avoid_: County selection
 
 **current_step**:

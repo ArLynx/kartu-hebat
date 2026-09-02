@@ -10,8 +10,8 @@ use App\Models\MahasiswaProfile;
 use App\Models\Selection;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\ApplicationWorkflowService;
 use App\Services\DocumentVerificationService;
-use App\Services\PendaftaranWorkflowBridgeService;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,14 +30,14 @@ class HygieneBundleTest extends TestCase
         $this->seed(MasterDataSeeder::class);
     }
 
-    public function test_bridge_uses_constructor_injected_document_verification_service(): void
+    public function test_workflow_uses_constructor_injected_document_verification_service(): void
     {
-        $bridge = app(PendaftaranWorkflowBridgeService::class);
+        $workflow = app(ApplicationWorkflowService::class);
 
         $this->assertSame(
             DocumentVerificationService::class,
-            $this->documentVerificationServiceOf($bridge),
-            'PendaftaranWorkflowBridgeService harus menerima DocumentVerificationService lewat constructor, bukan app().',
+            $this->documentVerificationServiceOf($workflow),
+            'ApplicationWorkflowService harus menerima DocumentVerificationService lewat constructor, bukan app().',
         );
     }
 
@@ -101,11 +101,11 @@ class HygieneBundleTest extends TestCase
         $this->assertSame('active', $fresh->status);
     }
 
-    private function documentVerificationServiceOf(PendaftaranWorkflowBridgeService $bridge): ?string
+    private function documentVerificationServiceOf(ApplicationWorkflowService $workflow): ?string
     {
-        $property = new \ReflectionProperty($bridge, 'documentVerification');
+        $property = new \ReflectionProperty($workflow, 'documentVerification');
         $property->setAccessible(true);
-        $value = $property->getValue($bridge);
+        $value = $property->getValue($workflow);
 
         return $value ? $value::class : null;
     }

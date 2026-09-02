@@ -68,8 +68,6 @@ class ApplicationController extends Controller
             'documents.verifications' => fn ($query) => $query
                 ->where('round', $currentRound)
                 ->with('verifier'),
-            'villageVerification.verifier',
-            'districtVerification.verifier',
             'agencyVerifications.verifier',
             'verificationLogs.actor',
             'scores.criterion',

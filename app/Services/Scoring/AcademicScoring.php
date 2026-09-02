@@ -15,8 +15,8 @@ class AcademicScoring implements ScoringStrategy
 
     public function values(?MahasiswaProfile $profile, Application $application): array
     {
-        $ipk = (float) ($profile?->ipk ?? 0);
-        $semester = (int) ($profile?->semester ?? 0);
+        $ipk = (float) ($application->pendaftaran?->pendidikan?->ipk ?? $profile?->ipk ?? 0);
+        $semester = (int) ($application->pendaftaran?->pendidikan?->semester ?? $profile?->semester ?? 0);
         $maxSemester = max(1, (int) config('kartu_hebat.scoring.academic_max_semester', 8));
 
         return [

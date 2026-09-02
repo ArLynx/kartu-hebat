@@ -15,8 +15,8 @@ use App\Models\Pendidikan;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\ApplicationWorkflowService;
 use App\Services\MahasiswaPendaftaranService;
-use App\Services\PendaftaranWorkflowBridgeService;
 use Database\Seeders\BeasiswaMasterSeeder;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
@@ -48,7 +48,7 @@ class VillageLookupTest extends TestCase
         $pendaftaran = $this->completeDraft($user, 'valid');
         $expected = Village::query()->with(['kecamatan', 'kabupaten'])->firstOrFail();
 
-        $application = app(PendaftaranWorkflowBridgeService::class)->submit($pendaftaran, $user);
+        $application = app(ApplicationWorkflowService::class)->submit($pendaftaran, $user);
 
         $data = $pendaftaran->fresh()->dataPribadi;
         $this->assertSame($expected->id, $data->village_id);
@@ -64,7 +64,7 @@ class VillageLookupTest extends TestCase
         $pendaftaran = $this->completeDraft($user, 'unknown');
 
         try {
-            app(PendaftaranWorkflowBridgeService::class)->submit($pendaftaran, $user);
+            app(ApplicationWorkflowService::class)->submit($pendaftaran, $user);
             $this->fail('Teks wilayah yang tidak dikenal harus ditolak.');
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('village_id', $exception->errors());
@@ -96,7 +96,7 @@ class VillageLookupTest extends TestCase
         $pendaftaran = $this->completeDraft($user, 'ambiguous');
 
         try {
-            app(PendaftaranWorkflowBridgeService::class)->submit($pendaftaran, $user);
+            app(ApplicationWorkflowService::class)->submit($pendaftaran, $user);
             $this->fail('Teks wilayah yang ambigu harus ditolak.');
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('village_id', $exception->errors());
@@ -116,7 +116,7 @@ class VillageLookupTest extends TestCase
             }
         });
 
-        app(PendaftaranWorkflowBridgeService::class)->submit($pendaftaran, $user);
+        app(ApplicationWorkflowService::class)->submit($pendaftaran, $user);
 
         $this->assertNotEmpty($villageQueries, 'Submit harus memuat tabel villages.');
         foreach ($villageQueries as $sql) {
@@ -132,7 +132,7 @@ class VillageLookupTest extends TestCase
     {
         $user = User::factory()->create();
         $pendaftaran = $this->completeDraft($user, 'valid');
-        $bridge = app(PendaftaranWorkflowBridgeService::class);
+        $bridge = app(ApplicationWorkflowService::class);
 
         $first = $bridge->submit($pendaftaran, $user);
 
