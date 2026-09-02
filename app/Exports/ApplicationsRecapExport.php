@@ -35,7 +35,7 @@ class ApplicationsRecapExport implements FromCollection, ShouldAutoSize, WithHea
     public function collection(): Collection
     {
         $query = Application::query()
-            ->with(['mahasiswa.profile.village.kecamatan'])
+            ->with(['mahasiswa.profile.village.kecamatan', 'pendaftaran.jalurBeasiswa'])
             ->where('periode', config('kartu_hebat.current_period'))
             ->where('status', '!=', ApplicationStatus::DRAFT->value);
 
@@ -52,6 +52,7 @@ class ApplicationsRecapExport implements FromCollection, ShouldAutoSize, WithHea
         return [
             'Nomor Pengajuan',
             'Jalur Pengajuan',
+            'Kategori Mahasiswa',
             'Periode',
             'Nama Mahasiswa',
             'NIK',
@@ -71,6 +72,7 @@ class ApplicationsRecapExport implements FromCollection, ShouldAutoSize, WithHea
         return [
             $application->nomor_pengajuan,
             $application->application_type?->label(),
+            $application->pendaftaran?->jalurBeasiswa?->nama ?? '-',
             $application->periode,
             $application->mahasiswa->name,
             $application->mahasiswa->profile?->nik,

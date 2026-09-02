@@ -6,34 +6,48 @@ use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SelectionRequest;
-use App\Models\Announcement;
 use App\Models\Application;
+use App\Models\JalurBeasiswa;
 use App\Models\Selection;
-use App\Models\VerificationLog;
-use App\Notifications\ApplicationStatusChanged;
-use App\Services\SelectionScoringService;
+use App\Services\SelectionWorkflowService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\File;
+use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SelectionController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly SelectionWorkflowService $workflow,
+    ) {}
+
+    public function index(Request $request): View
     {
         $selectedType = ApplicationType::tryFrom($request->string('application_type')->toString())
             ?? ApplicationType::AKADEMIK;
+
+        $selectedJalurId = $request->filled('jalur_beasiswa_id') ? $request->integer('jalur_beasiswa_id') : null;
+
+        $jalurBeasiswas = JalurBeasiswa::query()->where('aktif', true)->orderBy('urutan')->get();
 
         $query = Application::query()
             ->visibleTo($request->user())
             ->where('periode', config('kartu_hebat.current_period'))
             ->where('application_type', $selectedType->value)
-            ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'scores.criterion'])
+            ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'scores.criterion', 'pendaftaran.jalurBeasiswa'])
             ->whereIn('status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,
                 ApplicationStatus::DITOLAK->value,
             ]);
+
+        if ($selectedJalurId) {
+            $query->whereHas('pendaftaran', function ($pendaftaranQuery) use ($selectedJalurId): void {
+                $pendaftaranQuery->where('jalur_beasiswa_id', $selectedJalurId);
+            });
+        }
 
         if ($request->filled('search')) {
             $search = '%'.$request->string('search')->trim()->toString().'%';
@@ -45,26 +59,40 @@ class SelectionController extends Controller
         }
 
         $countySelections = Selection::query()
-            ->whereHas('application', fn ($application) => $application
-                ->visibleTo($request->user())
-                ->where('periode', config('kartu_hebat.current_period'))
-                ->where('application_type', $selectedType->value));
+            ->whereHas('application', function ($appQuery) use ($request, $selectedType, $selectedJalurId): void {
+                $appQuery
+                    ->visibleTo($request->user())
+                    ->where('periode', config('kartu_hebat.current_period'))
+                    ->where('application_type', $selectedType->value);
 
-        $typeCounts = Application::query()
+                if ($selectedJalurId) {
+                    $appQuery->whereHas('pendaftaran', fn ($p) => $p->where('jalur_beasiswa_id', $selectedJalurId));
+                }
+            });
+
+        $rawCounts = Application::query()
             ->visibleTo($request->user())
-            ->where('periode', config('kartu_hebat.current_period'))
-            ->whereIn('status', [
+            ->where('applications.periode', config('kartu_hebat.current_period'))
+            ->whereIn('applications.status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,
                 ApplicationStatus::DITOLAK->value,
             ])
-            ->selectRaw('application_type, count(*) as total')
-            ->groupBy('application_type')
-            ->pluck('total', 'application_type');
+            ->leftJoin('pendaftarans', 'pendaftarans.id', '=', 'applications.pendaftaran_id')
+            ->selectRaw('applications.application_type, pendaftarans.jalur_beasiswa_id, count(*) as total')
+            ->groupBy('applications.application_type', 'pendaftarans.jalur_beasiswa_id')
+            ->get();
 
         $typeCounts = collect(ApplicationType::cases())->mapWithKeys(
-            fn (ApplicationType $type): array => [$type->value => (int) ($typeCounts[$type->value] ?? 0)],
+            fn (ApplicationType $type): array => [
+                $type->value => (int) $rawCounts->where('application_type', $type->value)->sum('total'),
+            ],
         );
+
+        $jalurCounts = $rawCounts
+            ->where('application_type', $selectedType->value)
+            ->filter(fn ($row) => $row->jalur_beasiswa_id !== null)
+            ->pluck('total', 'jalur_beasiswa_id');
 
         return view('operator.selection', [
             'applications' => $query
@@ -75,8 +103,12 @@ class SelectionController extends Controller
                 ->withQueryString(),
             'applicationTypes' => ApplicationType::cases(),
             'selectedType' => $selectedType,
+            'selectedJalurId' => $selectedJalurId,
             'typeCounts' => $typeCounts,
+            'jalurCounts' => $jalurCounts,
+            'totalCurrentTypeCount' => (int) ($typeCounts[$selectedType->value] ?? 0),
             'quota' => $selectedType->quota(),
+            'jalurBeasiswas' => $jalurBeasiswas,
             'acceptedCount' => (clone $countySelections)
                 ->where('manual_decision', ApplicationStatus::DITERIMA->value)
                 ->count(),
@@ -86,156 +118,77 @@ class SelectionController extends Controller
         ]);
     }
 
-    public function store(
-        SelectionRequest $request,
-        Application $application,
-        SelectionScoringService $scoring,
-    ) {
+    public function export(Request $request): BinaryFileResponse
+    {
+        $selectedType = ApplicationType::tryFrom($request->string('application_type')->toString());
+        $selectedJalurId = $request->filled('jalur_beasiswa_id') ? $request->integer('jalur_beasiswa_id') : null;
+        $jalur = $selectedJalurId ? JalurBeasiswa::find($selectedJalurId) : null;
+
+        $filename = 'rekap-seleksi-kartu-hebat-'
+            .($selectedType ? strtolower($selectedType->value) : 'semua-jalur')
+            .($jalur ? '-'.strtolower($jalur->kode) : '')
+            .'.xlsx';
+
+        return Excel::download(
+            $this->workflow->exportCandidates($request->user(), $selectedType, $selectedJalurId),
+            $filename,
+        );
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'excel_file' => ['required', File::types(['xlsx', 'xls', 'csv'])->max(10 * 1024)],
+        ], [
+            'excel_file.required' => 'Pilih berkas Excel hasil ACC pimpinan terlebih dahulu.',
+            'excel_file.mimes' => 'Berkas daftar ACC pimpinan harus berformat Excel (.xlsx, .xls, .csv).',
+            'excel_file.max' => 'Ukuran berkas Excel maksimal 10 MB.',
+        ]);
+
+        $count = $this->workflow->importDecisionsFromExcel(
+            $request->user(),
+            $request->file('excel_file'),
+        );
+
+        return back()->with('success', "Keputusan ACC dari {$count} data kandidat berhasil diimpor ke sistem internal. Silakan periksa kembali status di tabel sebelum melakukan publikasi resmi.");
+    }
+
+    public function store(SelectionRequest $request, Application $application): RedirectResponse
+    {
         $this->authorize('select', $application);
         $data = $request->validated();
         $target = ApplicationStatus::from($data['decision']);
-        $existingSelection = $application->selection;
 
-        if (! $application->application_type) {
-            throw ValidationException::withMessages([
-                'decision' => 'Jalur pengajuan kandidat belum ditetapkan.',
-            ]);
-        }
-
-        if ($existingSelection?->published_at) {
-            throw ValidationException::withMessages([
-                'decision' => 'Hasil yang sudah dipublikasikan tidak dapat diubah dari halaman ini.',
-            ]);
-        }
-
-        DB::transaction(function () use ($request, $application, $data, $target, $scoring, $existingSelection): void {
-            if ($target === ApplicationStatus::DITERIMA && ! $this->quotaAvailable($request, $application, $existingSelection)) {
-                throw ValidationException::withMessages([
-                    'decision' => 'Kuota jalur '.$application->application_type->label().' sudah terpenuhi.',
-                ]);
-            }
-
-            $selection = $application->selection;
-
-            if (! $selection) {
-                $selection = $scoring->calculate($application, $request->user()->id);
-            }
-
-            $selection->update([
-                'manual_decision' => $target->value,
-                'notes' => $data['notes'] ?? null,
-                'decided_by' => $request->user()->id,
-                'decided_at' => now(),
-            ]);
-
-            VerificationLog::query()->create([
-                'application_id' => $application->id,
-                'actor_id' => $request->user()->id,
-                'from_status' => $application->status->value,
-                'to_status' => $application->status->value,
-                'action' => 'selection_decision_recorded',
-                'notes' => $data['notes'] ?? null,
-                'metadata' => [
-                    'manual_decision' => $target->value,
-                    'application_type' => $application->application_type->value,
-                ],
-                'created_at' => now(),
-            ]);
-
-            $scoring->recalculateRanking(
-                $request->user()->kabupaten_id,
-                applicationType: $application->application_type,
-            );
-        });
+        $this->workflow->recordDecision(
+            $application,
+            $target,
+            $request->user(),
+            $data['notes'] ?? null,
+        );
 
         return back()->with('success', 'Keputusan internal kandidat berhasil disimpan.');
     }
 
-    /**
-     * Dibaca dengan lockForUpdate di dalam transaksi agar dua keputusan
-     * konkuren pada jalur yang sama terserialisasi dan kuota tidak terlewati:
-     * locking read selalu melihat commit terbaru, bukan snapshot lama.
-     */
-    private function quotaAvailable(Request $request, Application $application, ?Selection $existingSelection): bool
+    public function publish(Request $request): RedirectResponse
     {
-        $acceptedCount = Selection::query()
-            ->whereHas('application', fn ($query) => $query
-                ->visibleTo($request->user())
-                ->where('periode', config('kartu_hebat.current_period'))
-                ->where('application_type', $application->application_type->value))
-            ->where('manual_decision', ApplicationStatus::DITERIMA->value)
-            ->when($existingSelection, fn ($query) => $query->where('id', '!=', $existingSelection->id))
-            ->lockForUpdate()
-            ->count();
+        $request->validate([
+            'sk_file' => ['required', File::types(['pdf'])->max(10 * 1024)],
+            'title' => ['nullable', 'string', 'max:255'],
+        ], [
+            'sk_file.required' => 'Surat Keputusan (SK) Penetapan format PDF wajib diunggah untuk memublikasikan hasil seleksi.',
+            'sk_file.mimes' => 'Berkas SK harus berformat PDF.',
+            'sk_file.max' => 'Ukuran berkas SK maksimal 10 MB.',
+        ]);
 
-        return $acceptedCount < $application->application_type->quota();
-    }
+        $title = $request->string('title')->trim()->toString();
+        $title = $title !== '' ? $title : null;
 
-    public function publish(Request $request)
-    {
-        $decided = Selection::query()
-            ->whereHas('application', fn ($application) => $application
-                ->visibleTo($request->user())
-                ->where('periode', config('kartu_hebat.current_period')))
-            ->whereNotNull('manual_decision')
-            ->whereNull('published_at')
-            ->with('application.mahasiswa')
-            ->get();
+        $count = $this->workflow->publishDecisions(
+            $request->user(),
+            $request->file('sk_file'),
+            $title,
+        );
 
-        if ($decided->isEmpty()) {
-            return back()->with('warning', 'Tidak ada keputusan baru yang siap dipublikasikan.');
-        }
-
-        DB::transaction(function () use ($request, $decided): void {
-            $publishedAt = now();
-
-            foreach ($decided as $selection) {
-                $application = $selection->application;
-                $target = ApplicationStatus::from($selection->manual_decision);
-                $from = $application->status;
-
-                $selection->update(['published_at' => $publishedAt]);
-                $application->update([
-                    'status' => $target,
-                    'catatan' => $selection->notes,
-                    'locked_at' => $publishedAt,
-                ]);
-
-                VerificationLog::query()->create([
-                    'application_id' => $application->id,
-                    'actor_id' => $request->user()->id,
-                    'from_status' => $from->value,
-                    'to_status' => $target->value,
-                    'action' => 'selection_result_published',
-                    'notes' => $selection->notes,
-                    'metadata' => ['application_type' => $application->application_type?->value],
-                    'created_at' => $publishedAt,
-                ]);
-
-                $application->mahasiswa->notify(new ApplicationStatusChanged(
-                    $application->fresh(),
-                    'Hasil seleksi telah dipublikasikan',
-                    'Hasil resmi pengajuan '.$application->nomor_pengajuan.' sudah dapat diperiksa.',
-                    route('student.history', absolute: false),
-                ));
-            }
-
-            $slug = 'hasil-seleksi-'.Str::slug(config('kartu_hebat.current_period'));
-
-            Announcement::query()->updateOrCreate(
-                ['slug' => $slug],
-                [
-                    'title' => 'Pengumuman Hasil Seleksi Kartu Hebat Mahasiswa',
-                    'type' => 'hasil',
-                    'excerpt' => 'Hasil seleksi jalur Akademik dan Tidak Mampu periode '.config('kartu_hebat.current_period').' telah dipublikasikan.',
-                    'body' => 'Peserta dapat memeriksa hasil menggunakan nomor pengajuan atau NIK pada halaman pengumuman.',
-                    'is_active' => true,
-                    'published_at' => $publishedAt,
-                    'created_by' => $request->user()->id,
-                ],
-            );
-        });
-
-        return back()->with('success', $decided->count().' hasil seleksi berhasil dipublikasikan.');
+        return back()->with('success', "{$count} hasil seleksi berhasil dipublikasikan bersama Surat Keputusan (SK) resmi.");
     }
 }

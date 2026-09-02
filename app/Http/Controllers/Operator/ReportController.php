@@ -34,7 +34,7 @@ class ReportController extends Controller
             ->visibleTo($request->user())
             ->where('periode', config('kartu_hebat.current_period'))
             ->when($type, fn ($query) => $query->where('application_type', $type->value))
-            ->with(['mahasiswa.profile.village.kecamatan', 'selection'])
+            ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
             ->where('status', ApplicationStatus::DITERIMA->value)
             ->whereHas('selection', fn ($selection) => $selection->whereNotNull('published_at'))
             ->get()
@@ -76,7 +76,7 @@ class ReportController extends Controller
             ->visibleTo($request->user())
             ->where('periode', config('kartu_hebat.current_period'))
             ->when($type, fn ($query) => $query->where('application_type', $type->value))
-            ->with(['mahasiswa.profile.village.kecamatan', 'selection'])
+            ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
             ->whereIn('status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,

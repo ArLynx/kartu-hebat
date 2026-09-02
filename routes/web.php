@@ -175,6 +175,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                 Route::middleware('role:operator_kabupaten')->group(function (): void {
                     Route::get('/rekonsiliasi', [ReconciliationController::class, 'index'])->name('reconciliation');
                     Route::get('/seleksi', [SelectionController::class, 'index'])->name('selection');
+                    Route::get('/seleksi/export', [SelectionController::class, 'export'])->name('selection.export');
+                    Route::post('/seleksi/import', [SelectionController::class, 'import'])->name('selection.import');
                     Route::post('/seleksi/{application}', [SelectionController::class, 'store'])->name('selection.store');
                     Route::post('/seleksi-publikasi', [SelectionController::class, 'publish'])->name('selection.publish');
                     Route::get('/laporan/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
