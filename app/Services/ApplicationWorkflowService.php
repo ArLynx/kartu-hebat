@@ -222,11 +222,30 @@ class ApplicationWorkflowService
                 ->lockForUpdate()
                 ->first();
 
-            if (! $application) {
+            $isNewApplication = ! $application;
+            $isRebound = $application && (int) $application->pendaftaran_id !== (int) $pendaftaran->id;
+            $isDraftPendaftaran = in_array($pendaftaran->status, ['draft', 'revision'], true);
+
+            if ($isNewApplication) {
                 $application = new Application([
                     'mahasiswa_id' => $student->id,
                     'status' => ApplicationStatus::DRAFT,
                 ]);
+            } elseif ($isRebound || ($isDraftPendaftaran && ! $application->status->isEditableByStudent())) {
+                $application->status = ApplicationStatus::DRAFT;
+                $application->submitted_at = null;
+                $application->locked_at = null;
+                $application->catatan = null;
+
+                if ($isRebound) {
+                    $application->verificationLogs()->delete();
+                    $application->agencyVerifications()->delete();
+                    $application->documentVerifications()->delete();
+                    $application->scores()->delete();
+                    $application->selection()?->delete();
+                    $application->villageVerification()?->delete();
+                    $application->districtVerification()?->delete();
+                }
             }
 
             $application->forceFill([

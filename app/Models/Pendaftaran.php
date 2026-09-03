@@ -21,6 +21,13 @@ class Pendaftaran extends Model
         'jalur_beasiswa_id',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Pendaftaran $pendaftaran): void {
+            $pendaftaran->application()->delete();
+        });
+    }
+
     protected function casts(): array
     {
         return [
