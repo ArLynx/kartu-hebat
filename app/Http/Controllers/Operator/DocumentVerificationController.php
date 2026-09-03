@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DocumentVerificationRequest;
 use App\Models\Application;
 use App\Models\Document;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 use Illuminate\Http\Request;
 
 class DocumentVerificationController extends Controller
@@ -16,13 +16,13 @@ class DocumentVerificationController extends Controller
         DocumentVerificationRequest $request,
         Application $application,
         Document $document,
-        DocumentVerificationService $service,
+        AgencyVerificationService $service,
     ) {
         $this->authorize('view', $application);
 
         abort_unless((int) $document->application_id === (int) $application->id, 404);
 
-        $service->save(
+        $service->assessDocument(
             $application,
             $document,
             $request->user(),
@@ -37,13 +37,13 @@ class DocumentVerificationController extends Controller
         Request $request,
         Application $application,
         Document $document,
-        DocumentVerificationService $service,
+        AgencyVerificationService $service,
     ) {
         $this->authorize('view', $application);
 
         abort_unless((int) $document->application_id === (int) $application->id, 404);
 
-        $service->cancel($application, $document, $request->user());
+        $service->cancelDocumentAssessment($application, $document, $request->user());
 
         return back()->with('success', 'Penilaian dokumen berhasil dibatalkan.');
     }

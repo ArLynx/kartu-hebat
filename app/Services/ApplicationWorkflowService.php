@@ -6,11 +6,8 @@ use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
-use App\Models\AgencyVerification;
 use App\Models\Application;
-use App\Models\Document;
 use App\Models\DocumentType;
-use App\Models\DocumentVerification;
 use App\Models\MahasiswaProfile;
 use App\Models\Pendaftaran;
 use App\Models\User;
@@ -27,6 +24,7 @@ class ApplicationWorkflowService
     public function __construct(
         private readonly SelectionScoringService $scoring,
         private readonly DocumentVerificationService $documentVerification,
+        private readonly AgencyVerificationService $agencyVerification,
     ) {}
 
     public function submit(Pendaftaran|Application $target, User $student): Application
@@ -438,172 +436,14 @@ class ApplicationWorkflowService
         ?float $score = null,
         ?int $desil = null,
     ): Application {
-        if (! $this->isActiveApplicationPeriod($application)) {
-            throw ValidationException::withMessages([
-                'decision' => 'Pengajuan periode historis tidak dapat diverifikasi ulang.',
-            ]);
-        }
-
-        if ($application->status !== ApplicationStatus::VERIFIKASI_DINAS) {
-            throw ValidationException::withMessages(['decision' => 'Pengajuan tidak berada pada antrean verifikasi dinas.']);
-        }
-
-        if (! in_array($operator->role->agencyCode(), DocumentVerificationService::requiredAgencies($application), true)) {
-            throw ValidationException::withMessages([
-                'decision' => 'Dinas ini tidak berwenang menilai aplikasi jalur '.($application->application_type?->label() ?? 'ini').'.',
-            ]);
-        }
-
-        if (in_array($decision, [VerificationDecision::MS, VerificationDecision::TMS], true)) {
-            $this->assertAllDocumentsVerified($application, $operator, $decision);
-        }
-
-        return DB::transaction(function () use ($application, $operator, $decision, $notes, $score, $desil): Application {
-            $from = $application->status;
-            $target = $this->storeVerificationAndResolveTarget(
-                $application,
-                $operator,
-                $decision,
-                $notes,
-                $score,
-                $desil,
-            );
-
-            if ($target !== null && $target !== $from) {
-                $application->update([
-                    'status' => $target,
-                    'catatan' => $decision === VerificationDecision::MS ? null : $notes,
-                    'locked_at' => $target->isEditableByStudent() ? null : now(),
-                ]);
-
-                if ($target === ApplicationStatus::SELEKSI_KABUPATEN) {
-                    $this->scoring->recalculateRanking($operator->kabupaten_id, applicationType: $application->application_type);
-                }
-
-                $this->log(
-                    $application,
-                    $from,
-                    $target,
-                    'verification_'.$decision->value,
-                    $notes,
-                    $operator,
-                    ['role' => $operator->role->value],
-                );
-
-                $this->notifyStudent(
-                    $application,
-                    'Status verifikasi diperbarui',
-                    $target->label().($notes ? ': '.$notes : '.'),
-                );
-
-                $this->notifyNextOperators($application, $target);
-            } else {
-                $this->log(
-                    $application,
-                    $from,
-                    $from,
-                    'agency_verification_'.$decision->value,
-                    $notes,
-                    $operator,
-                    ['agency' => $operator->role->agencyCode()],
-                );
-            }
-
-            return $application->fresh();
-        });
-    }
-
-    private function storeVerificationAndResolveTarget(
-        Application $application,
-        User $operator,
-        VerificationDecision $decision,
-        ?string $notes,
-        ?float $score,
-        ?int $desil,
-    ): ?ApplicationStatus {
-        return match ($operator->role) {
-            UserRole::OPERATOR_DUKCAPIL,
-            UserRole::OPERATOR_SOSIAL,
-            UserRole::OPERATOR_PENDIDIKAN,
-            UserRole::OPERATOR_DINKES,
-            UserRole::OPERATOR_PARSEPOR => $this->verifyAgency(
-                $application,
-                $operator,
-                $decision,
-                $notes,
-                $score,
-                $desil,
-            ),
-            default => throw ValidationException::withMessages([
-                'decision' => 'Role ini tidak berwenang melakukan verifikasi.',
-            ]),
-        };
-    }
-
-    private function verifyAgency(
-        Application $application,
-        User $operator,
-        VerificationDecision $decision,
-        ?string $notes,
-        ?float $score,
-        ?int $desil,
-    ): ?ApplicationStatus {
-        if (
-            $decision !== VerificationDecision::MS
-            || ! in_array($operator->role, [UserRole::OPERATOR_SOSIAL, UserRole::OPERATOR_PENDIDIKAN], true)
-        ) {
-            $desil = null;
-        }
-
-        AgencyVerification::query()->updateOrCreate(
-            [
-                'application_id' => $application->id,
-                'agency' => $operator->role->agencyCode(),
-            ],
-            [
-                'verifier_id' => $operator->id,
-                'decision' => $decision,
-                'score' => $score,
-                'notes' => $notes,
-                'metadata' => array_filter(['desil' => $desil], fn ($value) => $value !== null),
-                'verified_at' => now(),
-            ],
+        return $this->agencyVerification->submitDecision(
+            $application,
+            $operator,
+            $decision,
+            $notes,
+            $score,
+            $desil,
         );
-
-        $profile = $application->mahasiswa()->with('profile')->firstOrFail()->profile;
-
-        if ($profile) {
-            match ($operator->role) {
-                UserRole::OPERATOR_DUKCAPIL => $profile->update([
-                    'status_kependudukan' => match ($decision) {
-                        VerificationDecision::MS => 'sesuai',
-                        VerificationDecision::TMS => 'tidak_sesuai',
-                    },
-                ]),
-                UserRole::OPERATOR_SOSIAL => $profile->update([
-                    'desil_sosial' => $desil,
-                ]),
-                UserRole::OPERATOR_PENDIDIKAN => $profile->update([
-                    'desil_pendidikan' => $desil,
-                ]),
-                default => null,
-            };
-        }
-
-        $verifications = $application->agencyVerifications()->get();
-        $requiredAgencies = DocumentVerificationService::requiredAgencies($application);
-
-        if (count($verifications) < count($requiredAgencies)) {
-            return null;
-        }
-
-        if ($verifications->contains(fn ($verification) => $verification->decision === VerificationDecision::TMS)) {
-            return ApplicationStatus::TMS;
-        }
-
-        $this->scoring->calculate($application, $operator->id);
-
-        return ApplicationStatus::SELEKSI_KABUPATEN;
     }
 
     private function notifyStudent(Application $application, string $title, string $message): void
@@ -652,41 +492,6 @@ class ApplicationWorkflowService
                 route('operator.applications.show', $application, absolute: false),
             ));
         });
-    }
-
-    private function assertAllDocumentsVerified(Application $application, User $operator, VerificationDecision $decision): void
-    {
-        $stage = DocumentVerificationService::stageFor($operator);
-        $round = DocumentVerificationService::currentRound($application);
-
-        $documentIds = Document::query()
-            ->where('application_id', $application->id)
-            ->pluck('id');
-
-        if ($documentIds->isEmpty()) {
-            return;
-        }
-
-        $verifiedDocumentIds = DocumentVerification::query()
-            ->where('application_id', $application->id)
-            ->where('stage', $stage)
-            ->where('round', $round)
-            ->pluck('document_id');
-
-        $unverifiedIds = $documentIds->diff($verifiedDocumentIds);
-
-        if ($unverifiedIds->isNotEmpty()) {
-            $unverifiedNames = Document::query()
-                ->whereIn('id', $unverifiedIds)
-                ->with('type')
-                ->get()
-                ->pluck('type.name')
-                ->implode(', ');
-
-            throw ValidationException::withMessages([
-                'document_verification' => "Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan {$decision->label()}. Dokumen yang belum dinilai: {$unverifiedNames}.",
-            ]);
-        }
     }
 
     private function isActiveApplicationPeriod(Application $application): bool

@@ -7,10 +7,15 @@ use App\Enums\ApplicationType;
 use App\Enums\UserRole;
 use App\Models\Application;
 use App\Models\Criterion;
+use App\Models\JalurBeasiswa;
+use App\Models\KategoriBeasiswa;
 use App\Models\MahasiswaProfile;
+use App\Models\Pendaftaran;
+use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
 use App\Services\SelectionScoringService;
+use Database\Seeders\BeasiswaMasterSeeder;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,6 +33,7 @@ class SelectionScoringServiceTest extends TestCase
 
         $this->seed(RegionSeeder::class);
         $this->seed(MasterDataSeeder::class);
+        $this->seed(BeasiswaMasterSeeder::class);
     }
 
     public function test_academic_track_uses_only_ipk_and_semester(): void
@@ -159,7 +165,41 @@ class SelectionScoringServiceTest extends TestCase
         $this->assertSame(1, $unable->selection()->firstOrFail()->rank);
     }
 
-    private function application(ApplicationType $type, array $profileOverrides): Application
+    public function test_ranking_is_separated_by_jalur_beasiswa_reguler_and_non_reguler(): void
+    {
+        $jalurReguler = JalurBeasiswa::query()->create([
+            'kode' => 'REGULER',
+            'nama' => 'Reguler',
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+        $jalurNonReguler = JalurBeasiswa::query()->create([
+            'kode' => 'NON_REGULER',
+            'nama' => 'Non Reguler',
+            'aktif' => true,
+            'urutan' => 2,
+        ]);
+
+        $appReguler1 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.80, 'semester' => 6], $jalurReguler->id);
+        $appReguler2 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.50, 'semester' => 4], $jalurReguler->id);
+        $appNonReguler1 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.70, 'semester' => 6], $jalurNonReguler->id);
+        $appNonReguler2 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.40, 'semester' => 4], $jalurNonReguler->id);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($appReguler1);
+        $scoring->calculate($appReguler2);
+        $scoring->calculate($appNonReguler1);
+        $scoring->calculate($appNonReguler2);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $appReguler1->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $appReguler2->selection()->firstOrFail()->rank);
+        $this->assertSame(1, $appNonReguler1->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $appNonReguler2->selection()->firstOrFail()->rank);
+    }
+
+    private function application(ApplicationType $type, array $profileOverrides, ?int $jalurBeasiswaId = null): Application
     {
         $village = Village::query()->firstOrFail();
         $student = User::factory()->create([
@@ -181,9 +221,32 @@ class SelectionScoringServiceTest extends TestCase
             'village_id' => $village->id,
         ], $profileOverrides));
 
+        $pendaftaran = null;
+        if ($jalurBeasiswaId !== null) {
+            $periode = Periode::query()->first() ?? Periode::query()->create([
+                'nama' => config('kartu_hebat.current_period'),
+                'tahun' => 2026,
+                'tanggal_mulai' => '2026-07-01',
+                'tanggal_selesai' => '2026-12-31',
+                'status' => 'aktif',
+            ]);
+
+            $kategori = KategoriBeasiswa::query()->where('application_type', $type->value)->first();
+
+            $pendaftaran = Pendaftaran::query()->create([
+                'user_id' => $student->id,
+                'periode_id' => $periode->id,
+                'kategori_beasiswa_id' => $kategori?->id,
+                'jalur_beasiswa_id' => $jalurBeasiswaId,
+                'nomor_pendaftaran' => 'REG-'.fake()->unique()->numerify('######'),
+                'status' => 'submitted',
+            ]);
+        }
+
         return Application::query()->create([
             'nomor_pengajuan' => 'KHM-TEST-'.fake()->unique()->numerify('######'),
             'mahasiswa_id' => $student->id,
+            'pendaftaran_id' => $pendaftaran?->id,
             'periode' => config('kartu_hebat.current_period'),
             'application_type' => $type,
             'status' => ApplicationStatus::SELEKSI_KABUPATEN,

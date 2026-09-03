@@ -34,10 +34,10 @@ class SelectionController extends Controller
 
         $query = Application::query()
             ->visibleTo($request->user())
-            ->where('periode', config('kartu_hebat.current_period'))
-            ->where('application_type', $selectedType->value)
+            ->where('applications.periode', config('kartu_hebat.current_period'))
+            ->where('applications.application_type', $selectedType->value)
             ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'scores.criterion', 'pendaftaran.jalurBeasiswa'])
-            ->whereIn('status', [
+            ->whereIn('applications.status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,
                 ApplicationStatus::DITOLAK->value,
@@ -97,8 +97,9 @@ class SelectionController extends Controller
         return view('operator.selection', [
             'applications' => $query
                 ->leftJoin('selections', 'selections.application_id', '=', 'applications.id')
+                ->leftJoin('pendaftarans', 'pendaftarans.id', '=', 'applications.pendaftaran_id')
                 ->select('applications.*')
-                ->orderByRaw('COALESCE(selections.rank, 999999)')
+                ->orderByRaw('COALESCE(pendaftarans.jalur_beasiswa_id, 0), COALESCE(selections.rank, 999999)')
                 ->paginate(20)
                 ->withQueryString(),
             'applicationTypes' => ApplicationType::cases(),

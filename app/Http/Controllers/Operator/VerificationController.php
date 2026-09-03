@@ -6,19 +6,19 @@ use App\Enums\VerificationDecision;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VerificationRequest;
 use App\Models\Application;
-use App\Services\ApplicationWorkflowService;
+use App\Services\AgencyVerificationService;
 
 class VerificationController extends Controller
 {
     public function store(
         VerificationRequest $request,
         Application $application,
-        ApplicationWorkflowService $workflow,
+        AgencyVerificationService $agencyVerification,
     ) {
         $this->authorize('verify', $application);
         $data = $request->validated();
 
-        $workflow->verify(
+        $agencyVerification->submitDecision(
             $application,
             $request->user(),
             VerificationDecision::from($data['decision']),

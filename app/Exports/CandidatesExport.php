@@ -34,8 +34,9 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             ])
             ->get()
             ->sortBy(fn (Application $application) => sprintf(
-                '%s-%09d',
+                '%s-%s-%09d',
                 $application->application_type?->value ?? 'ZZZ',
+                $application->pendaftaran?->jalur_beasiswa_id ?? '0',
                 $application->selection?->rank ?? PHP_INT_MAX,
             ))
             ->values();
