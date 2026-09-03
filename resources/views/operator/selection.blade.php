@@ -12,20 +12,107 @@
             Ranking, kuota, dan keputusan kandidat dipisahkan antara jalur Akademik dan Tidak Mampu.
         </p>
     </div>
-    <div class="flex flex-wrap gap-2">
-        <a href="{{ route('operator.reports.pdf', ['application_type' => $selectedType->value]) }}" class="btn-secondary !py-2">
-            <x-icon name="download" class="h-4 w-4" /> PDF Rekap
+    <div class="flex flex-wrap items-center gap-2" x-data="{ openImportModal: false, openPublishModal: false }">
+        <a href="{{ route('operator.selection.export', array_filter(['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId])) }}" class="btn-secondary !py-2 bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100">
+            <x-icon name="download" class="h-4 w-4" /> Unduh Format Excel
         </a>
-        <a href="{{ route('operator.reports.recipients-pdf', ['application_type' => $selectedType->value]) }}" class="btn-secondary !py-2">
-            <x-icon name="download" class="h-4 w-4" /> PDF Penerima
-        </a>
-        <a href="{{ route('operator.reports.excel', ['application_type' => $selectedType->value]) }}" class="btn-secondary !py-2">
-            <x-icon name="download" class="h-4 w-4" /> Excel
-        </a>
-        <form method="POST" action="{{ route('operator.selection.publish') }}" onsubmit="return confirm('Publikasikan seluruh keputusan baru dari kedua jalur?')">
-            @csrf
-            <button class="btn-primary !py-2">Publikasikan Hasil</button>
-        </form>
+        <button type="button" @click="openImportModal = true" class="btn-secondary !py-2 bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100">
+            <x-icon name="upload" class="h-4 w-4 mr-1 inline" /> 1. Impor ACC Excel
+        </button>
+        <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
+            <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> 2. Publikasikan Hasil (Upload SK)
+        </button>
+
+        <!-- Step 1: Import Modal -->
+        <div x-show="openImportModal"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
+             @keydown.escape.window="openImportModal = false">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl transition-all"
+                 @click.outside="openImportModal = false">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Impor Keputusan ACC Pimpinan</h3>
+                        <p class="text-xs text-slate-500">Unggah berkas Excel hasil persetujuan/penyesuaian pimpinan untuk ditinjau secara internal.</p>
+                    </div>
+                    <button type="button" @click="openImportModal = false" class="text-slate-400 hover:text-slate-600">
+                        <x-icon name="close" class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('operator.selection.import') }}" enctype="multipart/form-data" class="mt-5 space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Berkas Excel ACC Pimpinan (.xlsx, .xls, .csv) <span class="text-red-500">*</span>
+                        </label>
+                        <p class="text-xs text-slate-500 mb-1">Unggah file Excel yang telah diperiksa status kelulusannya (DITERIMA / DITOLAK).</p>
+                        <input type="file" name="excel_file" accept=".xlsx,.xls,.csv" required class="form-input !py-1.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700">
+                    </div>
+
+                    <div class="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800 flex items-start gap-2">
+                        <x-icon name="info" class="h-4 w-4 shrink-0 mt-0.5 text-blue-600" />
+                        <span>Hasil impor ini <b>TIDAK langsung terlihat oleh mahasiswa</b>. Status akan diperbarui di tabel internal operator sehingga Anda dapat memeriksa kembali susunan nama dengan aman sebelum mempublikasikannya.</span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                        <button type="button" @click="openImportModal = false" class="btn-secondary !py-2">Batal</button>
+                        <button type="submit" class="btn-primary !py-2 bg-blue-600 hover:bg-blue-700">
+                            Simpan ke Tabel Internal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Step 2: Publish Modal -->
+        <div x-show="openPublishModal"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
+             @keydown.escape.window="openPublishModal = false">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl transition-all"
+                 @click.outside="openPublishModal = false">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Publikasikan Hasil Seleksi Resmi</h3>
+                        <p class="text-xs text-slate-500">Unggah berkas Surat Keputusan (SK) untuk merilis hasil akhir ke publik &amp; mahasiswa.</p>
+                    </div>
+                    <button type="button" @click="openPublishModal = false" class="text-slate-400 hover:text-slate-600">
+                        <x-icon name="close" class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('operator.selection.publish') }}" enctype="multipart/form-data" class="mt-5 space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Berkas SK Penetapan Resmi (PDF) <span class="text-red-500">*</span>
+                        </label>
+                        <p class="text-xs text-slate-500 mb-1">Surat Keputusan (SK) atau Berita Acara yang telah ditandatangani pimpinan.</p>
+                        <input type="file" name="sk_file" accept=".pdf,application/pdf" required class="form-input !py-1.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-navy-900 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-navy-800">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Judul Pengumuman (Opsional)
+                        </label>
+                        <input type="text" name="title" placeholder="Pengumuman Hasil Seleksi Kartu Hebat Mahasiswa" class="form-input text-sm">
+                    </div>
+
+                    <div class="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex items-start gap-2">
+                        <x-icon name="alert-triangle" class="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                        <span>Aksi ini akan menetapkan status akhir <b>DITERIMA</b> / <b>DITOLAK</b> secara permanen, melampirkan berkas SK ke pengumuman publik, dan mengirim notifikasi ke seluruh akun mahasiswa.</span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                        <button type="button" @click="openPublishModal = false" class="btn-secondary !py-2">Batal</button>
+                        <button type="submit" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
+                            Rilis Pengumuman Resmi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -77,14 +164,40 @@
     </div>
 </div>
 
-<form method="GET" class="mt-7 flex max-w-md gap-3">
-    <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
-    <div class="relative flex-1">
-        <x-icon name="search" class="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
-        <input name="search" value="{{ request('search') }}" class="form-input !pl-10" placeholder="Cari kandidat...">
+<div class="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4">
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 mr-1">Kategori:</span>
+        <a href="{{ route('operator.selection', ['application_type' => $selectedType->value]) }}"
+           class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ empty($selectedJalurId) ? 'bg-navy-900 text-white shadow-sm ring-2 ring-navy-900/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+            <span>Semua</span>
+            <span class="rounded-full px-2 py-0.5 text-[11px] {{ empty($selectedJalurId) ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
+                {{ number_format($totalCurrentTypeCount) }}
+            </span>
+        </a>
+        @foreach($jalurBeasiswas as $jalur)
+            @php $isActive = (int) $selectedJalurId === (int) $jalur->id; @endphp
+            <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $jalur->id]) }}"
+               class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ $isActive ? ($jalur->kode === 'REGULER' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/20' : 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-600/20') : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                <span>{{ $jalur->nama }}</span>
+                <span class="rounded-full px-2 py-0.5 text-[11px] {{ $isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
+                    {{ number_format($jalurCounts[$jalur->id] ?? 0) }}
+                </span>
+            </a>
+        @endforeach
     </div>
-    <button class="btn-secondary !py-2">Cari</button>
-</form>
+
+    <form method="GET" class="flex items-center gap-2">
+        <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
+        @if($selectedJalurId)
+            <input type="hidden" name="jalur_beasiswa_id" value="{{ $selectedJalurId }}">
+        @endif
+        <div class="relative">
+            <x-icon name="search" class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input name="search" value="{{ request('search') }}" class="form-input !py-1.5 !pl-9 text-sm" placeholder="Cari kandidat...">
+        </div>
+        <button class="btn-secondary !py-1.5 !px-3 text-sm">Cari</button>
+    </form>
+</div>
 
 <div class="table-shell mt-5">
     <div class="overflow-x-auto">
@@ -116,6 +229,13 @@
                         <td>
                             <p class="font-semibold text-slate-900">{{ $application->mahasiswa->name }}</p>
                             <p class="mt-1 text-xs text-slate-500">{{ $application->nomor_pengajuan }}</p>
+                            @if($application->pendaftaran?->jalurBeasiswa)
+                                <p class="mt-1">
+                                    <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold {{ $application->pendaftaran->jalurBeasiswa->kode === 'REGULER' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-purple-50 text-purple-700 border border-purple-200' }}">
+                                        {{ $application->pendaftaran->jalurBeasiswa->nama }}
+                                    </span>
+                                </p>
+                            @endif
                         </td>
                         <td>
                             @if($selectedType === \App\Enums\ApplicationType::AKADEMIK)
@@ -168,7 +288,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="py-14 text-center text-slate-500">Belum ada kandidat jalur {{ $selectedType->label() }} yang siap diseleksi.</td></tr>
+                    <tr><td colspan="7" class="py-14 text-center text-slate-500">Belum ada kandidat jalur {{ $selectedType->label() }}@if($selectedJalurId) ({{ $jalurBeasiswas->firstWhere('id', $selectedJalurId)?->nama }})@endif yang siap diseleksi.</td></tr>
                 @endforelse
             </tbody>
         </table>

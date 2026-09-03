@@ -8,7 +8,7 @@
     <div>
         <a href="{{ route('operator.applications.index') }}" class="text-sm font-semibold text-brand-600">← Kembali ke antrean</a>
         <h1 class="mt-3 text-3xl font-extrabold">Verifikasi Dokumen Mahasiswa</h1>
-        <p class="mt-2 text-sm text-slate-600">{{ $application->nomor_pengajuan }} · Jalur {{ $application->application_type?->label() ?? 'belum dipilih' }}</p>
+        <p class="mt-2 text-sm text-slate-600">{{ $application->nomor_pengajuan }} · Jalur {{ $application->application_type?->label() ?? 'belum dipilih' }} @if($application->pendaftaran?->jalurBeasiswa) · {{ $application->pendaftaran->jalurBeasiswa->nama }} @endif</p>
     </div>
     <x-status-badge :status="$application->status" />
 </div>
@@ -29,6 +29,7 @@
             <dl class="mt-6 grid gap-x-8 gap-y-5 border-t border-slate-200 pt-6 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach([
                     ['Jalur Pengajuan', $application->application_type?->label() ?? 'Belum dipilih'],
+                    ['Kategori Mahasiswa', $application->pendaftaran?->jalurBeasiswa?->nama ?? '-'],
                     ['NIK', $application->mahasiswa->profile?->nik],
                     ['Program Studi', $application->mahasiswa->profile?->program_studi],
                     ['Semester / IPK', ($application->mahasiswa->profile?->semester ?? '-').' / '.($application->mahasiswa->profile?->ipk ?? '-')],

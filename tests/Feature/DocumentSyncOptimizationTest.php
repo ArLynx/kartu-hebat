@@ -15,9 +15,9 @@ use App\Models\Pendidikan;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\ApplicationWorkflowService;
 use App\Services\DocumentVerificationService;
 use App\Services\MahasiswaPendaftaranService;
-use App\Services\PendaftaranWorkflowBridgeService;
 use Database\Seeders\BeasiswaMasterSeeder;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
@@ -45,7 +45,7 @@ class DocumentSyncOptimizationTest extends TestCase
     {
         $user = User::factory()->create();
         $pendaftaran = $this->completeDraft($user);
-        $bridge = app(PendaftaranWorkflowBridgeService::class);
+        $bridge = app(ApplicationWorkflowService::class);
 
         $application = $bridge->submit($pendaftaran, $user);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
@@ -95,7 +95,7 @@ class DocumentSyncOptimizationTest extends TestCase
     {
         $user = User::factory()->create();
         $pendaftaran = $this->completeDraft($user);
-        $bridge = app(PendaftaranWorkflowBridgeService::class);
+        $bridge = app(ApplicationWorkflowService::class);
 
         $application = $bridge->submit($pendaftaran, $user);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
@@ -137,7 +137,7 @@ class DocumentSyncOptimizationTest extends TestCase
     {
         $user = User::factory()->create();
         $pendaftaran = $this->completeDraft($user);
-        $bridge = app(PendaftaranWorkflowBridgeService::class);
+        $bridge = app(ApplicationWorkflowService::class);
 
         $application = $bridge->submit($pendaftaran, $user);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);

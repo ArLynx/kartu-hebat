@@ -139,7 +139,18 @@
                             <p class="mt-1 text-xs text-slate-500">{{ $application->mahasiswa->profile?->nim }}</p>
                         </td>
                         <td class="font-medium">{{ $application->nomor_pengajuan }}</td>
-                        <td><span class="status-chip status-info">{{ $application->application_type?->label() ?? '-' }}</span></td>
+                        <td>
+                            <div>
+                                <span class="status-chip status-info">{{ $application->application_type?->label() ?? '-' }}</span>
+                            </div>
+                            @if($application->pendaftaran?->jalurBeasiswa)
+                                <p class="mt-1">
+                                    <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold {{ $application->pendaftaran->jalurBeasiswa->kode === 'REGULER' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-purple-50 text-purple-700 border border-purple-200' }}">
+                                        {{ $application->pendaftaran->jalurBeasiswa->nama }}
+                                    </span>
+                                </p>
+                            @endif
+                        </td>
                         <td>
                             <p>{{ $application->mahasiswa->profile?->village?->display_name }}</p>
                             <p class="mt-1 text-xs text-slate-500">{{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</p>

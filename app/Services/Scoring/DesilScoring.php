@@ -16,9 +16,17 @@ class DesilScoring implements ScoringStrategy
 
     public function values(?MahasiswaProfile $profile, Application $application): array
     {
-        $available = collect([$profile?->desil_sosial, $profile?->desil_pendidikan])
+        $application->loadMissing('agencyVerifications');
+        $agencyDesils = $application->agencyVerifications
+            ->pluck('metadata.desil')
             ->filter(fn ($desil) => $desil !== null)
             ->map(fn ($desil) => (int) $desil);
+
+        $profileDesils = collect([$profile?->desil_sosial, $profile?->desil_pendidikan])
+            ->filter(fn ($desil) => $desil !== null)
+            ->map(fn ($desil) => (int) $desil);
+
+        $available = $agencyDesils->isNotEmpty() ? $agencyDesils : $profileDesils;
 
         if ($available->isEmpty()) {
             throw ValidationException::withMessages([

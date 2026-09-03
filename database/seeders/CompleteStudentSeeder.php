@@ -282,7 +282,7 @@ class CompleteStudentSeeder extends Seeder
             ],
             'data_pribadi' => [
                 'nik' => '6212012345670001',
-                'nisn' => '1234567890',
+                'nomor_rekening' => '1234567890',
                 'nama_lengkap' => 'Andini Putri Maharani',
                 'tempat_lahir' => 'Puruk Cahu',
                 'tanggal_lahir' => '2004-03-15',
@@ -366,7 +366,7 @@ class CompleteStudentSeeder extends Seeder
             ],
             'data_pribadi' => [
                 'nik' => '6212022345670002',
-                'nisn' => '2345678901',
+                'nomor_rekening' => '2345678901',
                 'nama_lengkap' => 'Rio Saputra',
                 'tempat_lahir' => 'Muara Teweh',
                 'tanggal_lahir' => '2002-09-21',
@@ -439,7 +439,7 @@ class CompleteStudentSeeder extends Seeder
             ],
             'data_pribadi' => [
                 'nik' => '6212032345670003',
-                'nisn' => '3456789012',
+                'nomor_rekening' => '3456789012',
                 'nama_lengkap' => 'Putri Wulandari',
                 'tempat_lahir' => 'Tamiang Layang',
                 'tanggal_lahir' => '2004-08-09',
@@ -523,7 +523,7 @@ class CompleteStudentSeeder extends Seeder
             ],
             'data_pribadi' => [
                 'nik' => '6212042345670004',
-                'nisn' => '4567890123',
+                'nomor_rekening' => '4567890123',
                 'nama_lengkap' => 'Bagas Kurniawan',
                 'tempat_lahir' => 'Sampit',
                 'tanggal_lahir' => '2003-12-02',

@@ -17,7 +17,13 @@ class SelectionScoringService
 
     public function calculate(Application $application, ?int $scorerId = null): Selection
     {
-        $application->loadMissing('mahasiswa.profile');
+        $application->loadMissing([
+            'mahasiswa.profile',
+            'pendaftaran.pendidikan',
+            'pendaftaran.dataPribadi',
+            'pendaftaran.prestasis',
+            'agencyVerifications',
+        ]);
         $profile = $application->mahasiswa->profile;
         $type = $application->application_type;
 
@@ -116,11 +122,16 @@ class SelectionScoringService
                             );
                         }
                     })
-                    ->with('application.mahasiswa.profile.village')
+                    ->with(['application.mahasiswa.profile.village', 'application.pendaftaran'])
                     ->get();
 
                 $selections
-                    ->groupBy(fn (Selection $selection) => $selection->application->mahasiswa->profile?->village?->kabupaten_id)
+                    ->groupBy(function (Selection $selection): string {
+                        $kabupaten = $selection->application->mahasiswa->profile?->village?->kabupaten_id ?? '0';
+                        $jalur = $selection->application->pendaftaran?->jalur_beasiswa_id ?? '0';
+
+                        return "{$kabupaten}-{$jalur}";
+                    })
                     ->each(function (Collection $countySelections) use (&$ranks): void {
                         $countySelections
                             ->sort(function (Selection $left, Selection $right): int {

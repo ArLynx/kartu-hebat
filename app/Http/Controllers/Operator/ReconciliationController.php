@@ -20,7 +20,7 @@ class ReconciliationController extends Controller
             ->when($selectedType, fn ($query) => $query->where('application_type', $selectedType->value));
 
         $applications = (clone $baseQuery)
-            ->with(['mahasiswa.profile.village.kecamatan', 'agencyVerifications.verifier'])
+            ->with(['mahasiswa.profile.village.kecamatan', 'agencyVerifications.verifier', 'pendaftaran.jalurBeasiswa'])
             ->whereIn('status', [
                 ApplicationStatus::VERIFIKASI_DINAS->value,
                 ApplicationStatus::SELEKSI_KABUPATEN->value,

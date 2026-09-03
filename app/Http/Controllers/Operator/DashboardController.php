@@ -43,7 +43,7 @@ class DashboardController extends Controller
         ];
 
         $recent = (clone $base)
-            ->with(['mahasiswa.profile.village.kecamatan'])
+            ->with(['mahasiswa.profile.village.kecamatan', 'pendaftaran.jalurBeasiswa'])
             ->where('applications.status', '!=', ApplicationStatus::DRAFT->value)
             ->latest('updated_at')
             ->limit(8)

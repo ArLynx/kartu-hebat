@@ -21,6 +21,7 @@
         <thead>
             <tr>
                 <th>Jalur</th>
+                <th>Kategori</th>
                 <th>Rank</th>
                 <th>Nomor</th>
                 <th>Mahasiswa</th>
@@ -37,6 +38,7 @@
             @forelse($applications as $application)
                 <tr>
                     <td>{{ $application->application_type?->label() }}</td>
+                    <td>{{ $application->pendaftaran?->jalurBeasiswa?->nama ?? '-' }}</td>
                     <td>{{ $application->selection?->rank }}</td>
                     <td>{{ $application->nomor_pengajuan }}</td>
                     <td>{{ $application->mahasiswa->name }}</td>
@@ -49,7 +51,7 @@
                     <td>{{ $application->selection?->published_at ? $application->status->label() : ($application->selection?->manual_decision ?? 'Menunggu') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="11">Tidak ada data.</td></tr>
+                <tr><td colspan="12">Tidak ada data.</td></tr>
             @endforelse
         </tbody>
     </table>

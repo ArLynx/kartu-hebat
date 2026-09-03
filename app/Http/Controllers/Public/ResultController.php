@@ -20,7 +20,7 @@ class ResultController extends Controller
             $searched = true;
 
             $result = Application::query()
-                ->with(['mahasiswa.profile', 'selection'])
+                ->with(['mahasiswa.profile', 'selection', 'pendaftaran.jalurBeasiswa'])
                 ->where('periode', config('kartu_hebat.current_period'))
                 ->where(function ($query) use ($data): void {
                     $query

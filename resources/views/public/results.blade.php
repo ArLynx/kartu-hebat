@@ -55,6 +55,10 @@
                                     <dd class="mt-1 text-sm font-medium text-slate-900">{{ $result->application_type?->label() }}</dd>
                                 </div>
                                 <div>
+                                    <dt class="text-xs font-semibold uppercase text-slate-500">Kategori Mahasiswa</dt>
+                                    <dd class="mt-1 text-sm font-medium text-slate-900">{{ $result->pendaftaran?->jalurBeasiswa?->nama ?? '-' }}</dd>
+                                </div>
+                                <div>
                                     <dt class="text-xs font-semibold uppercase text-slate-500">Peringkat Jalur</dt>
                                     <dd class="mt-1 text-sm font-medium text-slate-900">{{ $result->selection?->rank ?? '-' }}</dd>
                                 </div>

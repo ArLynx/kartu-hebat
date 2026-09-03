@@ -69,12 +69,12 @@ Mahasiswa mengisi **wizard 7 langkah**, tersimpan di tabel `pendaftarans`:
 6. Review
 7. Submit
 
-Saat submit, `PendaftaranWorkflowBridgeService` menjembatani pendaftaran ke workflow verifikasi:
+Saat submit, `ApplicationWorkflowService::submit()` mengkapsulasi integrasi pendaftaran ke workflow verifikasi:
 
 1. **Resolve wilayah** — memetakan desa/kelurahan ke master `villages` (dengan normalisasi nama wilayah).
 2. **Resolve jalur** — menentukan `ApplicationType` dari kategori beasiswa: `AKADEMIK`, `TIDAK_MAMPU`, `DISABILITAS`, `NON_AKADEMIK`.
-3. **Sinkronisasi** — menyalin data ke `MahasiswaProfile`, membuat/memperbarui `Application`, dan menyalin `Document`.
-4. Memanggil `ApplicationWorkflowService::submit()`.
+3. **Sinkronisasi & Inisiasi** — membuat/memperbarui record `Application`, menyalin referensi dokumen, dan mencatat log submit.
+4. Memajukan status ke `VERIFIKASI_DINAS` dan menotifikasi operator dinas terkait.
 
 ### Validasi sebelum submit
 
@@ -156,7 +156,6 @@ Saat mahasiswa submit ulang, `ApplicationWorkflowService::submit()` menyetel sta
 | File | Peran |
 |---|---|
 | `app/Services/ApplicationWorkflowService.php` | Mesin state utama (submit & verify) |
-| `app/Services/PendaftaranWorkflowBridgeService.php` | Jembatan pendaftaran → application |
 | `app/Services/SelectionScoringService.php` | Perhitungan skor & peringkat |
 | `app/Services/Scoring/*` | Strategy skoring per jalur |
 | `app/Enums/ApplicationStatus.php` | Status + label + progres + flag |

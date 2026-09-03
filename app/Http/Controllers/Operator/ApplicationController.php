@@ -7,6 +7,7 @@ use App\Enums\ApplicationType;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\JalurBeasiswa;
 use App\Services\DocumentVerificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class ApplicationController extends Controller
         $query = Application::query()
             ->visibleTo($user)
             ->where('periode', config('kartu_hebat.current_period'))
-            ->with(['mahasiswa.profile.village.kecamatan', 'selection'])
+            ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
             ->whereNot('status', ApplicationStatus::DRAFT->value);
 
         if ($track = $user->role->verifiedTrack()) {
@@ -36,6 +37,12 @@ class ApplicationController extends Controller
             $query->where('application_type', $request->string('application_type')->toString());
         }
 
+        if ($request->filled('jalur_beasiswa_id')) {
+            $query->whereHas('pendaftaran', function (Builder $builder) use ($request): void {
+                $builder->where('jalur_beasiswa_id', $request->integer('jalur_beasiswa_id'));
+            });
+        }
+
         if ($request->filled('search')) {
             $search = '%'.$request->string('search')->trim()->toString().'%';
             $query->where(function (Builder $builder) use ($search): void {
@@ -48,10 +55,38 @@ class ApplicationController extends Controller
             });
         }
 
+        $baseCountQuery = Application::query()
+            ->visibleTo($user)
+            ->where('applications.periode', config('kartu_hebat.current_period'))
+            ->whereNot('applications.status', ApplicationStatus::DRAFT->value);
+
+        if ($track = $user->role->verifiedTrack()) {
+            $baseCountQuery->where('applications.application_type', $track->value);
+        }
+
+        if ($request->filled('status')) {
+            $baseCountQuery->where('applications.status', $request->string('status')->toString());
+        } else {
+            $baseCountQuery->whereIn('applications.status', $this->defaultQueueStatuses($user->role));
+        }
+
+        if ($request->filled('application_type')) {
+            $baseCountQuery->where('applications.application_type', $request->string('application_type')->toString());
+        }
+
+        $rawJalurCounts = (clone $baseCountQuery)
+            ->leftJoin('pendaftarans', 'pendaftarans.id', '=', 'applications.pendaftaran_id')
+            ->selectRaw('pendaftarans.jalur_beasiswa_id, count(*) as total')
+            ->groupBy('pendaftarans.jalur_beasiswa_id')
+            ->pluck('total', 'jalur_beasiswa_id');
+
         return view('operator.applications.index', [
             'applications' => $query->latest('updated_at')->paginate(15)->withQueryString(),
             'statuses' => ApplicationStatus::cases(),
             'applicationTypes' => ApplicationType::cases(),
+            'jalurBeasiswas' => JalurBeasiswa::query()->where('aktif', true)->orderBy('urutan')->get(),
+            'jalurCounts' => $rawJalurCounts,
+            'totalQueueCount' => $rawJalurCounts->sum(),
         ]);
     }
 
@@ -68,13 +103,12 @@ class ApplicationController extends Controller
             'documents.verifications' => fn ($query) => $query
                 ->where('round', $currentRound)
                 ->with('verifier'),
-            'villageVerification.verifier',
-            'districtVerification.verifier',
             'agencyVerifications.verifier',
             'verificationLogs.actor',
             'scores.criterion',
             'selection',
             'pendaftaran.prestasis',
+            'pendaftaran.jalurBeasiswa',
         ]);
 
         $verifications = $application->documentVerifications;
