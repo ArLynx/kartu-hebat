@@ -183,6 +183,47 @@ class DocumentSyncOptimizationTest extends TestCase
         $this->assertSame(strlen('new-content'), (int) $ktp->size);
     }
 
+    public function test_submit_pendaftaran_succeeds_when_orphaned_application_exists(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran1 = $this->completeDraft($user);
+        $bridge = app(ApplicationWorkflowService::class);
+
+        $application = $bridge->submit($pendaftaran1, $user);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
+
+        // Simulasi aplikasi menjadi orphan (pendaftaran lama terhapus dan pendaftaran_id bernilai null)
+        $application->update([
+            'pendaftaran_id' => null,
+            'status' => ApplicationStatus::VERIFIKASI_DINAS,
+        ]);
+        $pendaftaran1->delete();
+
+        // Buat pendaftaran baru untuk user dan periode yang sama
+        $pendaftaran2 = $this->completeDraft($user);
+        $pendaftaran2->update(['nomor_pendaftaran' => 'KHM-DOC-NEW-'.$user->id]);
+
+        $submittedApp = $bridge->submit($pendaftaran2, $user);
+
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $submittedApp->status);
+        $this->assertSame($pendaftaran2->id, $submittedApp->pendaftaran_id);
+        $this->assertSame('KHM-DOC-NEW-'.$user->id, $submittedApp->nomor_pengajuan);
+    }
+
+    public function test_pendaftaran_deletion_cascades_to_application(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->completeDraft($user);
+        $bridge = app(ApplicationWorkflowService::class);
+
+        $application = $bridge->submit($pendaftaran, $user);
+        $this->assertDatabaseHas('applications', ['id' => $application->id]);
+
+        $pendaftaran->delete();
+
+        $this->assertDatabaseMissing('applications', ['id' => $application->id]);
+    }
+
     private function completeDraft(User $user): Pendaftaran
     {
         $periode = Periode::query()->firstOrFail();

@@ -37,7 +37,7 @@ return new class extends Migration
                     ->after('id')
                     ->unique()
                     ->constrained('pendaftarans')
-                    ->nullOnDelete();
+                    ->cascadeOnDelete();
             });
         }
     }
