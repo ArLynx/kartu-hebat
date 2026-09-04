@@ -25,3 +25,17 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# AI & Agent tools
+/.agents
+/.ai
+/.scratch
+/docs
+/skills-lock.json
+/AGENTS.md
+/CONTEXT.md
+/boost.json
+/opencode.json
+/.mcp.json
+/storage/framework/cache/*
+!/storage/framework/cache/data/.gitignore
