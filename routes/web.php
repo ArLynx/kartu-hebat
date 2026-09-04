@@ -29,7 +29,6 @@ use App\Http\Controllers\Superadmin\DashboardController as SuperadminDashboardCo
 use App\Http\Controllers\Superadmin\DocumentTypeController as SuperadminDocumentTypeController;
 use App\Http\Controllers\Superadmin\KategoriBeasiswaController as SuperadminKategoriBeasiswaController;
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
-use App\Http\Controllers\SuperAdmin\LogActivityController;
 use App\Http\Controllers\TwoFactorSetupController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\RegisteredUserController;
@@ -151,8 +150,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                     ->parameters(['operators' => 'operator']);
 
                 Route::post('operators/{operator}/reset-password', [SuperadminOperatorController::class, 'resetPassword'])->name('operators.reset-password');
-
-                Route::get('/log-aktivitas', [LogActivityController::class, 'index'])->name('log-aktivitas.index');
             });
 
         Route::middleware([
