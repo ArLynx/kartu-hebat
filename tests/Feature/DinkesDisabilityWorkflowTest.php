@@ -12,8 +12,8 @@ use App\Models\DocumentType;
 use App\Models\MahasiswaProfile;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\AgencyVerificationService;
 use App\Services\ApplicationWorkflowService;
-use App\Services\DocumentVerificationService;
 use Database\Seeders\DisabilityTrackSeeder;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
@@ -40,7 +40,7 @@ class DinkesDisabilityWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentService = app(DocumentVerificationService::class);
+        $documentService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::DISABILITAS]);
 
@@ -54,10 +54,10 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
-            $documentService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -79,7 +79,7 @@ class DinkesDisabilityWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentService = app(DocumentVerificationService::class);
+        $documentService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::DISABILITAS]);
 
@@ -93,10 +93,10 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
-            $documentService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -111,7 +111,7 @@ class DinkesDisabilityWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentService = app(DocumentVerificationService::class);
+        $documentService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -123,10 +123,10 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
 
         $this->assertFalse($dinkes->can('verify', $application));
-        $this->assertFalse(DocumentVerificationService::canVerifyStage($application, 'kesehatan'));
+        $this->assertFalse(AgencyVerificationService::canVerifyStage($application, 'kesehatan'));
 
         foreach ($application->documents as $document) {
-            $documentService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
         }
 
         try {
@@ -141,7 +141,7 @@ class DinkesDisabilityWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentService = app(DocumentVerificationService::class);
+        $documentService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -154,9 +154,9 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
-            $documentService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
-            $documentService->save($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);

@@ -15,8 +15,8 @@ use App\Models\Pendidikan;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\AgencyVerificationService;
 use App\Services\ApplicationWorkflowService;
-use App\Services\DocumentVerificationService;
 use App\Services\MahasiswaPendaftaranService;
 use Database\Seeders\BeasiswaMasterSeeder;
 use Database\Seeders\MasterDataSeeder;
@@ -65,7 +65,7 @@ class DocumentSyncOptimizationTest extends TestCase
         ]);
 
         $doc = $application->documents()->firstOrFail();
-        app(DocumentVerificationService::class)->save($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
+        app(AgencyVerificationService::class)->assessDocument($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
         $application->update(['status' => ApplicationStatus::DRAFT]);
 
@@ -111,7 +111,7 @@ class DocumentSyncOptimizationTest extends TestCase
             'kabupaten_id' => $village->kabupaten_id,
         ]);
 
-        app(DocumentVerificationService::class)->save($application, $document, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
+        app(AgencyVerificationService::class)->assessDocument($application, $document, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
         $application->update(['status' => ApplicationStatus::DRAFT]);
 
@@ -163,7 +163,7 @@ class DocumentSyncOptimizationTest extends TestCase
         ]);
 
         $doc = $application->documents()->firstOrFail();
-        app(DocumentVerificationService::class)->save($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
+        app(AgencyVerificationService::class)->assessDocument($application, $doc, $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'Perlu perbaikan');
 
         $application->update(['status' => ApplicationStatus::DRAFT]);
 

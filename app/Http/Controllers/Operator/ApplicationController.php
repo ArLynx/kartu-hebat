@@ -8,7 +8,7 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\JalurBeasiswa;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -95,7 +95,7 @@ class ApplicationController extends Controller
         $this->authorize('view', $application);
 
         $user = $request->user();
-        $currentRound = DocumentVerificationService::currentRound($application);
+        $currentRound = AgencyVerificationService::currentRound($application);
 
         $application->load([
             'mahasiswa.profile.village.kecamatan',
@@ -116,8 +116,8 @@ class ApplicationController extends Controller
         $canEditChecklist = false;
 
         if ($user->role->isAgency()) {
-            $stage = DocumentVerificationService::stageFor($user);
-            $canEditChecklist = DocumentVerificationService::canVerifyStage($application, $stage);
+            $stage = AgencyVerificationService::stageFor($user);
+            $canEditChecklist = AgencyVerificationService::canVerifyStage($application, $stage);
         }
 
         return view('operator.applications.show', [

@@ -48,7 +48,7 @@
                     <th>Mahasiswa</th>
                     <th>Jalur</th>
                     @foreach($agencies as $code)
-                        <th>{{ \App\Services\DocumentVerificationService::stageLabel($code) }}</th>
+                        <th>{{ \App\Services\AgencyVerificationService::stageLabel($code) }}</th>
                     @endforeach
                     <th>Status Sistem</th>
                     <th></th>
@@ -58,7 +58,7 @@
                 @forelse($applications as $application)
                     @php
                         $agency = $application->agencyVerifications->keyBy('agency');
-                        $required = \App\Services\DocumentVerificationService::requiredAgencies($application);
+                        $required = \App\Services\AgencyVerificationService::requiredAgencies($application);
                     @endphp
                     <tr>
                         <td>

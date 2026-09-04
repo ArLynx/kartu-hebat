@@ -14,7 +14,7 @@ use App\Models\Pendaftaran;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 use App\Services\MahasiswaPendaftaranService;
 use Database\Seeders\BeasiswaMasterSeeder;
 use Database\Seeders\MasterDataSeeder;
@@ -172,9 +172,9 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $documentsByCode = $application->documents()->with('type')->get()
             ->keyBy(fn (Document $document): string => $document->type->code);
 
-        $documentVerifier = app(DocumentVerificationService::class);
-        $documentVerifier->save($application, $documentsByCode['KTP'], $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'KTP buram');
-        $documentVerifier->save($application, $documentsByCode['KHS'], $operator, DocumentVerificationResult::MEMENUHI);
+        $documentVerifier = app(AgencyVerificationService::class);
+        $documentVerifier->assessDocument($application, $documentsByCode['KTP'], $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'KTP buram');
+        $documentVerifier->assessDocument($application, $documentsByCode['KHS'], $operator, DocumentVerificationResult::MEMENUHI);
 
         $this->assertSame(1, $documentsByCode['KTP']->verifications()->count());
         $this->assertSame(1, $documentsByCode['KHS']->verifications()->count());

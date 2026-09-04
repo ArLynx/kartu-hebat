@@ -6,7 +6,7 @@ use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
 use App\Models\Application;
 use App\Models\User;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 
 class ApplicationPolicy
 {
@@ -66,7 +66,7 @@ class ApplicationPolicy
             default => false,
         } && in_array(
             $user->role->agencyCode(),
-            DocumentVerificationService::requiredAgencies($application),
+            AgencyVerificationService::requiredAgencies($application),
             true,
         );
     }

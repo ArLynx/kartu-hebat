@@ -89,7 +89,7 @@
                     $documentAssessments = $pendaftaran->application->documents
                         ->flatMap(fn ($document) => $document->verifications)
                         ->filter()
-                        ->groupBy(fn ($verification) => \App\Services\DocumentVerificationService::stageLabel($verification->stage));
+                        ->groupBy(fn ($verification) => \App\Services\AgencyVerificationService::stageLabel($verification->stage));
                 @endphp
                 @if($documentAssessments->isNotEmpty())
                     <div class="mt-5 border-t border-slate-200 pt-5">

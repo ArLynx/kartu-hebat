@@ -7,7 +7,7 @@ use App\Models\DocumentType;
 use App\Models\Dokumen;
 use App\Models\JenisDokumen;
 use App\Models\Pendaftaran;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 use App\Services\MahasiswaPendaftaranService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +27,7 @@ class DokumenController extends Controller
 
     public function __construct(
         private readonly MahasiswaPendaftaranService $flow,
-        private readonly DocumentVerificationService $documentVerifications,
+        private readonly AgencyVerificationService $agencyVerification,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -127,7 +127,7 @@ class DokumenController extends Controller
                             ->first();
 
                     if ($target) {
-                        $this->documentVerifications->resetForDocument($target);
+                        $this->agencyVerification->resetForDocument($target);
                     }
                 }
 

@@ -23,7 +23,6 @@ class ApplicationWorkflowService
 {
     public function __construct(
         private readonly SelectionScoringService $scoring,
-        private readonly DocumentVerificationService $documentVerification,
         private readonly AgencyVerificationService $agencyVerification,
     ) {}
 
@@ -62,9 +61,8 @@ class ApplicationWorkflowService
 
         // Pengiriman ulang setelah aplikasi dikembalikan ke draf membuka putaran
         // baru: penilaian dokumen lama dibersihkan agar dinas menilai ulang.
-        $docVerificationService = $this->documentVerification ?? app(DocumentVerificationService::class);
         if ($application->verificationLogs()->where('action', 'submitted')->exists()) {
-            $docVerificationService->resetForApplication($application);
+            $this->agencyVerification->resetForApplication($application);
         }
 
         $this->synchronizeDocuments($pendaftaran, $application, $student, $applicationType);
@@ -269,7 +267,6 @@ class ApplicationWorkflowService
         $diskName = (string) config('kartu_hebat.document_disk', 'local');
         $disk = Storage::disk($diskName);
         $syncedDocumentTypeIds = [];
-        $docVerificationService = $this->documentVerification ?? app(DocumentVerificationService::class);
 
         foreach ($pendaftaran->dokumens as $index => $source) {
             $sourceType = $source->jenisDokumen;
@@ -308,7 +305,7 @@ class ApplicationWorkflowService
                 : ($existing?->version ?? 0) + 1;
 
             if ($existing && $existing->path !== $source->file_path) {
-                $docVerificationService->resetForDocument($existing);
+                $this->agencyVerification->resetForDocument($existing);
             }
 
             $unchanged = $existing && $existing->path === $source->file_path;
@@ -491,7 +488,7 @@ class ApplicationWorkflowService
                     ->filter(fn (UserRole $role) => $role->isAgency())
                     ->filter(fn (UserRole $role) => in_array(
                         $role->agencyCode(),
-                        DocumentVerificationService::requiredAgencies($application),
+                        AgencyVerificationService::requiredAgencies($application),
                         true,
                     ))
                     ->pluck('value')

@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\ApplicationType;
 use App\Enums\DocumentVerificationResult;
 use App\Enums\VerificationDecision;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -59,8 +59,8 @@ class VerificationRequest extends FormRequest
                 return;
             }
 
-            $stage = DocumentVerificationService::stageFor($this->user());
-            $round = DocumentVerificationService::currentRound($application);
+            $stage = AgencyVerificationService::stageFor($this->user());
+            $round = AgencyVerificationService::currentRound($application);
             $application->load([
                 'documents.verifications' => fn ($q) => $q->where('stage', $stage)->where('round', $round),
             ]);

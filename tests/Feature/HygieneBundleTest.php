@@ -10,8 +10,8 @@ use App\Models\MahasiswaProfile;
 use App\Models\Selection;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\AgencyVerificationService;
 use App\Services\ApplicationWorkflowService;
-use App\Services\DocumentVerificationService;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,14 +30,14 @@ class HygieneBundleTest extends TestCase
         $this->seed(MasterDataSeeder::class);
     }
 
-    public function test_workflow_uses_constructor_injected_document_verification_service(): void
+    public function test_workflow_uses_constructor_injected_agency_verification_service(): void
     {
         $workflow = app(ApplicationWorkflowService::class);
 
         $this->assertSame(
-            DocumentVerificationService::class,
-            $this->documentVerificationServiceOf($workflow),
-            'ApplicationWorkflowService harus menerima DocumentVerificationService lewat constructor, bukan app().',
+            AgencyVerificationService::class,
+            $this->agencyVerificationServiceOf($workflow),
+            'ApplicationWorkflowService harus menerima AgencyVerificationService lewat constructor, bukan app().',
         );
     }
 
@@ -101,9 +101,9 @@ class HygieneBundleTest extends TestCase
         $this->assertSame('active', $fresh->status);
     }
 
-    private function documentVerificationServiceOf(ApplicationWorkflowService $workflow): ?string
+    private function agencyVerificationServiceOf(ApplicationWorkflowService $workflow): ?string
     {
-        $property = new \ReflectionProperty($workflow, 'documentVerification');
+        $property = new \ReflectionProperty($workflow, 'agencyVerification');
         $property->setAccessible(true);
         $value = $property->getValue($workflow);
 

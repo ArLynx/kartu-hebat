@@ -6,7 +6,7 @@ use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 use Illuminate\Http\Request;
 
 class ReconciliationController extends Controller
@@ -59,7 +59,7 @@ class ReconciliationController extends Controller
 
     private function isComplete(Application $application): bool
     {
-        $required = DocumentVerificationService::requiredAgencies($application);
+        $required = AgencyVerificationService::requiredAgencies($application);
 
         return count($required) > 0
             && count($application->agencyVerifications) >= count($required);

@@ -16,8 +16,8 @@ use App\Models\Pendaftaran;
 use App\Models\Periode;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\AgencyVerificationService;
 use App\Services\ApplicationWorkflowService;
-use App\Services\DocumentVerificationService;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,7 +42,7 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerificationService = app(DocumentVerificationService::class);
+        $documentVerificationService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -76,9 +76,9 @@ class ApplicationWorkflowTest extends TestCase
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         foreach ($documents as $document) {
-            $documentVerificationService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS, score: 90);
@@ -101,7 +101,7 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerificationService = app(DocumentVerificationService::class);
+        $documentVerificationService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -132,9 +132,9 @@ class ApplicationWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
-            $documentVerificationService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $education, DocumentVerificationResult::TIDAK_MEMENUHI, 'Data tidak sesuai');
+            $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::TIDAK_MEMENUHI, 'Data tidak sesuai');
         }
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -295,7 +295,7 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerification = app(DocumentVerificationService::class);
+        $documentVerification = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -326,7 +326,7 @@ class ApplicationWorkflowTest extends TestCase
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
         foreach ($documents as $document) {
-            $documentVerification->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentVerification->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);

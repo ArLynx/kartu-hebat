@@ -12,8 +12,8 @@ use App\Models\DocumentType;
 use App\Models\MahasiswaProfile;
 use App\Models\User;
 use App\Models\Village;
+use App\Services\AgencyVerificationService;
 use App\Services\ApplicationWorkflowService;
-use App\Services\DocumentVerificationService;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,7 +75,7 @@ class DocumentVerificationTest extends TestCase
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
-        app(DocumentVerificationService::class)->save(
+        app(AgencyVerificationService::class)->assessDocument(
             $application,
             $document,
             $operator,
@@ -95,7 +95,7 @@ class DocumentVerificationTest extends TestCase
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
-        app(DocumentVerificationService::class)->save(
+        app(AgencyVerificationService::class)->assessDocument(
             $application,
             $document,
             $operator,
@@ -155,11 +155,11 @@ class DocumentVerificationTest extends TestCase
         $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
 
-        $documentVerificationService = app(DocumentVerificationService::class);
+        $documentVerificationService = app(AgencyVerificationService::class);
         foreach ($application->documents as $document) {
-            $documentVerificationService->save($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $social, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->save($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow = app(ApplicationWorkflowService::class);
@@ -189,7 +189,7 @@ class DocumentVerificationTest extends TestCase
         $workflow = app(ApplicationWorkflowService::class);
 
         // Verifikator menilai dokumen putaran 1.
-        app(DocumentVerificationService::class)->save(
+        app(AgencyVerificationService::class)->assessDocument(
             $application,
             $document,
             $dukcapil,
@@ -201,7 +201,7 @@ class DocumentVerificationTest extends TestCase
         $application->update(['status' => ApplicationStatus::DRAFT]);
         $workflow->submit($application, $student);
 
-        $this->assertSame(2, DocumentVerificationService::currentRound($application->fresh()));
+        $this->assertSame(2, AgencyVerificationService::currentRound($application->fresh()));
     }
 
     public function test_operator_show_page_renders_with_assessment(): void
@@ -210,7 +210,7 @@ class DocumentVerificationTest extends TestCase
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $document = $application->documents->first();
 
-        app(DocumentVerificationService::class)->save(
+        app(AgencyVerificationService::class)->assessDocument(
             $application,
             $document,
             $operator,

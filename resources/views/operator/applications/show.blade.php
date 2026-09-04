@@ -319,7 +319,7 @@
                             @foreach($docVerifications as $verification)
                                 <tr>
                                     <td class="py-3 pr-4 font-semibold text-slate-800">{{ $verification->document?->type?->name }}</td>
-                                    <td class="py-3 pr-4 text-slate-600">{{ \App\Services\DocumentVerificationService::stageLabel($verification->stage) }}</td>
+                                    <td class="py-3 pr-4 text-slate-600">{{ \App\Services\AgencyVerificationService::stageLabel($verification->stage) }}</td>
                                     <td class="py-3 pr-4">
                                         <span @class([
                                             'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
