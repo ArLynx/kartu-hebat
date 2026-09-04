@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Application;
 use App\Models\AuditLog;
-use App\Models\VerificationLog;
-use App\Models\Pendaftaran;
 use App\Models\AgencyVerification;
 use App\Models\DocumentVerification;
+use App\Models\Pendaftaran;
 use App\Models\User;
+use App\Models\VerificationLog;
 use Illuminate\Http\Request;
 
 class LogActivityController extends Controller
@@ -86,12 +87,6 @@ class LogActivityController extends Controller
 
             match ($request->activity) {
 
-                /*
-                |--------------------------------------------------------------
-                | PENGAJUAN
-                |--------------------------------------------------------------
-                */
-
                 'submitted' => $verificationQuery->whereIn(
                     'action',
                     [
@@ -100,12 +95,6 @@ class LogActivityController extends Controller
                         'diajukan',
                     ]
                 ),
-
-                /*
-                |--------------------------------------------------------------
-                | MS
-                |--------------------------------------------------------------
-                */
 
                 'ms' => $verificationQuery->whereIn(
                     'action',
@@ -123,12 +112,6 @@ class LogActivityController extends Controller
                     ]
                 ),
 
-                /*
-                |--------------------------------------------------------------
-                | TMS
-                |--------------------------------------------------------------
-                */
-
                 'tms' => $verificationQuery->whereIn(
                     'action',
                     [
@@ -144,12 +127,6 @@ class LogActivityController extends Controller
                         'rejected_tms',
                     ]
                 ),
-
-                /*
-                |--------------------------------------------------------------
-                | SELEKSI
-                |--------------------------------------------------------------
-                */
 
                 'selected' => $verificationQuery->whereIn(
                     'action',
@@ -184,7 +161,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | LABEL AKTIVITAS VERIFIKASI
+        | LABEL VERIFIKASI
         |--------------------------------------------------------------------------
         */
 
@@ -240,10 +217,6 @@ class LogActivityController extends Controller
 
             $auditQuery->where(function ($query) use ($search) {
 
-                /*
-                | Cari nama operator
-                */
-
                 $query->whereHas(
                     'user',
                     function ($q) use ($search) {
@@ -255,19 +228,11 @@ class LogActivityController extends Controller
                     }
                 );
 
-                /*
-                | Cari jenis aktivitas
-                */
-
                 $query->orWhere(
                     'event',
                     'like',
                     "%{$search}%"
                 );
-
-                /*
-                | Cari nama class data
-                */
 
                 $query->orWhere(
                     'auditable_type',
@@ -284,7 +249,6 @@ class LogActivityController extends Controller
         */
 
         if ($request->filled('event')) {
-
             $auditQuery->where(
                 'event',
                 $request->event
@@ -309,7 +273,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | SIAPKAN INFORMASI AUDIT
+        | SIAPKAN DATA AUDIT
         |--------------------------------------------------------------------------
         */
 
@@ -319,7 +283,7 @@ class LogActivityController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | Default
+                | DEFAULT
                 |--------------------------------------------------------------------------
                 */
 
@@ -348,29 +312,35 @@ class LogActivityController extends Controller
                     $student = null;
 
                     if ($profile->user_id) {
-
-                        $student = User::query()
-                            ->find($profile->user_id);
+                        $student = User::find(
+                            $profile->user_id
+                        );
                     }
 
                     if ($student) {
 
-                        $pendaftaran = Pendaftaran::query()
-                            ->where(
-                                'user_id',
-                                $student->id
-                            )
-                            ->latest('id')
-                            ->first();
+                        $pendaftaran =
+                            Pendaftaran::query()
+                                ->where(
+                                    'user_id',
+                                    $student->id
+                                )
+                                ->latest('id')
+                                ->first();
 
                         $log->student_info = [
-                            'name' => $student->name,
 
-                            'user_id' => $student->id,
+                            'name' =>
+                                $student->name,
 
-                            'nik' => $profile->nik,
+                            'user_id' =>
+                                $student->id,
 
-                            'nim' => $profile->nim,
+                            'nik' =>
+                                $profile->nik,
+
+                            'nim' =>
+                                $profile->nim,
 
                             'nomor_pendaftaran' =>
                                 $pendaftaran?->nomor_pendaftaran,
@@ -384,7 +354,84 @@ class LogActivityController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | 2. AGENCY VERIFICATION
+                | 2. APPLICATION / PENGAJUAN BEASISWA
+                |--------------------------------------------------------------------------
+                |
+                | INI BAGIAN YANG MEMPERBAIKI:
+                |
+                | "Tidak terkait mahasiswa"
+                |
+                | untuk log seperti:
+                |
+                | Mengubah Status Pengajuan dan Waktu Penguncian
+                |
+                */
+
+                if (
+                    ! $log->student_info
+                    &&
+                    $log->auditable instanceof Application
+                ) {
+
+                    $application =
+                        $log->auditable;
+
+                    /*
+                    | Application
+                    |      ↓
+                    | mahasiswa
+                    |      ↓
+                    | profile
+                    |      ↓
+                    | pendaftaran
+                    */
+
+                    $application->loadMissing([
+                        'mahasiswa.profile',
+                        'pendaftaran',
+                    ]);
+
+                    $student =
+                        $application->mahasiswa;
+
+                    $profile =
+                        $student?->profile;
+
+                    $pendaftaran =
+                        $application->pendaftaran;
+
+
+                    if ($student) {
+
+                        $log->student_info = [
+
+                            'name' =>
+                                $student->name,
+
+                            'user_id' =>
+                                $student->id,
+
+                            'nik' =>
+                                $profile?->nik,
+
+                            'nim' =>
+                                $profile?->nim,
+
+                            'nomor_pendaftaran' =>
+                                $application->nomor_pengajuan
+                                ??
+                                $pendaftaran?->nomor_pendaftaran,
+
+                            'pendaftaran_id' =>
+                                $pendaftaran?->id,
+                        ];
+                    }
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | 3. AGENCY VERIFICATION
                 |--------------------------------------------------------------------------
                 */
 
@@ -394,7 +441,8 @@ class LogActivityController extends Controller
                     $log->auditable instanceof AgencyVerification
                 ) {
 
-                    $verification = $log->auditable;
+                    $verification =
+                        $log->auditable;
 
                     $verification->loadMissing([
                         'application.mahasiswa.profile',
@@ -407,13 +455,14 @@ class LogActivityController extends Controller
                     $student =
                         $application?->mahasiswa;
 
+                    $profile =
+                        $student?->profile;
+
+                    $pendaftaran =
+                        $application?->pendaftaran;
+
+
                     if ($student) {
-
-                        $profile =
-                            $student->profile;
-
-                        $pendaftaran =
-                            $application?->pendaftaran;
 
                         $log->student_info = [
 
@@ -443,11 +492,20 @@ class LogActivityController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | 3. DOCUMENT VERIFICATION
+                | 4. DOCUMENT VERIFICATION
                 |--------------------------------------------------------------------------
                 |
-                | INI YANG MEMBUAT LOG VERIFIKASI DOKUMEN
-                | TERHUBUNG KE MAHASISWA.
+                | Operator dinas melakukan verifikasi dokumen.
+                |
+                | DocumentVerification
+                |        ↓
+                | Application
+                |        ↓
+                | Mahasiswa
+                |        ↓
+                | Profile
+                |        ↓
+                | Pendaftaran
                 |
                 */
 
@@ -459,19 +517,6 @@ class LogActivityController extends Controller
 
                     $verification =
                         $log->auditable;
-
-                    /*
-                    | Load hubungan:
-                    | DocumentVerification
-                    |      ↓
-                    | Application
-                    |      ↓
-                    | Mahasiswa
-                    |      ↓
-                    | Profile
-                    |      ↓
-                    | Pendaftaran
-                    */
 
                     $verification->loadMissing([
                         'application.mahasiswa.profile',
@@ -493,9 +538,9 @@ class LogActivityController extends Controller
 
 
                     /*
-                    |--------------------------------------------------------------
+                    |--------------------------------------------------------------------------
                     | DATA MAHASISWA
-                    |--------------------------------------------------------------
+                    |--------------------------------------------------------------------------
                     */
 
                     if ($student) {
@@ -526,20 +571,29 @@ class LogActivityController extends Controller
 
 
                     /*
-                    |--------------------------------------------------------------
+                    |--------------------------------------------------------------------------
                     | DATA DOKUMEN
-                    |--------------------------------------------------------------
+                    |--------------------------------------------------------------------------
                     */
+
+                    $documentName = 'Dokumen Beasiswa';
+
+                    if (
+                        $verification->document
+                        &&
+                        $verification->document->type
+                    ) {
+                        $documentName =
+                            $verification
+                                ->document
+                                ->type
+                                ->name;
+                    }
 
                     $log->document_verification_info = [
 
                         'document_name' =>
-                            $verification
-                                ->document
-                                ?->type
-                                ?->name
-                            ??
-                            'Dokumen Beasiswa',
+                            $documentName,
 
                         'stage' =>
                             $verification->stage,
@@ -557,12 +611,8 @@ class LogActivityController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | 4. SELECTION
+                | 5. SELECTION / SELEKSI KABUPATEN
                 |--------------------------------------------------------------------------
-                |
-                | Kalau audit berasal dari Selection,
-                | cari mahasiswa melalui Application.
-                |
                 */
 
                 if (
@@ -596,6 +646,7 @@ class LogActivityController extends Controller
                         $pendaftaran =
                             $application?->pendaftaran;
 
+
                         if ($student) {
 
                             $log->student_info = [
@@ -627,12 +678,8 @@ class LogActivityController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | 5. FALLBACK
+                | 6. FALLBACK USER ID
                 |--------------------------------------------------------------------------
-                |
-                | Kalau model mempunyai user_id,
-                | coba cari mahasiswa dari user tersebut.
-                |
                 */
 
                 if (! $log->student_info) {
@@ -642,8 +689,8 @@ class LogActivityController extends Controller
 
                     if ($studentId) {
 
-                        $student = User::query()
-                            ->find($studentId);
+                        $student =
+                            User::find($studentId);
 
                         if ($student) {
 
@@ -656,6 +703,9 @@ class LogActivityController extends Controller
                                     ->latest('id')
                                     ->first();
 
+                            $profile =
+                                $student->profile;
+
                             $log->student_info = [
 
                                 'name' =>
@@ -665,10 +715,10 @@ class LogActivityController extends Controller
                                     $student->id,
 
                                 'nik' =>
-                                    $student->profile?->nik,
+                                    $profile?->nik,
 
                                 'nim' =>
-                                    $student->profile?->nim,
+                                    $profile?->nim,
 
                                 'nomor_pendaftaran' =>
                                     $pendaftaran
@@ -684,7 +734,7 @@ class LogActivityController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | NAMA DATA YANG MANUSIAWI
+                | LABEL DATA
                 |--------------------------------------------------------------------------
                 */
 
@@ -696,7 +746,7 @@ class LogActivityController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | NAMA AKTIVITAS YANG MANUSIAWI
+                | LABEL AKTIVITAS
                 |--------------------------------------------------------------------------
                 */
 
@@ -729,32 +779,21 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | DAFTAR OPERATOR
+        | OPERATOR
         |--------------------------------------------------------------------------
         */
 
         $operators = User::query()
             ->whereIn('role', [
-
                 'operator_dukcapil',
-
                 'operator_dinas_sosial',
-
                 'operator_dinas_pendidikan',
-
                 'operator_dinas_kesehatan',
-
                 'operator_parsepor',
-
                 'operator_kabupaten',
-
             ])
             ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'role',
-            ]);
+            ->get();
 
 
         /*
@@ -781,7 +820,7 @@ class LogActivityController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | LABEL AKTIVITAS VERIFIKASI / SELEKSI
+    | AKTIVITAS VERIFIKASI
     |--------------------------------------------------------------------------
     */
 
@@ -790,12 +829,6 @@ class LogActivityController extends Controller
         $actor,
         array $metadata = []
     ): string {
-
-        /*
-        |--------------------------------------------------------------------------
-        | ROLE OPERATOR
-        |--------------------------------------------------------------------------
-        */
 
         $role =
             $actor?->role;
@@ -830,23 +863,11 @@ class LogActivityController extends Controller
         };
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | NORMALISASI ACTION
-        |--------------------------------------------------------------------------
-        */
-
-        $normalizedAction =
+        $action =
             is_string($action)
             ? strtolower(trim($action))
             : '';
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | KEPUTUSAN DARI METADATA
-        |--------------------------------------------------------------------------
-        */
 
         $decision =
             $metadata['decision']
@@ -861,17 +882,16 @@ class LogActivityController extends Controller
             ??
             null;
 
+
         if ($decision instanceof \BackedEnum) {
             $decision =
                 $decision->value;
         }
 
-        if (is_string($decision)) {
 
+        if (is_string($decision)) {
             $decision =
-                strtolower(
-                    trim($decision)
-                );
+                strtolower(trim($decision));
         }
 
 
@@ -883,7 +903,7 @@ class LogActivityController extends Controller
 
         if (
             in_array(
-                $normalizedAction,
+                $action,
                 [
                     'ms',
                     'agency_verification_ms',
@@ -925,7 +945,7 @@ class LogActivityController extends Controller
 
         if (
             in_array(
-                $normalizedAction,
+                $action,
                 [
                     'tms',
                     'agency_verification_tms',
@@ -967,7 +987,7 @@ class LogActivityController extends Controller
 
         if (
             in_array(
-                $normalizedAction,
+                $action,
                 [
                     'submitted',
                     'submit',
@@ -989,77 +1009,13 @@ class LogActivityController extends Controller
 
         if (
             in_array(
-                $normalizedAction,
+                $action,
                 [
                     'selected',
                     'selection',
                     'seleksi',
                     'seleksi_kabupaten',
                     'selection_decision_recorded',
-                ],
-                true
-            )
-        ) {
-
-            /*
-            | Kalau ada keputusan manual
-            */
-
-            if (
-                in_array(
-                    $decision,
-                    [
-                        'diterima',
-                        'accept',
-                        'accepted',
-                        'lulus',
-                        'terpilih',
-                    ],
-                    true
-                )
-            ) {
-
-                return
-                    'Menetapkan Penerima Beasiswa';
-            }
-
-
-            if (
-                in_array(
-                    $decision,
-                    [
-                        'ditolak',
-                        'reject',
-                        'rejected',
-                        'tidak_lulus',
-                    ],
-                    true
-                )
-            ) {
-
-                return
-                    'Menolak Pengajuan Beasiswa';
-            }
-
-
-            return 'Memproses Seleksi Kabupaten';
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | HASIL SELEKSI DIPUBLIKASIKAN
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            in_array(
-                $normalizedAction,
-                [
-                    'selection_result_published',
-                    'published',
-                    'publish',
-                    'publikasi',
                 ],
                 true
             )
@@ -1103,6 +1059,30 @@ class LogActivityController extends Controller
 
 
             return
+                'Memproses Seleksi Kabupaten';
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PUBLIKASI
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            in_array(
+                $action,
+                [
+                    'selection_result_published',
+                    'published',
+                    'publish',
+                    'publikasi',
+                ],
+                true
+            )
+        ) {
+
+            return
                 'Mempublikasikan Hasil Seleksi';
         }
 
@@ -1117,9 +1097,7 @@ class LogActivityController extends Controller
             str_replace(
                 ['_', '-'],
                 ' ',
-                $action
-                ??
-                'Aktivitas Verifikasi'
+                $action ?: 'Aktivitas Verifikasi'
             )
         );
     }
@@ -1127,7 +1105,7 @@ class LogActivityController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | NAMA DATA
+    | DATA LABEL
     |--------------------------------------------------------------------------
     */
 
@@ -1147,7 +1125,7 @@ class LogActivityController extends Controller
                 $type ?? '',
                 'Pendaftaran'
             )
-                => 'Pendaftaran Beasiswa',
+                => 'Pengajuan Beasiswa',
 
             str_ends_with(
                 $type ?? '',
@@ -1204,16 +1182,14 @@ class LogActivityController extends Controller
                 => 'Akun Pengguna',
 
             default
-                => class_basename(
-                    $type ?? 'Data'
-                ),
+                => 'Data Sistem',
         };
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | NAMA AKTIVITAS AUDIT
+    | EVENT LABEL
     |--------------------------------------------------------------------------
     */
 
@@ -1244,10 +1220,12 @@ class LogActivityController extends Controller
                 ??
                 null;
 
+
             if ($result instanceof \BackedEnum) {
                 $result =
                     $result->value;
             }
+
 
             $result =
                 strtolower(
@@ -1295,8 +1273,7 @@ class LogActivityController extends Controller
             }
 
 
-            return
-                'Memverifikasi Dokumen';
+            return 'Memverifikasi Dokumen';
         }
 
 
@@ -1320,11 +1297,12 @@ class LogActivityController extends Controller
                 ??
                 null;
 
-            if ($decision instanceof \BackedEnum) {
 
+            if ($decision instanceof \BackedEnum) {
                 $decision =
                     $decision->value;
             }
+
 
             $decision =
                 strtolower(
@@ -1378,7 +1356,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | MENAMBAHKAN DATA
+        | CREATED
         |--------------------------------------------------------------------------
         */
 
@@ -1403,7 +1381,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | MENGHAPUS DATA
+        | DELETED
         |--------------------------------------------------------------------------
         */
 
@@ -1428,7 +1406,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | MENGUBAH DATA
+        | UPDATED
         |--------------------------------------------------------------------------
         */
 
@@ -1450,13 +1428,7 @@ class LogActivityController extends Controller
                 );
 
 
-            /*
-            | Tidak ditemukan field
-            */
-
-            if (
-                empty($changedFields)
-            ) {
+            if (empty($changedFields)) {
 
                 return
                     'Mengubah ' .
@@ -1470,9 +1442,7 @@ class LogActivityController extends Controller
             | Satu field
             */
 
-            if (
-                count($changedFields) === 1
-            ) {
+            if (count($changedFields) === 1) {
 
                 return
                     'Mengubah ' .
@@ -1483,7 +1453,25 @@ class LogActivityController extends Controller
 
 
             /*
-            | Beberapa field
+            | Dua field
+            */
+
+            if (count($changedFields) === 2) {
+
+                return
+                    'Mengubah ' .
+                    $this->fieldLabel(
+                        $changedFields[0]
+                    ) .
+                    ' dan ' .
+                    $this->fieldLabel(
+                        $changedFields[1]
+                    );
+            }
+
+
+            /*
+            | Lebih dari dua
             */
 
             $labels =
@@ -1498,40 +1486,6 @@ class LogActivityController extends Controller
                     ->all();
 
 
-            if (
-                count($labels) === 2
-            ) {
-
-                return
-                    'Mengubah ' .
-                    $labels[0] .
-                    ' dan ' .
-                    $labels[1];
-            }
-
-
-            if (
-                count($labels) > 3
-            ) {
-
-                return
-                    'Mengubah ' .
-                    implode(
-                        ', ',
-                        array_slice(
-                            $labels,
-                            0,
-                            3
-                        )
-                    ) .
-                    ' dan ' .
-                    (
-                        count($labels) - 3
-                    ) .
-                    ' data lainnya';
-            }
-
-
             return
                 'Mengubah ' .
                 implode(
@@ -1539,19 +1493,20 @@ class LogActivityController extends Controller
                     array_slice(
                         $labels,
                         0,
-                        -1
+                        3
                     )
                 ) .
-                ' dan ' .
-                end($labels);
+                (
+                    count($labels) > 3
+                    ? ' dan ' .
+                        (
+                            count($labels) - 3
+                        ) .
+                        ' data lainnya'
+                    : ''
+                );
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | FALLBACK
-        |--------------------------------------------------------------------------
-        */
 
         return ucfirst(
             str_replace(
@@ -1565,7 +1520,7 @@ class LogActivityController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | FIELD YANG BERUBAH
+    | CARI FIELD YANG BERUBAH
     |--------------------------------------------------------------------------
     */
 
@@ -1586,10 +1541,6 @@ class LogActivityController extends Controller
 
         foreach ($fields as $field) {
 
-            /*
-            | Timestamp bukan aktivitas pengguna
-            */
-
             if (
                 in_array(
                     $field,
@@ -1601,7 +1552,6 @@ class LogActivityController extends Controller
                     true
                 )
             ) {
-
                 continue;
             }
 
@@ -1619,7 +1569,6 @@ class LogActivityController extends Controller
                     $newValue
                 )
             ) {
-
                 continue;
             }
 
@@ -1635,7 +1584,7 @@ class LogActivityController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | BANDINGKAN NILAI
+    | CEK NILAI SAMA
     |--------------------------------------------------------------------------
     */
 
@@ -1643,10 +1592,6 @@ class LogActivityController extends Controller
         $oldValue,
         $newValue
     ): bool {
-
-        /*
-        | Array
-        */
 
         if (
             is_array($oldValue)
@@ -1660,10 +1605,6 @@ class LogActivityController extends Controller
                 json_encode($newValue);
         }
 
-
-        /*
-        | Null dan string kosong dianggap sama
-        */
 
         if (
             (
@@ -1707,7 +1648,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | TAMBAH DATA
+        | CREATED
         |--------------------------------------------------------------------------
         */
 
@@ -1722,10 +1663,7 @@ class LogActivityController extends Controller
             )
         ) {
 
-            foreach (
-                $newValues
-                as $field => $value
-            ) {
+            foreach ($newValues as $field => $value) {
 
                 if (
                     in_array(
@@ -1737,7 +1675,6 @@ class LogActivityController extends Controller
                         true
                     )
                 ) {
-
                     continue;
                 }
 
@@ -1766,7 +1703,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | HAPUS DATA
+        | DELETED
         |--------------------------------------------------------------------------
         */
 
@@ -1781,10 +1718,7 @@ class LogActivityController extends Controller
             )
         ) {
 
-            foreach (
-                $oldValues
-                as $field => $value
-            ) {
+            foreach ($oldValues as $field => $value) {
 
                 if (
                     in_array(
@@ -1797,7 +1731,6 @@ class LogActivityController extends Controller
                         true
                     )
                 ) {
-
                     continue;
                 }
 
@@ -1826,7 +1759,7 @@ class LogActivityController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | PERUBAHAN DATA
+        | UPDATED
         |--------------------------------------------------------------------------
         */
 
@@ -1851,7 +1784,6 @@ class LogActivityController extends Controller
                     true
                 )
             ) {
-
                 continue;
             }
 
@@ -1863,17 +1795,12 @@ class LogActivityController extends Controller
                 $newValues[$field] ?? null;
 
 
-            /*
-            | Hanya tampilkan yang benar-benar berubah
-            */
-
             if (
                 $this->valuesAreEqual(
                     $oldValue,
                     $newValue
                 )
             ) {
-
                 continue;
             }
 
@@ -1904,7 +1831,7 @@ class LogActivityController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | NAMA FIELD
+    | LABEL FIELD
     |--------------------------------------------------------------------------
     */
 
@@ -1917,20 +1844,26 @@ class LogActivityController extends Controller
             'status_kependudukan'
                 => 'Status Kependudukan',
 
+            'status'
+                => 'Status Pengajuan',
+
             'nik'
                 => 'NIK',
 
             'nim'
                 => 'NIM',
 
-            'phone'
-                => 'Nomor HP',
+            'name'
+                => 'Nama',
 
             'email'
                 => 'Email',
 
-            'name'
-                => 'Nama',
+            'phone'
+                => 'Nomor HP',
+
+            'alamat'
+                => 'Alamat',
 
             'universitas'
                 => 'Perguruan Tinggi',
@@ -1942,7 +1875,7 @@ class LogActivityController extends Controller
                 => 'Program Studi',
 
             'jenjang'
-                => 'Jenjang',
+                => 'Jenjang Pendidikan',
 
             'semester'
                 => 'Semester',
@@ -1955,21 +1888,6 @@ class LogActivityController extends Controller
 
             'status_mahasiswa'
                 => 'Status Mahasiswa',
-
-            'alamat'
-                => 'Alamat',
-
-            'village_id'
-                => 'Desa / Kelurahan',
-
-            'kecamatan_id'
-                => 'Kecamatan',
-
-            'kabupaten_id'
-                => 'Kabupaten',
-
-            'provinsi_id'
-                => 'Provinsi',
 
             'penghasilan_keluarga'
                 => 'Penghasilan Keluarga',
@@ -1986,9 +1904,6 @@ class LogActivityController extends Controller
             'prestasi'
                 => 'Prestasi',
 
-            'status'
-                => 'Status Pengajuan',
-
             'catatan'
                 => 'Catatan',
 
@@ -2002,37 +1917,34 @@ class LogActivityController extends Controller
                 => 'Kategori Beasiswa',
 
             'jalur_beasiswa_id'
-                => 'Kategori Beasiswa',
+                => 'Jalur Beasiswa',
 
             'periode_id'
                 => 'Periode Beasiswa',
 
             'file'
-                => 'File',
+                => 'File Dokumen',
 
             'jenis_dokumen'
                 => 'Jenis Dokumen',
 
-            'agency'
-                => 'Dinas',
+            'result'
+                => 'Hasil Verifikasi',
 
             'decision'
                 => 'Keputusan Verifikasi',
 
-            'result'
-                => 'Hasil Verifikasi',
+            'manual_decision'
+                => 'Keputusan Seleksi',
 
             'stage'
                 => 'Tahap Verifikasi',
 
-            'round'
-                => 'Putaran Verifikasi',
-
             'notes'
                 => 'Catatan Verifikasi',
 
-            'manual_decision'
-                => 'Keputusan Seleksi',
+            'agency'
+                => 'Dinas',
 
             'decided_by'
                 => 'Penentu Keputusan',
@@ -2040,14 +1952,14 @@ class LogActivityController extends Controller
             'decided_at'
                 => 'Waktu Keputusan',
 
-            'published_at'
-                => 'Waktu Publikasi',
+            'submitted_at'
+                => 'Waktu Pengajuan',
 
             'locked_at'
                 => 'Waktu Penguncian',
 
-            'submitted_at'
-                => 'Waktu Pengajuan',
+            'published_at'
+                => 'Waktu Publikasi',
 
             default
                 => ucwords(
@@ -2063,7 +1975,7 @@ class LogActivityController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | FORMAT HASIL VERIFIKASI
+    | HASIL VERIFIKASI
     |--------------------------------------------------------------------------
     */
 
@@ -2072,10 +1984,10 @@ class LogActivityController extends Controller
     ): string {
 
         if ($value instanceof \BackedEnum) {
-
             $value =
                 $value->value;
         }
+
 
         $value =
             strtolower(
@@ -2117,7 +2029,7 @@ class LogActivityController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | FORMAT NILAI
+    | FORMAT VALUE
     |--------------------------------------------------------------------------
     */
 
@@ -2186,7 +2098,13 @@ class LogActivityController extends Controller
             'memenuhi'
                 => 'Memenuhi Syarat',
 
+            'memenuhi_syarat'
+                => 'Memenuhi Syarat',
+
             'tidak_memenuhi'
+                => 'Tidak Memenuhi Syarat',
+
+            'tidak_memenuhi_syarat'
                 => 'Tidak Memenuhi Syarat',
 
             'diterima'
