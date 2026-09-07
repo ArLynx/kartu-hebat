@@ -16,6 +16,7 @@ class Pendidikan extends Model
         'jenjang',
         'semester',
         'ipk',
+        'nilai_raport',
         'tahun_masuk',
         'tahun_lulus',
         'status_mahasiswa',
@@ -36,6 +37,7 @@ class Pendidikan extends Model
     {
         return [
             'ipk' => 'decimal:2',
+            'nilai_raport' => 'decimal:2',
             'pddikti_verified_at' => 'datetime',
         ];
     }

@@ -1,36 +1,37 @@
 <x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+    <x-slot name="title">Atur Ulang Kata Sandi</x-slot>
 
-        <x-validation-errors class="mb-4" />
+    <div class="mb-8">
+        <p class="section-kicker">Pembaruan Keamanan</p>
+        <h1 class="mt-3 text-3xl font-extrabold">Atur ulang kata sandi</h1>
+        <p class="mt-2 text-sm leading-6 text-slate-600">Masukkan kata sandi baru untuk akun Anda.</p>
+    </div>
 
-        <form method="POST" action="{{ route('password.update') }}">
-            @csrf
+    <x-validation-errors class="mb-5" />
 
-            <input type="hidden" name="token" value="{{ $request->route('token') }}">
+    <form method="POST" action="{{ route('password.update') }}" class="space-y-5">
+        @csrf
 
-            <div class="block">
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
-            </div>
+        <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-            <div class="mt-4">
-                <x-label for="password" value="{{ __('Password') }}" />
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            </div>
+        <div>
+            <label for="email" class="form-label">Email</label>
+            <input id="email" type="email" name="email" value="{{ old('email', $request->email) }}" class="form-input" autocomplete="username" autofocus required>
+        </div>
 
-            <div class="mt-4">
-                <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" />
-                <x-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
-            </div>
+        <div>
+            <label for="password" class="form-label">Kata Sandi Baru</label>
+            <input id="password" type="password" name="password" class="form-input" autocomplete="new-password" required>
+        </div>
 
-            <div class="flex items-center justify-end mt-4">
-                <x-button>
-                    {{ __('Reset Password') }}
-                </x-button>
-            </div>
-        </form>
-    </x-authentication-card>
+        <div>
+            <label for="password_confirmation" class="form-label">Konfirmasi Kata Sandi Baru</label>
+            <input id="password_confirmation" type="password" name="password_confirmation" class="form-input" autocomplete="new-password" required>
+        </div>
+
+        <button type="submit" class="btn-primary w-full justify-center">
+            Simpan Kata Sandi Baru
+            <x-icon name="arrow-right" class="h-4 w-4" />
+        </button>
+    </form>
 </x-guest-layout>

@@ -13,11 +13,20 @@ class Prestasi extends Model
         'nama_prestasi',
         'tingkat',
         'peringkat',
+        'is_pengurus_inti_ormawa',
+        'jabatan_ormawa',
         'penyelenggara',
         'tahun',
         'dokumen_prestasi',
         'keterangan',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_pengurus_inti_ormawa' => 'boolean',
+        ];
+    }
 
     public function pendaftaran(): BelongsTo
     {

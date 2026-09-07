@@ -38,7 +38,6 @@
                     ['Tanggungan', $application->mahasiswa->profile?->jumlah_tanggungan],
                     ['Status Kependudukan', str($application->mahasiswa->profile?->status_kependudukan ?? 'belum_diverifikasi')->replace('_', ' ')->title()],
                     ['Desil Sosial', $application->mahasiswa->profile?->desil_sosial],
-                    ['Desil Pendidikan', $application->mahasiswa->profile?->desil_pendidikan],
                 ] as [$label, $value])
                     <div>
                         <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $label }}</dt>
@@ -391,7 +390,7 @@
                         </div>
                     @endif
 
-                    @if(auth()->user()->hasRole('operator_sosial', 'operator_pendidikan') && $application->application_type === \App\Enums\ApplicationType::TIDAK_MAMPU)
+                    @if(auth()->user()->hasRole('operator_sosial') && $application->application_type === \App\Enums\ApplicationType::TIDAK_MAMPU)
                         <div>
                             <label class="form-label">Desil Verifikasi</label>
                             <input type="number" name="desil" min="1" max="10" value="{{ old('desil') }}" class="form-input" placeholder="1–10">

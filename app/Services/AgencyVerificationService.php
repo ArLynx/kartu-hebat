@@ -313,7 +313,7 @@ class AgencyVerificationService
     ): ?ApplicationStatus {
         if (
             $decision !== VerificationDecision::MS
-            || ! in_array($operator->role, [UserRole::OPERATOR_SOSIAL, UserRole::OPERATOR_PENDIDIKAN], true)
+            || $operator->role !== UserRole::OPERATOR_SOSIAL
         ) {
             $desil = null;
         }
@@ -345,9 +345,6 @@ class AgencyVerificationService
                 ]),
                 UserRole::OPERATOR_SOSIAL => $profile->update([
                     'desil_sosial' => $desil,
-                ]),
-                UserRole::OPERATOR_PENDIDIKAN => $profile->update([
-                    'desil_pendidikan' => $desil,
                 ]),
                 default => null,
             };

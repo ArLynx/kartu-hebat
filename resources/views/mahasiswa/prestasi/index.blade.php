@@ -206,6 +206,37 @@
                     </div>
 
 
+                    {{-- KEPENGURUSAN ORMAWA UNIVERSITAS (PERBUP) --}}
+                    <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4" x-data="{ isOrmawa: {{ old('is_pengurus_inti_ormawa') ? 'true' : 'false' }} }">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="is_pengurus_inti_ormawa"
+                                value="1"
+                                x-model="isOrmawa"
+                                @checked(old('is_pengurus_inti_ormawa'))
+                                class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                            >
+                            <span class="text-sm font-semibold text-slate-800">
+                                Merupakan Kepengurusan Inti Organisasi Mahasiswa Tingkat Universitas
+                            </span>
+                        </label>
+                        <p class="mt-1 text-xs text-slate-500 ml-7">
+                            Centang jika ini merupakan SK Kepengurusan Inti (Ketua / Wakil / Sekretaris / Bendahara) BEM/DPM/MPM universitas sebagai dasar penilaian Beasiswa Non-Akademik sesuai Perbup.
+                        </p>
+                        <div x-show="isOrmawa" class="mt-3 ml-7" x-cloak>
+                            <label class="form-label !text-xs">Jabatan Kepengurusan Inti</label>
+                            <input
+                                class="form-input !py-1.5 text-sm"
+                                type="text"
+                                name="jabatan_ormawa"
+                                value="{{ old('jabatan_ormawa') }}"
+                                placeholder="Contoh: Ketua BEM Universitas / Bendahara DPM Universitas"
+                            >
+                        </div>
+                    </div>
+
+
                     {{-- DOKUMEN --}}
                     <div class="md:col-span-2">
 
@@ -303,6 +334,12 @@
                                     <span class="status-chip status-neutral">
                                         {{ ucfirst($prestasi->tingkat) }}
                                     </span>
+
+                                    @if($prestasi->is_pengurus_inti_ormawa)
+                                        <span class="status-chip bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold">
+                                            Pengurus Inti Ormawa Univ {{ $prestasi->jabatan_ormawa ? '('.$prestasi->jabatan_ormawa.')' : '' }}
+                                        </span>
+                                    @endif
 
                                 </div>
 

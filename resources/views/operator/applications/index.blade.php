@@ -98,7 +98,7 @@
                                 <p>IPK {{ $application->mahasiswa->profile?->ipk ?? '-' }}</p>
                                 <p class="mt-1 text-xs text-slate-500">Semester {{ $application->mahasiswa->profile?->semester ?? '-' }}</p>
                             @else
-                                <p>Desil S/P: {{ $application->mahasiswa->profile?->desil_sosial ?? '-' }} / {{ $application->mahasiswa->profile?->desil_pendidikan ?? '-' }}</p>
+                                <p>Desil: {{ $application->mahasiswa->profile?->desil_sosial ?? '-' }}</p>
                                 <p class="mt-1 max-w-48 truncate text-xs text-slate-500">{{ $application->mahasiswa->profile?->universitas }}</p>
                             @endif
                         </td>

@@ -140,8 +140,6 @@
 
                 'desil_sosial' => 'Desil Sosial',
 
-                'desil_pendidikan' => 'Desil Pendidikan',
-
                 'prestasi' => 'Prestasi',
 
                 'status' => 'Status',
@@ -1471,8 +1469,6 @@
                         'jumlah_tanggungan': 'Jumlah Tanggungan',
 
                         'desil_sosial': 'Desil Sosial',
-
-                        'desil_pendidikan': 'Desil Pendidikan',
 
                         'prestasi': 'Prestasi',
 

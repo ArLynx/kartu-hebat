@@ -135,6 +135,12 @@ class PendidikanController extends Controller
                 'between:0,4',
             ],
 
+            'nilai_raport' => [
+                'nullable',
+                'numeric',
+                'between:0,100',
+            ],
+
             'tahun_masuk' => [
                 'required',
                 'integer',
@@ -267,6 +273,10 @@ class PendidikanController extends Controller
             'ipk.numeric' => 'IPK harus berupa angka.',
 
             'ipk.between' => 'IPK harus berada pada rentang 0,00 sampai 4,00.',
+
+            'nilai_raport.numeric' => 'Nilai raport harus berupa angka.',
+
+            'nilai_raport.between' => 'Nilai raport harus berada pada rentang 0 sampai 100.',
 
             'tahun_masuk.required' => 'Tahun masuk wajib diisi.',
 

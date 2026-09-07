@@ -19,7 +19,7 @@ class VerificationRequest extends FormRequest
     public function rules(): array
     {
         $isAgency = $this->user()?->role->isAgency() ?? false;
-        $isDesilAgency = $this->user()?->hasRole('operator_sosial', 'operator_pendidikan') ?? false;
+        $isDesilAgency = $this->user()?->hasRole('operator_sosial') ?? false;
         $application = $this->route('application');
         $isUnableTrack = $application?->application_type === ApplicationType::TIDAK_MAMPU;
         $requiresDesil = fn (): bool => $isDesilAgency

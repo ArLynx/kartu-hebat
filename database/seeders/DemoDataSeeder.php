@@ -15,7 +15,7 @@ use App\Models\Kecamatan;
 use App\Models\MahasiswaProfile;
 use App\Models\User;
 use App\Models\Village;
-use App\Services\DocumentVerificationService;
+use App\Services\AgencyVerificationService;
 use App\Services\SelectionScoringService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -150,7 +150,6 @@ class DemoDataSeeder extends Seeder
                 'penghasilan_keluarga' => 3500000,
                 'jumlah_tanggungan' => 3,
                 'desil_sosial' => null,
-                'desil_pendidikan' => null,
             ],
         );
 
@@ -228,7 +227,6 @@ class DemoDataSeeder extends Seeder
             $status = $statuses[$i % count($statuses)];
             $applicationType = $i % 2 === 0 ? ApplicationType::AKADEMIK : ApplicationType::TIDAK_MAMPU;
             $desilSosial = fake()->numberBetween(1, 10);
-            $desilPendidikan = min(10, max(1, $desilSosial + fake()->numberBetween(-1, 1)));
 
             $student = User::factory()->create([
                 'name' => fake()->name(),
@@ -258,7 +256,6 @@ class DemoDataSeeder extends Seeder
                 'penghasilan_keluarga' => fake()->numberBetween(1200000, 6500000),
                 'jumlah_tanggungan' => fake()->numberBetween(2, 7),
                 'desil_sosial' => $desilSosial,
-                'desil_pendidikan' => $desilPendidikan,
                 'prestasi' => $i % 3 === 0 ? 'Prestasi akademik/nonakademik terverifikasi.' : null,
             ]);
 
@@ -353,7 +350,7 @@ class DemoDataSeeder extends Seeder
             return;
         }
 
-        $required = DocumentVerificationService::requiredAgencies($application);
+        $required = AgencyVerificationService::requiredAgencies($application);
 
         foreach ($operators as $roleValue => $operator) {
             $role = UserRole::tryFrom($roleValue);
@@ -361,11 +358,9 @@ class DemoDataSeeder extends Seeder
                 continue;
             }
 
-            $desil = match ($role) {
-                UserRole::OPERATOR_SOSIAL => $application->mahasiswa->profile?->desil_sosial,
-                UserRole::OPERATOR_PENDIDIKAN => $application->mahasiswa->profile?->desil_pendidikan,
-                default => null,
-            };
+            $desil = $role === UserRole::OPERATOR_SOSIAL
+                ? $application->mahasiswa->profile?->desil_sosial
+                : null;
 
             AgencyVerification::query()->create([
                 'application_id' => $application->id,

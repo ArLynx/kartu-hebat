@@ -53,15 +53,14 @@ class SelectionScoringServiceTest extends TestCase
     {
         $application = $this->application(ApplicationType::TIDAK_MAMPU, [
             'desil_sosial' => 2,
-            'desil_pendidikan' => 4,
         ]);
 
         $selection = app(SelectionScoringService::class)->calculate($application);
         $score = $application->scores()->with('criterion')->firstOrFail();
 
         $this->assertSame('desil', $score->criterion->code);
-        $this->assertEqualsWithDelta(3.0, (float) $score->raw_value, 0.0001);
-        $this->assertEqualsWithDelta(77.7778, (float) $selection->final_score, 0.0001);
+        $this->assertEqualsWithDelta(2.0, (float) $score->raw_value, 0.0001);
+        $this->assertEqualsWithDelta(88.8889, (float) $selection->final_score, 0.0001);
     }
 
     public function test_ranking_is_reset_for_each_application_track(): void
@@ -72,7 +71,6 @@ class SelectionScoringServiceTest extends TestCase
         ]);
         $unable = $this->application(ApplicationType::TIDAK_MAMPU, [
             'desil_sosial' => 1,
-            'desil_pendidikan' => 2,
         ]);
 
         $scoring = app(SelectionScoringService::class);
@@ -144,7 +142,6 @@ class SelectionScoringServiceTest extends TestCase
         ]);
         $unable = $this->application(ApplicationType::TIDAK_MAMPU, [
             'desil_sosial' => 1,
-            'desil_pendidikan' => 2,
         ]);
 
         $scoring = app(SelectionScoringService::class);
@@ -199,8 +196,181 @@ class SelectionScoringServiceTest extends TestCase
         $this->assertSame(2, $appNonReguler2->selection()->firstOrFail()->rank);
     }
 
-    private function application(ApplicationType $type, array $profileOverrides, ?int $jalurBeasiswaId = null): Application
+    public function test_unable_track_orders_strictly_by_perbup_criteria(): void
     {
+        // A: Desil 1, IPK 3.10
+        $appA = $this->application(ApplicationType::TIDAK_MAMPU, [
+            'desil_sosial' => 1,
+            'ipk' => 3.10,
+        ], null, ['nilai_raport' => 75.0, 'tahun_masuk' => 2023, 'akreditasi_perguruan_tinggi' => 'C']);
+
+        // B: Desil 2, IPK 3.99 (harus kalah dari A karena Desil 1 > Desil 2)
+        $appB = $this->application(ApplicationType::TIDAK_MAMPU, [
+            'desil_sosial' => 2,
+            'ipk' => 3.99,
+        ], null, ['nilai_raport' => 98.0, 'tahun_masuk' => 2020, 'akreditasi_perguruan_tinggi' => 'Unggul']);
+
+        // C: Desil 2, IPK 3.80, Raport 90, Masuk 2022, Akr B
+        $appC = $this->application(ApplicationType::TIDAK_MAMPU, [
+            'desil_sosial' => 2,
+            'ipk' => 3.80,
+        ], null, ['nilai_raport' => 90.0, 'tahun_masuk' => 2022, 'akreditasi_perguruan_tinggi' => 'B']);
+
+        // D: Desil 2, IPK 3.80, Raport 95 (harus menang dari C karena Raport lebih tinggi)
+        $appD = $this->application(ApplicationType::TIDAK_MAMPU, [
+            'desil_sosial' => 2,
+            'ipk' => 3.80,
+        ], null, ['nilai_raport' => 95.0, 'tahun_masuk' => 2022, 'akreditasi_perguruan_tinggi' => 'B']);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($appA);
+        $scoring->calculate($appB);
+        $scoring->calculate($appC);
+        $scoring->calculate($appD);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $appA->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $appB->selection()->firstOrFail()->rank);
+        $this->assertSame(3, $appD->selection()->firstOrFail()->rank);
+        $this->assertSame(4, $appC->selection()->firstOrFail()->rank);
+    }
+
+    public function test_academic_track_orders_strictly_by_perbup_criteria(): void
+    {
+        // 1: IPK 3.90, Masuk 2023, Akr B
+        $app1 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.90], null, [
+            'ipk' => 3.90,
+            'tahun_masuk' => 2023,
+            'akreditasi_perguruan_tinggi' => 'B',
+        ]);
+
+        // 2: IPK 3.80, Masuk 2020, Akr Unggul (Kalah dari 1 karena IPK, tapi menang dari 3 karena Angkatan lebih awal)
+        $app2 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.80], null, [
+            'ipk' => 3.80,
+            'tahun_masuk' => 2020,
+            'akreditasi_perguruan_tinggi' => 'Unggul',
+        ]);
+
+        // 3: IPK 3.80, Masuk 2021, Akr Unggul (Kalah dari 2 karena angkatan)
+        $app3 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.80], null, [
+            'ipk' => 3.80,
+            'tahun_masuk' => 2021,
+            'akreditasi_perguruan_tinggi' => 'Unggul',
+        ]);
+
+        // 4: IPK 3.80, Masuk 2020, Akr Baik (Kalah dari 2 karena akreditasi)
+        $app4 = $this->application(ApplicationType::AKADEMIK, ['ipk' => 3.80], null, [
+            'ipk' => 3.80,
+            'tahun_masuk' => 2020,
+            'akreditasi_perguruan_tinggi' => 'Baik',
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($app1);
+        $scoring->calculate($app2);
+        $scoring->calculate($app3);
+        $scoring->calculate($app4);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $app1->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $app2->selection()->firstOrFail()->rank);
+        $this->assertSame(3, $app4->selection()->firstOrFail()->rank);
+        $this->assertSame(4, $app3->selection()->firstOrFail()->rank);
+    }
+
+    public function test_non_academic_track_orders_strictly_by_perbup_criteria(): void
+    {
+        $this->seed(\Database\Seeders\PrestasiTrackSeeder::class);
+
+        // 1: Juara 1 Internasional, non-ormawa
+        $app1 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
+            'tahun_masuk' => 2023,
+            'akreditasi_perguruan_tinggi' => 'B',
+        ], [
+            ['tingkat' => 'internasional', 'peringkat' => 'Juara 1', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        // 2: Juara 1 Nasional, ormawa (Kalah dari 1 karena tingkat lomba, tapi menang dari 3 karena Ormawa)
+        $app2 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
+            'tahun_masuk' => 2021,
+            'akreditasi_perguruan_tinggi' => 'B',
+        ], [
+            ['tingkat' => 'nasional', 'peringkat' => 'Juara 1', 'is_pengurus_inti_ormawa' => false],
+            ['tingkat' => 'kampus', 'peringkat' => 'Ketua', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Ketua BEM'],
+        ]);
+
+        // 3: Juara 1 Nasional, non-ormawa
+        $app3 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
+            'tahun_masuk' => 2021,
+            'akreditasi_perguruan_tinggi' => 'B',
+        ], [
+            ['tingkat' => 'nasional', 'peringkat' => 'Juara 1', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($app1);
+        $scoring->calculate($app2);
+        $scoring->calculate($app3);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $app1->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $app2->selection()->firstOrFail()->rank);
+        $this->assertSame(3, $app3->selection()->firstOrFail()->rank);
+    }
+
+    public function test_disability_track_orders_strictly_by_perbup_criteria(): void
+    {
+        $this->seed(\Database\Seeders\DisabilityTrackSeeder::class);
+
+        // 1: Masuk 2020, Akr Unggul
+        $app1 = $this->application(ApplicationType::DISABILITAS, [
+            'disability_type' => 'TUNANETRA',
+            'disability_grade' => 'BERAT',
+        ], null, [
+            'tahun_masuk' => 2020,
+            'akreditasi_perguruan_tinggi' => 'Unggul',
+        ]);
+
+        // 2: Masuk 2020, Akr Baik Sekali (Kalah dari 1 karena akreditasi)
+        $app2 = $this->application(ApplicationType::DISABILITAS, [
+            'disability_type' => 'TUNANETRA',
+            'disability_grade' => 'BERAT',
+        ], null, [
+            'tahun_masuk' => 2020,
+            'akreditasi_perguruan_tinggi' => 'Baik Sekali',
+        ]);
+
+        // 3: Masuk 2022, Akr Unggul (Kalah dari 1 dan 2 karena tahun masuk lebih akhir)
+        $app3 = $this->application(ApplicationType::DISABILITAS, [
+            'disability_type' => 'TUNANETRA',
+            'disability_grade' => 'BERAT',
+        ], null, [
+            'tahun_masuk' => 2022,
+            'akreditasi_perguruan_tinggi' => 'Unggul',
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($app1);
+        $scoring->calculate($app2);
+        $scoring->calculate($app3);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $app1->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $app2->selection()->firstOrFail()->rank);
+        $this->assertSame(3, $app3->selection()->firstOrFail()->rank);
+    }
+
+    private function application(
+        ApplicationType $type,
+        array $profileOverrides,
+        ?int $jalurBeasiswaId = null,
+        array $pendidikanOverrides = [],
+        array $prestasiList = []
+    ): Application {
         $village = Village::query()->firstOrFail();
         $student = User::factory()->create([
             'role' => UserRole::MAHASISWA,
@@ -221,32 +391,56 @@ class SelectionScoringServiceTest extends TestCase
             'village_id' => $village->id,
         ], $profileOverrides));
 
-        $pendaftaran = null;
-        if ($jalurBeasiswaId !== null) {
-            $periode = Periode::query()->first() ?? Periode::query()->create([
-                'nama' => config('kartu_hebat.current_period'),
-                'tahun' => 2026,
-                'tanggal_mulai' => '2026-07-01',
-                'tanggal_selesai' => '2026-12-31',
-                'status' => 'aktif',
-            ]);
+        $periode = Periode::query()->first() ?? Periode::query()->create([
+            'nama' => config('kartu_hebat.current_period'),
+            'tahun' => 2026,
+            'tanggal_mulai' => '2026-07-01',
+            'tanggal_selesai' => '2026-12-31',
+            'status' => 'aktif',
+        ]);
 
-            $kategori = KategoriBeasiswa::query()->where('application_type', $type->value)->first();
+        $kategori = KategoriBeasiswa::query()->where('application_type', $type->value)->first();
 
-            $pendaftaran = Pendaftaran::query()->create([
-                'user_id' => $student->id,
-                'periode_id' => $periode->id,
-                'kategori_beasiswa_id' => $kategori?->id,
-                'jalur_beasiswa_id' => $jalurBeasiswaId,
-                'nomor_pendaftaran' => 'REG-'.fake()->unique()->numerify('######'),
-                'status' => 'submitted',
-            ]);
+        $pendaftaran = Pendaftaran::query()->create([
+            'user_id' => $student->id,
+            'periode_id' => $periode->id,
+            'kategori_beasiswa_id' => $kategori?->id,
+            'jalur_beasiswa_id' => $jalurBeasiswaId,
+            'nomor_pendaftaran' => 'REG-'.fake()->unique()->numerify('######'),
+            'status' => 'submitted',
+        ]);
+
+        $pendaftaran->pendidikan()->create(array_merge([
+            'nim' => fake()->unique()->bothify('NIM-#####'),
+            'universitas' => 'Universitas Uji',
+            'status_perguruan_tinggi' => 'negeri',
+            'fakultas' => 'Teknik',
+            'jurusan' => 'Informatika',
+            'jenjang' => 'S1',
+            'semester' => $profileOverrides['semester'] ?? 4,
+            'ipk' => $profileOverrides['ipk'] ?? 3.00,
+            'nilai_raport' => $profileOverrides['nilai_raport'] ?? 80.0,
+            'tahun_masuk' => $profileOverrides['tahun_masuk'] ?? 2022,
+            'akreditasi_perguruan_tinggi' => $profileOverrides['akreditasi_perguruan_tinggi'] ?? 'B',
+            'alamat_perguruan_tinggi' => 'Palangka Raya',
+            'no_telp_perguruan_tinggi' => '0812345678',
+        ], $pendidikanOverrides));
+
+        foreach ($prestasiList as $prestasi) {
+            $pendaftaran->prestasis()->create(array_merge([
+                'jenis' => 'non_akademik',
+                'nama_prestasi' => 'Lomba Uji',
+                'tingkat' => 'nasional',
+                'peringkat' => 'Juara 1',
+                'penyelenggara' => 'DIKTI',
+                'tahun' => 2024,
+            ], $prestasi));
         }
 
         return Application::query()->create([
             'nomor_pengajuan' => 'KHM-TEST-'.fake()->unique()->numerify('######'),
             'mahasiswa_id' => $student->id,
-            'pendaftaran_id' => $pendaftaran?->id,
+            'pendaftaran_id' => $pendaftaran->id,
             'periode' => config('kartu_hebat.current_period'),
             'application_type' => $type,
             'status' => ApplicationStatus::SELEKSI_KABUPATEN,

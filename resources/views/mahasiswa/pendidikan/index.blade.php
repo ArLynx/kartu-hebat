@@ -294,6 +294,30 @@
                         </div>
 
 
+                        {{-- NILAI RAPORT KELAS XII SEMESTER GENAP --}}
+                        <div>
+                            <label class="form-label">
+                                Nilai Rata-rata Raport Kelas XII Semester Genap
+                                <span class="text-xs font-normal text-slate-500">(Dasar Urutan Seleksi Perbup)</span>
+                            </label>
+
+                            <input
+                                class="form-input"
+                                type="number"
+                                name="nilai_raport"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                value="{{ old('nilai_raport', $pendidikan?->nilai_raport) }}"
+                                placeholder="Contoh: 85.50"
+                            >
+
+                            <p class="mt-2 text-xs leading-5 text-slate-500">
+                                Skala 0 - 100. Menjadi kriteria penentu urutan (tie-breaker) pada seleksi Beasiswa Tidak Mampu.
+                            </p>
+                        </div>
+
+
                         {{-- TAHUN MASUK --}}
                         <div>
                             <label class="form-label">

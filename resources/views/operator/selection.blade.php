@@ -152,14 +152,20 @@
     <div class="flex items-start gap-3">
         <x-icon name="info" class="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
         <div class="text-sm leading-6 text-blue-800">
-            @if($selectedType === \App\Enums\ApplicationType::AKADEMIK)
-                <p class="font-bold">Rumus jalur Akademik</p>
-                <p>IPK berbobot 75% dan semester aktif berbobot 25%. IPK dinormalisasi terhadap skala 4,00; semester dinormalisasi sampai semester {{ config('kartu_hebat.scoring.academic_max_semester') }}.</p>
-            @else
-                <p class="font-bold">Rumus jalur Tidak Mampu</p>
-                <p>Skor 100% berasal dari rata-rata desil Dinas Sosial dan Dinas Pendidikan. Desil 1 memperoleh prioritas tertinggi; desil 10 memperoleh skor terendah.</p>
+            @if($selectedType === \App\Enums\ApplicationType::TIDAK_MAMPU)
+                <p class="font-bold">Dasar Urutan Seleksi Beasiswa Tidak Mampu (Peraturan Bupati):</p>
+                <p>1. Desil 1 s.d. 5 DTSEN (prioritas desil terendah) &bull; 2. Nilai IPK total/kumulatif &bull; 3. Nilai raport kelas XII semester genap &bull; 4. Tahun angkatan masuk PT lebih awal &bull; 5. Akreditasi Perguruan Tinggi.</p>
+            @elseif($selectedType === \App\Enums\ApplicationType::AKADEMIK)
+                <p class="font-bold">Dasar Urutan Seleksi Beasiswa Prestasi Akademik (Peraturan Bupati):</p>
+                <p>1. Nilai IPK total/kumulatif &bull; 2. Tahun angkatan masuk PT lebih awal &bull; 3. Akreditasi Perguruan Tinggi.</p>
+            @elseif($selectedType === \App\Enums\ApplicationType::NON_AKADEMIK)
+                <p class="font-bold">Dasar Urutan Seleksi Beasiswa Prestasi Non Akademik (Peraturan Bupati):</p>
+                <p>1. Tingkatan Juara 1, 2, atau 3 kompetisi non akademik &bull; 2. Kepengurusan inti ormawa tingkat universitas (BEM/DPM) &bull; 3. Tahun angkatan masuk PT lebih awal &bull; 4. Akreditasi Perguruan Tinggi.</p>
+            @elseif($selectedType === \App\Enums\ApplicationType::DISABILITAS)
+                <p class="font-bold">Dasar Urutan Seleksi Beasiswa Penyandang Disabilitas (Peraturan Bupati):</p>
+                <p>1. Tahun angkatan masuk PT lebih awal &bull; 2. Akreditasi Perguruan Tinggi.</p>
             @endif
-            <p class="mt-1">Skor otomatis merupakan alat bantu. Keputusan akhir tetap ditetapkan Operator Kabupaten.</p>
+            <p class="mt-1 text-xs text-blue-700">Urutan peringkat otomatis dihitung secara bertingkat (cascading tie-breaker) sesuai hierarki kriteria Perbup.</p>
         </div>
     </div>
 </div>
@@ -217,8 +223,7 @@
                 @forelse($applications as $application)
                     @php
                         $profile = $application->mahasiswa->profile;
-                        $desils = collect([$profile?->desil_sosial, $profile?->desil_pendidikan])->filter(fn($value) => $value !== null);
-                        $verifiedDesil = $desils->isNotEmpty() ? number_format((float) $desils->average(), 2) : '-';
+                        $verifiedDesil = $profile?->desil_sosial !== null ? (string) $profile->desil_sosial : '-';
                     @endphp
                     <tr>
                         <td>
@@ -238,12 +243,35 @@
                             @endif
                         </td>
                         <td>
-                            @if($selectedType === \App\Enums\ApplicationType::AKADEMIK)
-                                <p class="font-medium">IPK {{ $profile?->ipk ?? '-' }}</p>
-                                <p class="mt-1 text-xs text-slate-500">Semester {{ $profile?->semester ?? '-' }}</p>
+                            @php
+                                $pendidikan = $application->pendaftaran?->pendidikan;
+                                $ipkVal = $pendidikan?->ipk ?? $profile?->ipk ?? '-';
+                                $tahunMasukVal = $pendidikan?->tahun_masuk ?? '-';
+                                $akreditasiVal = $pendidikan?->akreditasi_perguruan_tinggi ?? '-';
+                            @endphp
+
+                            @if($selectedType === \App\Enums\ApplicationType::TIDAK_MAMPU)
+                                <p class="font-semibold text-slate-900">Desil {{ $verifiedDesil }} · IPK {{ $ipkVal }}</p>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Raport XII: <span class="font-medium text-slate-700">{{ $pendidikan?->nilai_raport ? number_format((float) $pendidikan->nilai_raport, 2) : '-' }}</span> · Angkatan {{ $tahunMasukVal }} · Akr. {{ $akreditasiVal }}
+                                </p>
+                            @elseif($selectedType === \App\Enums\ApplicationType::AKADEMIK)
+                                <p class="font-semibold text-slate-900">IPK {{ $ipkVal }}</p>
+                                <p class="mt-1 text-xs text-slate-500">Angkatan {{ $tahunMasukVal }} · Akreditasi {{ $akreditasiVal }}</p>
+                            @elseif($selectedType === \App\Enums\ApplicationType::NON_AKADEMIK)
+                                @php
+                                    $bestPrestasi = $application->pendaftaran?->prestasis?->first(fn ($p) => ! (bool) $p->is_pengurus_inti_ormawa);
+                                    $ormawaPrestasi = $application->pendaftaran?->prestasis?->first(fn ($p) => (bool) $p->is_pengurus_inti_ormawa);
+                                @endphp
+                                <p class="font-semibold text-slate-900">
+                                    {{ $bestPrestasi ? ($bestPrestasi->peringkat.' ('.ucfirst($bestPrestasi->tingkat).')') : 'Tanpa Lomba' }}
+                                </p>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Ormawa: <span class="font-medium text-slate-700">{{ $ormawaPrestasi ? ($ormawaPrestasi->jabatan_ormawa ?: 'Pengurus Inti') : '-' }}</span> · Angkatan {{ $tahunMasukVal }} · Akr. {{ $akreditasiVal }}
+                                </p>
                             @else
-                                <p class="font-medium">Desil {{ $verifiedDesil }}</p>
-                                <p class="mt-1 text-xs text-slate-500">Sosial {{ $profile?->desil_sosial ?? '-' }} · Pendidikan {{ $profile?->desil_pendidikan ?? '-' }}</p>
+                                <p class="font-semibold text-slate-900">Angkatan {{ $tahunMasukVal }}</p>
+                                <p class="mt-1 text-xs text-slate-500">Akreditasi PT: {{ $akreditasiVal }} · Disabilitas: {{ $profile?->disability_type ?? '-' }}</p>
                             @endif
                         </td>
                         <td>

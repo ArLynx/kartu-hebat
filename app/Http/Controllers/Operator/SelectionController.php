@@ -36,7 +36,14 @@ class SelectionController extends Controller
             ->visibleTo($request->user())
             ->where('applications.periode', config('kartu_hebat.current_period'))
             ->where('applications.application_type', $selectedType->value)
-            ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'scores.criterion', 'pendaftaran.jalurBeasiswa'])
+            ->with([
+                'mahasiswa.profile.village.kecamatan',
+                'selection',
+                'scores.criterion',
+                'pendaftaran.jalurBeasiswa',
+                'pendaftaran.pendidikan',
+                'pendaftaran.prestasis',
+            ])
             ->whereIn('applications.status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,

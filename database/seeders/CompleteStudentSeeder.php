@@ -277,7 +277,6 @@ class CompleteStudentSeeder extends Seeder
                 'penghasilan_keluarga' => 4500000,
                 'jumlah_tanggungan' => 4,
                 'desil_sosial' => null,
-                'desil_pendidikan' => null,
                 'prestasi' => 'Juara 1 LKTI Tingkat Universitas (2024)',
             ],
             'data_pribadi' => [
@@ -361,7 +360,6 @@ class CompleteStudentSeeder extends Seeder
                 'penghasilan_keluarga' => 1800000,
                 'jumlah_tanggungan' => 5,
                 'desil_sosial' => 6,
-                'desil_pendidikan' => 7,
                 'prestasi' => null,
             ],
             'data_pribadi' => [
@@ -434,7 +432,6 @@ class CompleteStudentSeeder extends Seeder
                 'penghasilan_keluarga' => 3500000,
                 'jumlah_tanggungan' => 3,
                 'desil_sosial' => null,
-                'desil_pendidikan' => null,
                 'prestasi' => 'Juara 2 MTQ Tingkat Provinsi Kalteng (2025)',
             ],
             'data_pribadi' => [
@@ -518,7 +515,6 @@ class CompleteStudentSeeder extends Seeder
                 'penghasilan_keluarga' => 5000000,
                 'jumlah_tanggungan' => 3,
                 'desil_sosial' => null,
-                'desil_pendidikan' => null,
                 'prestasi' => 'Juara 1 Debat Bahasa Indonesia Tingkat Nasional (2025); Juara 3 Pencak Silat Tingkat Provinsi (2024)',
             ],
             'data_pribadi' => [

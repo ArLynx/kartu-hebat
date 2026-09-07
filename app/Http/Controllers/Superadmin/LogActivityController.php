@@ -1898,9 +1898,6 @@ class LogActivityController extends Controller
             'desil_sosial'
                 => 'Desil Sosial',
 
-            'desil_pendidikan'
-                => 'Desil Pendidikan',
-
             'prestasi'
                 => 'Prestasi',
 

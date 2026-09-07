@@ -28,7 +28,7 @@
                 <th>NIM</th>
                 <th>Perguruan Tinggi</th>
                 <th>IPK/Smt</th>
-                <th>Desil S/P</th>
+                <th>Desil Sosial</th>
                 <th>Wilayah</th>
                 <th>Skor</th>
                 <th>Keputusan</th>
@@ -45,7 +45,7 @@
                     <td>{{ $application->mahasiswa->profile?->nim }}</td>
                     <td>{{ $application->mahasiswa->profile?->universitas }}</td>
                     <td>{{ $application->mahasiswa->profile?->ipk ?? '-' }} / {{ $application->mahasiswa->profile?->semester ?? '-' }}</td>
-                    <td>{{ $application->mahasiswa->profile?->desil_sosial ?? '-' }} / {{ $application->mahasiswa->profile?->desil_pendidikan ?? '-' }}</td>
+                    <td>{{ $application->mahasiswa->profile?->desil_sosial ?? '-' }}</td>
                     <td>{{ $application->mahasiswa->profile?->village?->display_name }}, {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</td>
                     <td>{{ number_format((float) ($application->selection?->final_score ?? 0), 2) }}</td>
                     <td>{{ $application->selection?->published_at ? $application->status->label() : ($application->selection?->manual_decision ?? 'Menunggu') }}</td>

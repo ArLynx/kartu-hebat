@@ -22,7 +22,13 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
     public function collection(): Collection
     {
         return Application::query()
-            ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
+            ->with([
+                'mahasiswa.profile.village.kecamatan',
+                'selection',
+                'pendaftaran.jalurBeasiswa',
+                'pendaftaran.pendidikan',
+                'pendaftaran.prestasis',
+            ])
             ->where('periode', config('kartu_hebat.current_period'))
             ->when($this->applicationType, fn ($query) => $query->where('application_type', $this->applicationType->value))
             ->when($this->jalurBeasiswaId, fn ($query) => $query->whereHas('pendaftaran', fn ($q) => $q->where('jalur_beasiswa_id', $this->jalurBeasiswaId)))
@@ -56,8 +62,11 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             'Program Studi',
             'Semester',
             'IPK',
+            'Nilai Raport XII',
+            'Tahun Masuk (Angkatan)',
+            'Akreditasi PT',
+            'Pengurus Ormawa Univ',
             'Desil Sosial',
-            'Desil Pendidikan',
             'Kecamatan',
             'Desa/Kelurahan',
             'Skor Akhir',
@@ -68,6 +77,9 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
 
     public function map($application): array
     {
+        $pendidikan = $application->pendaftaran?->pendidikan;
+        $hasOrmawa = $application->pendaftaran?->prestasis?->contains(fn ($p) => (bool) $p->is_pengurus_inti_ormawa);
+
         return [
             $application->application_type?->label(),
             $application->pendaftaran?->jalurBeasiswa?->nama ?? '-',
@@ -80,8 +92,11 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             $application->mahasiswa->profile?->program_studi,
             $application->mahasiswa->profile?->semester,
             $application->mahasiswa->profile?->ipk,
+            $pendidikan?->nilai_raport !== null ? (float) $pendidikan->nilai_raport : '-',
+            $pendidikan?->tahun_masuk ?? '-',
+            $pendidikan?->akreditasi_perguruan_tinggi ?? '-',
+            $hasOrmawa ? 'Ya' : 'Tidak',
             $application->mahasiswa->profile?->desil_sosial,
-            $application->mahasiswa->profile?->desil_pendidikan,
             $application->mahasiswa->profile?->village?->kecamatan?->name,
             $application->mahasiswa->profile?->village?->display_name,
             $application->selection?->final_score,

@@ -180,11 +180,15 @@ class PrestasiController extends Controller
                 Rule::in(['kampus', 'kabupaten', 'provinsi', 'nasional', 'internasional']),
             ],
             'peringkat' => ['required', 'string', 'max:100'],
+            'is_pengurus_inti_ormawa' => ['nullable', 'boolean'],
+            'jabatan_ormawa' => ['nullable', 'string', 'max:150'],
             'penyelenggara' => ['required', 'string', 'max:200'],
             'tahun' => ['required', 'integer', 'digits:4', 'between:1990,'.now()->year],
             'dokumen' => ['nullable', File::types(self::CERTIFICATE_FORMATS)->max(2048)],
             'keterangan' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $validated['is_pengurus_inti_ormawa'] = $request->boolean('is_pengurus_inti_ormawa');
 
         unset($validated['dokumen']);
 

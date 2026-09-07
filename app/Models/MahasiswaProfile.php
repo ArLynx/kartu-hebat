@@ -19,7 +19,6 @@ class MahasiswaProfile extends Model
             'penghasilan_keluarga' => 'integer',
             'jumlah_tanggungan' => 'integer',
             'desil_sosial' => 'integer',
-            'desil_pendidikan' => 'integer',
         ];
     }
 

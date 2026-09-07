@@ -87,14 +87,13 @@ class ApplicationWorkflowTest extends TestCase
         $application = $workflow->verify($application, $social, VerificationDecision::MS, score: 85, desil: 2);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        $application = $workflow->verify($application, $education, VerificationDecision::MS, score: 88, desil: 3);
+        $application = $workflow->verify($application, $education, VerificationDecision::MS, score: 88);
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->status);
         $this->assertNotNull($application->selection);
         $this->assertCount(2, $application->scores);
         $this->assertCount(3, $application->agencyVerifications);
         $this->assertSame('sesuai', $student->profile->fresh()->status_kependudukan);
         $this->assertSame(2, $student->profile->fresh()->desil_sosial);
-        $this->assertSame(3, $student->profile->fresh()->desil_pendidikan);
     }
 
     public function test_application_becomes_tms_when_any_agency_rejects(): void

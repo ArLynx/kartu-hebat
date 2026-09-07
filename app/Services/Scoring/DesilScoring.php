@@ -22,7 +22,7 @@ class DesilScoring implements ScoringStrategy
             ->filter(fn ($desil) => $desil !== null)
             ->map(fn ($desil) => (int) $desil);
 
-        $profileDesils = collect([$profile?->desil_sosial, $profile?->desil_pendidikan])
+        $profileDesils = collect([$profile?->desil_sosial])
             ->filter(fn ($desil) => $desil !== null)
             ->map(fn ($desil) => (int) $desil);
 

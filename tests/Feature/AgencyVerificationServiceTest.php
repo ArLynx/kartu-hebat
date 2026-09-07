@@ -106,10 +106,9 @@ class AgencyVerificationServiceTest extends TestCase
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $app2->status);
         $this->assertSame(2, $student->profile->fresh()->desil_sosial);
 
-        // 3. Pendidikan MS -> desil_pendidikan = 3, konsensus lengkap -> transisi ke SELEKSI_KABUPATEN
-        $app3 = $this->service->submitDecision($application, $pendidikan, VerificationDecision::MS, desil: 3);
+        // 3. Pendidikan MS -> konsensus lengkap -> transisi ke SELEKSI_KABUPATEN
+        $app3 = $this->service->submitDecision($application, $pendidikan, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $app3->status);
-        $this->assertSame(3, $student->profile->fresh()->desil_pendidikan);
         $this->assertNotNull($app3->selection);
     }
 
