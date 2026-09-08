@@ -197,11 +197,23 @@
             }
         }
 
-        /*
+       /*
         |--------------------------------------------------------------------------
         | Alamat sesuai KTP
         |--------------------------------------------------------------------------
         */
+
+        $jenisWilayah = 'Desa';
+
+        if ($dataPribadi?->village_id) {
+            $village = \App\Models\Village::find($dataPribadi->village_id);
+
+            if ($village) {
+                $jenisWilayah = $village->type === 'kelurahan'
+                    ? 'Kelurahan'
+                    : 'Desa';
+            }
+        }
 
         $alamatKtp = collect([
             $dataPribadi?->alamat
@@ -209,7 +221,7 @@
                 : null,
 
             $dataPribadi?->desa
-                ? 'Desa ' . $dataPribadi->desa
+                ? $jenisWilayah . ' ' . $dataPribadi->desa
                 : null,
 
             $dataPribadi?->kecamatan
