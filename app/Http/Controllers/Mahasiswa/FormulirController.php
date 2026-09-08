@@ -17,8 +17,8 @@ class FormulirController extends Controller
     /**
      * Surat Permohonan
      *
-     * Form A : IPK >= 2.75
-     * Form B : IPK < 2.75
+     * Form A : Mahasiswa yang sudah memiliki IPK
+     * Form B : Mahasiswa yang belum memiliki IPK (IPK = 0 / kosong)
      */
     public function suratPermohonan(Request $request): Response
     {
@@ -34,6 +34,12 @@ class FormulirController extends Controller
             'pendidikan',
             'orangTua',
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pastikan data wajib tersedia
+        |--------------------------------------------------------------------------
+        */
 
         abort_unless(
             $pendaftaran->pendidikan,
@@ -53,35 +59,69 @@ class FormulirController extends Controller
             'Data orang tua belum dilengkapi.'
         );
 
-        $ipk = $pendaftaran->pendidikan->ipk;
+        /*
+        |--------------------------------------------------------------------------
+        | Tentukan Form A / Form B berdasarkan IPK
+        |--------------------------------------------------------------------------
+        |
+        | IPK = 0 / kosong
+        |     -> Form B
+        |
+        | IPK > 0
+        |     -> Form A
+        |
+        */
 
-        abort_unless(
-            $ipk !== null,
-            422,
-            'IPK belum diisi.'
-        );
+        $pendidikan = $pendaftaran->pendidikan;
+
+        $ipk = $pendidikan->ipk;
 
         /*
         |--------------------------------------------------------------------------
-        | Tentukan Form A / Form B
+        | Tentukan jenis formulir
         |--------------------------------------------------------------------------
         */
 
-        $batasIpk = 2.75;
+        $jenisForm = (
+            $ipk === null ||
+            (float) $ipk <= 0
+        )
+            ? 'B'
+            : 'A';
 
-        $jenisForm = (float) $ipk >= $batasIpk
-            ? 'A'
-            : 'B';
 
         /*
         |--------------------------------------------------------------------------
-        | Generate PDF
+        | Form A wajib mempunyai IPK
+        |--------------------------------------------------------------------------
+        */
+
+        if ($jenisForm === 'A') {
+
+            abort_unless(
+                (float) $ipk > 0,
+                422,
+                'IPK belum diisi.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tentukan Blade Form
         |--------------------------------------------------------------------------
         */
 
         $viewName = $jenisForm === 'B'
             ? 'mahasiswa.formulir.surat-permohonan-b'
             : 'mahasiswa.formulir.surat-permohonan-a';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generate PDF
+        |--------------------------------------------------------------------------
+        */
 
         $pdf = Pdf::loadView(
             $viewName,
@@ -90,6 +130,7 @@ class FormulirController extends Controller
                 'jenisForm' => $jenisForm,
             ]
         );
+
 
         /*
         |--------------------------------------------------------------------------
@@ -108,10 +149,18 @@ class FormulirController extends Controller
             935.43,
         ]);
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Nama File
+        |--------------------------------------------------------------------------
+        */
+
         $namaFile = 'Surat-Permohonan-'
-            .$pendaftaran->nomor_pendaftaran
-            .'-Form-'.$jenisForm
-            .'.pdf';
+            . $pendaftaran->nomor_pendaftaran
+            . '-Form-' . $jenisForm
+            . '.pdf';
+
 
         return $pdf->download($namaFile);
     }

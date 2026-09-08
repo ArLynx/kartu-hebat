@@ -290,6 +290,8 @@
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
                                 Masukkan IPK terakhir sesuai dokumen akademik.
+                                <strong>Jika belum memiliki IPK, seperti mahasiswa baru/semester 1,
+                                isi dengan 0.</strong>
                             </p>
                         </div>
 
@@ -298,7 +300,9 @@
                         <div>
                             <label class="form-label">
                                 Nilai Rata-rata Raport Kelas XII Semester Genap
-                                <span class="text-xs font-normal text-slate-500">(Dasar Urutan Seleksi Perbup)</span>
+                                <span class="text-xs font-normal text-slate-500">
+                                    (Opsional)
+                                </span>
                             </label>
 
                             <input
@@ -314,6 +318,10 @@
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
                                 Skala 0 - 100. Menjadi kriteria penentu urutan (tie-breaker) pada seleksi Beasiswa Tidak Mampu.
+                                Isi nilai rata-rata raport Kelas XII Semester Genap.
+                                <strong>Nilai ini digunakan sebagai nilai akademik bagi mahasiswa
+                                yang belum memiliki IPK (IPK diisi 0).</strong>
+                                Kolom ini boleh dikosongkan jika tidak diperlukan.
                             </p>
                         </div>
 
