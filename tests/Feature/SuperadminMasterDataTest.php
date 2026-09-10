@@ -188,6 +188,113 @@ class SuperadminMasterDataTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $operator->id]);
     }
 
+    public function test_superadmin_can_view_periode_index_and_create_page(): void
+    {
+        $superadmin = $this->superadmin();
+        $periode = Periode::query()->create([
+            'tahun' => 2026,
+            'nama' => 'Periode Beasiswa 2026',
+            'tanggal_mulai' => '2026-01-01',
+            'tanggal_selesai' => '2026-12-31',
+            'status' => 'aktif',
+        ]);
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.periodes.index'))
+            ->assertOk()
+            ->assertSee('Periode Beasiswa 2026');
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.periodes.create'))
+            ->assertOk()
+            ->assertSee('Periode Beasiswa Baru');
+    }
+
+    public function test_superadmin_can_create_and_update_periode(): void
+    {
+        $superadmin = $this->superadmin();
+
+        $response = $this->actingAs($superadmin)->post(route('superadmin.periodes.store'), [
+            'tahun' => 2027,
+            'nama' => 'Beasiswa Hebat 2027',
+            'tanggal_mulai' => '2027-02-01',
+            'tanggal_selesai' => '2027-04-30',
+            'status' => 'draft',
+        ]);
+
+        $response->assertRedirect(route('superadmin.periodes.index'));
+        $this->assertDatabaseHas('periodes', [
+            'tahun' => 2027,
+            'nama' => 'Beasiswa Hebat 2027',
+            'status' => 'draft',
+        ]);
+
+        $periode = Periode::query()->where('tahun', 2027)->firstOrFail();
+
+        $updateResponse = $this->actingAs($superadmin)->put(route('superadmin.periodes.update', $periode), [
+            'tahun' => 2027,
+            'nama' => 'Beasiswa Hebat 2027 Final',
+            'tanggal_mulai' => '2027-02-01',
+            'tanggal_selesai' => '2027-05-15',
+            'status' => 'aktif',
+        ]);
+
+        $updateResponse->assertRedirect(route('superadmin.periodes.edit', $periode));
+        $this->assertDatabaseHas('periodes', [
+            'id' => $periode->id,
+            'nama' => 'Beasiswa Hebat 2027 Final',
+            'status' => 'aktif',
+        ]);
+    }
+
+    public function test_periode_with_categories_cannot_be_deleted(): void
+    {
+        $superadmin = $this->superadmin();
+        $periode = Periode::query()->create([
+            'tahun' => 2026,
+            'nama' => 'Periode Terikat',
+            'tanggal_mulai' => '2026-01-01',
+            'tanggal_selesai' => '2026-12-31',
+            'status' => 'aktif',
+        ]);
+
+        KategoriBeasiswa::query()->create([
+            'periode_id' => $periode->id,
+            'kode' => 'CAT-TEST',
+            'application_type' => ApplicationType::AKADEMIK,
+            'nama' => 'Kategori Terikat',
+            'kuota' => 10,
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+
+        $this->actingAs($superadmin)
+            ->delete(route('superadmin.periodes.destroy', $periode))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('periodes', ['id' => $periode->id]);
+    }
+
+    public function test_empty_periode_can_be_deleted(): void
+    {
+        $superadmin = $this->superadmin();
+        $periode = Periode::query()->create([
+            'tahun' => 2028,
+            'nama' => 'Periode Kosong',
+            'tanggal_mulai' => '2028-01-01',
+            'tanggal_selesai' => '2028-12-31',
+            'status' => 'draft',
+        ]);
+
+        $this->actingAs($superadmin)
+            ->delete(route('superadmin.periodes.destroy', $periode))
+            ->assertRedirect(route('superadmin.periodes.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('periodes', ['id' => $periode->id]);
+    }
+
     private function superadmin(): User
     {
         return User::factory()->create([

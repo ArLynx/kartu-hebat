@@ -94,6 +94,10 @@
                     Dashboard
                 </x-sidebar-link>
 
+                <x-sidebar-link :href="route('superadmin.periodes.index')" :active="request()->routeIs('superadmin.periodes.*')" icon="calendar">
+                    Periode Beasiswa
+                </x-sidebar-link>
+
                 <x-sidebar-link :href="route('superadmin.kategori-beasiswa.index')" :active="request()->routeIs('superadmin.kategori-beasiswa.*')" icon="tag">
                     Kategori Beasiswa
                 </x-sidebar-link>

@@ -29,6 +29,7 @@ use App\Http\Controllers\Superadmin\DashboardController as SuperadminDashboardCo
 use App\Http\Controllers\Superadmin\DocumentTypeController as SuperadminDocumentTypeController;
 use App\Http\Controllers\Superadmin\KategoriBeasiswaController as SuperadminKategoriBeasiswaController;
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
+use App\Http\Controllers\Superadmin\PeriodeController as SuperadminPeriodeController;
 use App\Http\Controllers\SuperAdmin\LogActivityController;
 use App\Http\Controllers\TwoFactorSetupController;
 use Illuminate\Support\Facades\Route;
@@ -137,6 +138,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
             ->name('superadmin.')
             ->group(function (): void {
                 Route::get('/dashboard', SuperadminDashboardController::class)->name('dashboard');
+
+                Route::resource('periodes', SuperadminPeriodeController::class)
+                    ->except('show')
+                    ->parameters(['periodes' => 'periode']);
 
                 Route::resource('kategori-beasiswa', SuperadminKategoriBeasiswaController::class)
                     ->except('show')
