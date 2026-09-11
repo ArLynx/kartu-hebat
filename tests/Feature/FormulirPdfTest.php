@@ -126,7 +126,7 @@ class FormulirPdfTest extends TestCase
         $this->assertSame(3, $pageCount);
     }
 
-    public function test_controller_downloads_form_b_when_ipk_below_threshold(): void
+    public function test_controller_downloads_form_b_when_ipk_is_zero_or_not_yet_available(): void
     {
         $user = User::factory()->create([
             'role' => UserRole::MAHASISWA,
@@ -199,8 +199,8 @@ class FormulirPdfTest extends TestCase
             'alamat_perguruan_tinggi' => 'Jl. Yos Sudarso, Palangka Raya',
             'no_telp_perguruan_tinggi' => '0536-3221234',
             'tahun_masuk' => 2023,
-            'semester' => 4,
-            'ipk' => 2.50,
+            'semester' => 1,
+            'ipk' => 0.00,
         ]);
 
         OrangTua::query()->create([
