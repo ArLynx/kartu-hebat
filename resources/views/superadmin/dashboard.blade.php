@@ -13,6 +13,10 @@
         </p>
     </div>
     <div class="flex flex-wrap gap-3">
+        <a href="{{ route('superadmin.periodes.create') }}" class="btn-secondary">
+            <x-icon name="plus" class="h-4 w-4" />
+            Periode Baru
+        </a>
         <a href="{{ route('superadmin.kategori-beasiswa.create') }}" class="btn-secondary">
             <x-icon name="plus" class="h-4 w-4" />
             Kategori Baru
@@ -26,12 +30,12 @@
 
 <div class="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
     @foreach([
-        ['tag', 'Kategori Beasiswa', $stats['categories'], $stats['activeCategories'].' kategori aktif'],
-        ['document', 'Document Types', $stats['documentTypes'], $stats['activeDocumentTypes'].' jenis aktif'],
-        ['folder', 'Jenis Terintegrasi', $stats['integratedDocumentTypes'], 'Dipakai alur pendaftaran'],
-        ['clock', 'Periode', $stats['periods'], 'Seluruh periode beasiswa'],
-    ] as [$icon, $label, $value, $description])
-        <div class="card p-5">
+        ['calendar', 'Periode', $stats['periods'], 'Seluruh periode beasiswa', route('superadmin.periodes.index')],
+        ['tag', 'Kategori Beasiswa', $stats['categories'], $stats['activeCategories'].' kategori aktif', route('superadmin.kategori-beasiswa.index')],
+        ['document', 'Document Types', $stats['documentTypes'], $stats['activeDocumentTypes'].' jenis aktif', route('superadmin.document-types.index')],
+        ['folder', 'Jenis Terintegrasi', $stats['integratedDocumentTypes'], 'Dipakai alur pendaftaran', null],
+    ] as [$icon, $label, $value, $description, $url])
+        <{{ $url ? 'a href="'.$url.'"' : 'div' }} class="card p-5 {{ $url ? 'hover:border-brand-300 transition-colors' : '' }}">
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="text-sm font-semibold text-slate-500">{{ $label }}</p>
@@ -42,7 +46,7 @@
                     <x-icon :name="$icon" class="h-5 w-5" />
                 </div>
             </div>
-        </div>
+        </{{ $url ? 'a' : 'div' }}>
     @endforeach
 </div>
 
