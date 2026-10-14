@@ -30,7 +30,7 @@ use App\Http\Controllers\Superadmin\DocumentTypeController as SuperadminDocument
 use App\Http\Controllers\Superadmin\KategoriBeasiswaController as SuperadminKategoriBeasiswaController;
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
 use App\Http\Controllers\Superadmin\PeriodeController as SuperadminPeriodeController;
-use App\Http\Controllers\SuperAdmin\LogActivityController;
+use App\Http\Controllers\Superadmin\LogActivityController;
 use App\Http\Controllers\TwoFactorSetupController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\RegisteredUserController;

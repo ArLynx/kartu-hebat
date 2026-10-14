@@ -366,6 +366,19 @@
                     </div>
 
 
+                    @if ($pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::TIDAK_MAMPU)
+                        <div>
+                            <dt class="text-slate-500">
+                                Nilai Rata-rata Raport Kelas XII
+                            </dt>
+
+                            <dd class="mt-1 font-semibold">
+                                {{ $pendidikan?->nilai_raport !== null ? number_format((float) $pendidikan->nilai_raport, 2) : '-' }}
+                            </dd>
+                        </div>
+                    @endif
+
+
                     <div>
                         <dt class="text-slate-500">
                             Status Mahasiswa
@@ -438,65 +451,67 @@
 
 
             {{-- ========================================================= --}}
-            {{-- PRESTASI --}}
+            {{-- PRESTASI (HANYA NON-AKADEMIK) --}}
             {{-- ========================================================= --}}
 
-            <section class="card overflow-hidden">
+            @if ($pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::NON_AKADEMIK)
+                <section class="card overflow-hidden">
 
-                <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5 sm:px-8">
+                    <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5 sm:px-8">
 
-                    <div>
+                        <div>
 
-                        <h2 class="text-xl font-bold">
-                            Prestasi
-                        </h2>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            {{ $pendaftaran->prestasis->count() }}
-                            prestasi tercatat.
-                        </p>
-
-                    </div>
-
-                    <a href="{{ route('mahasiswa.prestasi.index') }}"
-                        class="text-sm font-semibold text-brand-700 hover:underline">
-                        Perbaiki
-                    </a>
-
-                </div>
-
-
-                <div class="p-6 sm:p-8">
-
-                    @forelse ($pendaftaran->prestasis as $prestasi)
-                        <div class="border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0">
-
-                            <p class="font-semibold">
-                                {{ $prestasi->nama_prestasi }}
-                            </p>
+                            <h2 class="text-xl font-bold">
+                                Prestasi
+                            </h2>
 
                             <p class="mt-1 text-sm text-slate-500">
-                                {{ ucfirst(str_replace('_', ' ', $prestasi->jenis)) }}
-                                ·
-                                {{ ucfirst($prestasi->tingkat) }}
-                                ·
-                                {{ $prestasi->peringkat }}
-                                ·
-                                {{ $prestasi->tahun }}
+                                {{ $pendaftaran->prestasis->count() }}
+                                prestasi tercatat.
                             </p>
 
                         </div>
 
-                    @empty
+                        <a href="{{ route('mahasiswa.prestasi.index') }}"
+                            class="text-sm font-semibold text-brand-700 hover:underline">
+                            Perbaiki
+                        </a>
 
-                        <p class="text-sm text-slate-500">
-                            Tidak ada prestasi yang dicantumkan.
-                        </p>
-                    @endforelse
+                    </div>
 
-                </div>
 
-            </section>
+                    <div class="p-6 sm:p-8">
+
+                        @forelse ($pendaftaran->prestasis as $prestasi)
+                            <div class="border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0">
+
+                                <p class="font-semibold">
+                                    {{ $prestasi->nama_prestasi }}
+                                </p>
+
+                                <p class="mt-1 text-sm text-slate-500">
+                                    {{ ucfirst(str_replace('_', ' ', $prestasi->jenis)) }}
+                                    ·
+                                    {{ ucfirst($prestasi->tingkat) }}
+                                    ·
+                                    {{ $prestasi->peringkat }}
+                                    ·
+                                    {{ $prestasi->tahun }}
+                                </p>
+
+                            </div>
+
+                        @empty
+
+                            <p class="text-sm text-slate-500">
+                                Tidak ada prestasi yang dicantumkan.
+                            </p>
+                        @endforelse
+
+                    </div>
+
+                </section>
+            @endif
 
 
 
@@ -548,6 +563,13 @@
                             /bulan
                         </dd>
 
+                        <dd class="mt-1 text-xs text-slate-500">
+                            Status: {{ $orangTua?->status_ayah === 'meninggal_dunia' ? 'Meninggal Dunia' : 'Hidup' }}
+                            @if ($orangTua?->nik_ayah)
+                                · NIK: {{ $orangTua->nik_ayah }}
+                            @endif
+                        </dd>
+
                     </div>
 
 
@@ -567,6 +589,13 @@
                             Rp
                             {{ number_format((float) ($orangTua?->penghasilan_ibu ?? 0), 0, ',', '.') }}
                             /bulan
+                        </dd>
+
+                        <dd class="mt-1 text-xs text-slate-500">
+                            Status: {{ $orangTua?->status_ibu === 'meninggal_dunia' ? 'Meninggal Dunia' : 'Hidup' }}
+                            @if ($orangTua?->nik_ibu)
+                                · NIK: {{ $orangTua->nik_ibu }}
+                            @endif
                         </dd>
 
                     </div>
@@ -590,6 +619,12 @@
                                 {{ number_format((float) ($orangTua->penghasilan_wali ?? 0), 0, ',', '.') }}
                                 /bulan
                             </dd>
+
+                            @if ($orangTua->nik_wali)
+                                <dd class="mt-1 text-xs text-slate-500">
+                                    NIK: {{ $orangTua->nik_wali }}
+                                </dd>
+                            @endif
 
                         </div>
                     @endif

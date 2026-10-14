@@ -45,6 +45,11 @@
                 6 => ['label' => 'Review', 'route' => 'mahasiswa.review.index'],
                 7 => ['label' => 'Submit', 'route' => 'mahasiswa.submit.index'],
             ];
+
+            $isNonAkademik = $pendaftaran?->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::NON_AKADEMIK;
+            if (! $isNonAkademik) {
+                unset($steps[3]);
+            }
         @endphp
 
         @if ($pendaftaran->application)
@@ -178,7 +183,8 @@
                     class="inline-flex w-fit rounded-full {{ $stepStatuses[7] ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }} px-4 py-2 text-sm font-bold">{{ ucfirst($pendaftaran->status) }}</span>
             </div>
 
-            <div class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+            <div class="mt-8 grid gap-3 sm:grid-cols-2 {{ $isNonAkademik ? 'lg:grid-cols-7' : 'lg:grid-cols-6' }}">
+                @php $seq = 1; @endphp
                 @foreach ($steps as $number => $step)
                     @php
                         $completed = $stepStatuses[$number];
@@ -198,18 +204,24 @@
                             'bg-white text-slate-500' => !$completed && !$current,
                         ])>
                             @if ($completed)
-                                <x-icon name="check" class="h-4 w-4" />@else{{ $number }}
+                                <x-icon name="check" class="h-4 w-4" />@else{{ $seq }}
                             @endif
                         </div>
                         <p class="mt-3 text-xs font-semibold text-slate-700">{{ $step['label'] }}</p>
                     </a>
+                    @php $seq++; @endphp
                 @endforeach
             </div>
 
             <div class="mt-8 flex flex-wrap gap-3">
-                <a href="{{ route($steps[$currentStep]['route']) }}" class="btn-primary">
+                @php
+                    $targetStep = isset($steps[$currentStep]) ? $currentStep : array_key_first($steps);
+                    $stepKeys = array_keys($steps);
+                    $displayCurrentStep = array_search($targetStep, $stepKeys) !== false ? array_search($targetStep, $stepKeys) + 1 : $targetStep;
+                @endphp
+                <a href="{{ route($steps[$targetStep]['route']) }}" class="btn-primary">
                     <x-icon name="form" class="h-5 w-5" />
-                    {{ $stepStatuses[7] ? 'Lihat Pendaftaran' : 'Lanjutkan Tahap ' . $currentStep }}
+                    {{ $stepStatuses[7] ? 'Lihat Pendaftaran' : 'Lanjutkan Tahap ' . $displayCurrentStep }}
                 </a>
                 <a href="{{ route('profile.show') }}" class="btn-secondary">Profil & Keamanan Akun</a>
             </div>

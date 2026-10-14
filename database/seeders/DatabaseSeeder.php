@@ -14,12 +14,12 @@ class DatabaseSeeder extends Seeder
             BeasiswaMasterSeeder::class,
             DisabilityTrackSeeder::class,
             PrestasiTrackSeeder::class,
+            JalurBeasiswaSeeder::class,
         ]);
 
         if (app()->environment(['local', 'testing'])) {
             $this->call(BeasiswaDemoUserSeeder::class);
             $this->call(CompleteStudentSeeder::class);
-            $this->call(JalurBeasiswaSeeder::class);
         }
     }
 }

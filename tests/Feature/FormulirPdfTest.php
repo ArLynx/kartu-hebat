@@ -200,7 +200,7 @@ class FormulirPdfTest extends TestCase
             'no_telp_perguruan_tinggi' => '0536-3221234',
             'tahun_masuk' => 2023,
             'semester' => 4,
-            'ipk' => 2.50,
+            'ipk' => 0.00,
         ]);
 
         OrangTua::query()->create([

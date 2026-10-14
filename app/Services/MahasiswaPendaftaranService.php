@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ApplicationType;
 use App\Models\JenisDokumen;
 use App\Models\Pendaftaran;
 use App\Models\User;
@@ -57,6 +58,7 @@ class MahasiswaPendaftaranService
     public function completion(Pendaftaran $pendaftaran): array
     {
         $pendaftaran->loadMissing([
+            'kategoriBeasiswa',
             'dataPribadi',
             'pendidikan',
             'prestasis',
@@ -99,22 +101,24 @@ class MahasiswaPendaftaranService
                 'status_mahasiswa',
             ]);
 
-        $prestasiComplete = $pendaftaran->prestasi_dikonfirmasi_at !== null;
+        $prestasiComplete = ! $this->requiresPrestasi($pendaftaran)
+            || $pendaftaran->prestasi_dikonfirmasi_at !== null;
+
+        $ayahFields = ['nama_ayah', 'status_ayah', 'pekerjaan_ayah', 'penghasilan_ayah'];
+        if ($orangTua?->status_ayah === 'hidup') {
+            $ayahFields[] = 'nik_ayah';
+        }
+
+        $ibuFields = ['nama_ibu', 'status_ibu', 'pekerjaan_ibu', 'penghasilan_ibu'];
+        if ($orangTua?->status_ibu === 'hidup') {
+            $ibuFields[] = 'nik_ibu';
+        }
+
+        $waliFields = ['nama_wali', 'nik_wali', 'pekerjaan_wali', 'penghasilan_wali'];
 
         $orangTuaComplete = $orangTua
-            && $this->allFilled($orangTua, [
-                'nama_ayah',
-                'pekerjaan_ayah',
-                'penghasilan_ayah',
-                'nama_ibu',
-                'pekerjaan_ibu',
-                'penghasilan_ibu',
-            ])
-            && (! $orangTua->memiliki_wali || $this->allFilled($orangTua, [
-                'nama_wali',
-                'pekerjaan_wali',
-                'penghasilan_wali',
-            ]));
+            && $this->allFilled($orangTua, array_merge($ayahFields, $ibuFields))
+            && (! $orangTua->memiliki_wali || $this->allFilled($orangTua, $waliFields));
 
         $requiredTypes = $this->requiredDocumentTypes($pendaftaran);
         $uploadedDocuments = $pendaftaran->dokumens
@@ -158,6 +162,13 @@ class MahasiswaPendaftaranService
         ];
     }
 
+    public function requiresPrestasi(Pendaftaran $pendaftaran): bool
+    {
+        $pendaftaran->loadMissing('kategoriBeasiswa');
+
+        return $pendaftaran->kategoriBeasiswa?->application_type === ApplicationType::NON_AKADEMIK;
+    }
+
     /**
      * @return array<int, string>
      */
@@ -170,6 +181,10 @@ class MahasiswaPendaftaranService
             4 => 'Orang Tua',
             5 => 'Dokumen',
         ];
+
+        if (! $this->requiresPrestasi($pendaftaran)) {
+            unset($labels[3]);
+        }
 
         if ($includeReview) {
             $labels[6] = 'Review';

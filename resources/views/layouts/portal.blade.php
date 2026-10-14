@@ -56,9 +56,15 @@
                         Pendidikan
                     </x-sidebar-link>
 
-                    <x-sidebar-link :href="route('mahasiswa.prestasi.index')" :active="request()->routeIs('mahasiswa.prestasi.*')" icon="chart">
-                        Prestasi
-                    </x-sidebar-link>
+                    @php
+                        $userPendaftaran = $pendaftaran ?? $activePendaftaran ?? null;
+                    @endphp
+
+                    @if ($userPendaftaran?->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::NON_AKADEMIK)
+                        <x-sidebar-link :href="route('mahasiswa.prestasi.index')" :active="request()->routeIs('mahasiswa.prestasi.*')" icon="chart">
+                            Prestasi
+                        </x-sidebar-link>
+                    @endif
 
                     <x-sidebar-link :href="route('mahasiswa.orang-tua.index')" :active="request()->routeIs('mahasiswa.orang-tua.*')" icon="users">
                         Orang Tua
