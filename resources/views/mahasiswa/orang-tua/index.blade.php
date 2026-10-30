@@ -81,12 +81,13 @@
 
                         {{-- STATUS AYAH --}}
                         <div>
-                            <label class="form-label">
+                            <label class="form-label" for="status_ayah">
                                 Status Ayah
                                 <span class="text-red-500">*</span>
                             </label>
 
                             <select
+                                id="status_ayah"
                                 class="form-input"
                                 name="status_ayah"
                                 required
@@ -107,19 +108,21 @@
                         {{-- NIK AYAH --}}
                         <div>
 
-                            <label class="form-label">
+                            <label class="form-label" for="nik_ayah">
                                 NIK Ayah
-                                <span class="font-normal text-slate-400">(opsional)</span>
+                                <span id="nik_ayah_required" class="text-red-500">*</span>
+                                <span id="nik_ayah_optional" class="font-normal text-slate-400 hidden">(opsional)</span>
                             </label>
 
                             <input
+                                id="nik_ayah"
                                 class="form-input"
                                 type="text"
                                 name="nik_ayah"
                                 maxlength="16"
                                 inputmode="numeric"
                                 value="{{ old('nik_ayah', $orangTua?->nik_ayah) }}"
-                                placeholder="Masukkan NIK jika ada"
+                                placeholder="Masukkan 16 digit NIK ayah"
                             >
 
                         </div>
@@ -216,12 +219,13 @@
 
                         {{-- STATUS IBU --}}
                         <div>
-                            <label class="form-label">
+                            <label class="form-label" for="status_ibu">
                                 Status Ibu
                                 <span class="text-red-500">*</span>
                             </label>
 
                             <select
+                                id="status_ibu"
                                 class="form-input"
                                 name="status_ibu"
                                 required
@@ -242,19 +246,21 @@
                         {{-- NIK IBU --}}
                         <div>
 
-                            <label class="form-label">
+                            <label class="form-label" for="nik_ibu">
                                 NIK Ibu
-                                <span class="font-normal text-slate-400">(opsional)</span>
+                                <span id="nik_ibu_required" class="text-red-500">*</span>
+                                <span id="nik_ibu_optional" class="font-normal text-slate-400 hidden">(opsional)</span>
                             </label>
 
                             <input
+                                id="nik_ibu"
                                 class="form-input"
                                 type="text"
                                 name="nik_ibu"
                                 maxlength="16"
                                 inputmode="numeric"
                                 value="{{ old('nik_ibu', $orangTua?->nik_ibu) }}"
-                                placeholder="Masukkan NIK jika ada"
+                                placeholder="Masukkan 16 digit NIK ibu"
                             >
 
                         </div>
@@ -377,19 +383,21 @@
                         {{-- NIK WALI --}}
                         <div>
 
-                            <label class="form-label">
+                            <label class="form-label" for="nik_wali">
                                 NIK Wali
-                                <span class="font-normal text-slate-400">(opsional)</span>
+                                <span class="text-red-500">*</span>
                             </label>
 
                             <input
+                                id="nik_wali"
                                 class="form-input"
                                 type="text"
                                 name="nik_wali"
                                 maxlength="16"
                                 inputmode="numeric"
                                 value="{{ old('nik_wali', $orangTua?->nik_wali) }}"
-                                placeholder="Masukkan NIK jika ada"
+                                placeholder="Masukkan 16 digit NIK wali"
+                                data-wali-required
                             >
 
                         </div>
@@ -455,11 +463,17 @@
 
             <div class="flex flex-wrap justify-between gap-3">
 
+                <?php
+                    $isNonAkademik = $pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::NON_AKADEMIK;
+                    $prevRoute = $isNonAkademik ? route('mahasiswa.prestasi.index') : route('mahasiswa.pendidikan.index');
+                    $prevLabel = $isNonAkademik ? 'Kembali ke Prestasi' : 'Kembali ke Pendidikan';
+                ?>
+
                 <a
-                    href="{{ route('mahasiswa.prestasi.index') }}"
+                    href="{{ $prevRoute }}"
                     class="btn-secondary"
                 >
-                    Kembali ke Prestasi
+                    {{ $prevLabel }}
                 </a>
 
 
@@ -504,30 +518,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkbox = document.getElementById('memiliki-wali');
     const fields = document.getElementById('wali-fields');
 
-    if (!checkbox || !fields) {
-        return;
+    if (checkbox && fields) {
+        const syncWali = () => {
+            fields.classList.toggle(
+                'hidden',
+                !checkbox.checked
+            );
+
+            fields
+                .querySelectorAll('[data-wali-required]')
+                .forEach((input) => {
+                    input.required = checkbox.checked;
+                });
+        };
+
+        checkbox.addEventListener('change', syncWali);
+        syncWali();
     }
 
-    const sync = () => {
+    const setupParentNikSync = (statusSelectId, nikInputId, requiredMarkId, optionalMarkId) => {
+        const statusSelect = document.getElementById(statusSelectId);
+        const nikInput = document.getElementById(nikInputId);
+        const requiredMark = document.getElementById(requiredMarkId);
+        const optionalMark = document.getElementById(optionalMarkId);
 
-        fields.classList.toggle(
-            'hidden',
-            !checkbox.checked
-        );
+        if (!statusSelect || !nikInput) {
+            return;
+        }
 
-        fields
-            .querySelectorAll('[data-wali-required]')
-            .forEach((input) => {
+        const syncNik = () => {
+            const isHidup = statusSelect.value === 'hidup';
+            nikInput.required = isHidup;
 
-                input.required = checkbox.checked;
+            if (requiredMark && optionalMark) {
+                requiredMark.classList.toggle('hidden', !isHidup);
+                optionalMark.classList.toggle('hidden', isHidup);
+            }
 
-            });
+            if (isHidup) {
+                nikInput.placeholder = 'Masukkan 16 digit NIK';
+            } else {
+                nikInput.placeholder = 'Masukkan NIK jika ada (opsional)';
+            }
+        };
 
+        statusSelect.addEventListener('change', syncNik);
+        syncNik();
     };
 
-    checkbox.addEventListener('change', sync);
-
-    sync();
+    setupParentNikSync('status_ayah', 'nik_ayah', 'nik_ayah_required', 'nik_ayah_optional');
+    setupParentNikSync('status_ibu', 'nik_ibu', 'nik_ibu_required', 'nik_ibu_optional');
 
 });
 </script>

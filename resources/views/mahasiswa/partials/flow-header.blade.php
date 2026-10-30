@@ -8,6 +8,15 @@
         6 => ['label' => 'Review', 'route' => 'mahasiswa.review.index'],
         7 => ['label' => 'Submit', 'route' => 'mahasiswa.submit.index'],
     ];
+
+    $isNonAkademik = $pendaftaran?->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::NON_AKADEMIK;
+    if (! $isNonAkademik) {
+        unset($steps[3]);
+    }
+
+    $totalSteps = count($steps);
+    $stepKeys = array_keys($steps);
+    $displayStep = array_search($currentStep, $stepKeys) !== false ? array_search($currentStep, $stepKeys) + 1 : $currentStep;
 @endphp
 
 <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -17,13 +26,14 @@
     </div>
     <div class="text-left sm:text-right">
         <span class="inline-flex w-fit rounded-full bg-brand-100 px-4 py-2 text-xs font-bold text-brand-800">
-            Tahap {{ $currentStep }} / 7
+            Tahap {{ $displayStep }} / {{ $totalSteps }}
         </span>
         <p class="mt-2 text-xs text-slate-500">{{ $pendaftaran->nomor_pendaftaran }}</p>
     </div>
 </div>
 
-<div class="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+<div class="mt-7 grid gap-3 sm:grid-cols-2 {{ $totalSteps === 7 ? 'lg:grid-cols-7' : 'lg:grid-cols-6' }}">
+    @php $seq = 1; @endphp
     @foreach($steps as $number => $step)
         @php
             $completed = (bool) ($stepStatuses[$number] ?? false);
@@ -45,10 +55,11 @@
                 @if($completed && ! $current)
                     <x-icon name="check" class="h-4 w-4" />
                 @else
-                    {{ $number }}
+                    {{ $seq }}
                 @endif
             </div>
             <p class="mt-3 text-xs font-semibold text-slate-700">{{ $step['label'] }}</p>
         </a>
+        @php $seq++; @endphp
     @endforeach
 </div>

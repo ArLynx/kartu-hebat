@@ -200,8 +200,6 @@
                                     'D3' => 'Diploma III (D3)',
                                     'D4' => 'Diploma IV (D4)',
                                     'S1' => 'Strata 1 (S1)',
-                                    'S2' => 'Strata 2 (S2)',
-                                    'S3' => 'Strata 3 (S3)',
                                 ] as $value => $label)
 
                                     <option
@@ -290,40 +288,42 @@
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
                                 Masukkan IPK terakhir sesuai dokumen akademik.
-                                <strong>Jika belum memiliki IPK, seperti mahasiswa baru/semester 1,
-                                isi dengan 0.</strong>
+                                {{-- <strong>Jika belum memiliki IPK, seperti mahasiswa baru/semester 1,
+                                isi dengan 0.</strong> --}}
                             </p>
                         </div>
 
 
-                        {{-- NILAI RAPORT KELAS XII SEMESTER GENAP --}}
-                        <div>
-                            <label class="form-label">
-                                Nilai Rata-rata Raport Kelas XII Semester Genap
-                                <span class="text-xs font-normal text-slate-500">
-                                    (Opsional)
-                                </span>
-                            </label>
+                        {{-- NILAI RAPORT KELAS XII SEMESTER GENAP (HANYA UNTUK KATEGORI TIDAK MAMPU) --}}
+                        @if ($pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::TIDAK_MAMPU)
+                            <div>
+                                <label class="form-label">
+                                    Nilai Rata-rata Raport Kelas XII Semester Genap
+                                    <span class="text-xs font-normal text-slate-500">
+                                        (Opsional)
+                                    </span>
+                                </label>
 
-                            <input
-                                class="form-input"
-                                type="number"
-                                name="nilai_raport"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                value="{{ old('nilai_raport', $pendidikan?->nilai_raport) }}"
-                                placeholder="Contoh: 85.50"
-                            >
+                                <input
+                                    class="form-input"
+                                    type="number"
+                                    name="nilai_raport"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value="{{ old('nilai_raport', $pendidikan?->nilai_raport) }}"
+                                    placeholder="Contoh: 85.50"
+                                >
 
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Skala 0 - 100. Menjadi kriteria penentu urutan (tie-breaker) pada seleksi Beasiswa Tidak Mampu.
-                                Isi nilai rata-rata raport Kelas XII Semester Genap.
-                                <strong>Nilai ini digunakan sebagai nilai akademik bagi mahasiswa
-                                yang belum memiliki IPK (IPK diisi 0).</strong>
-                                Kolom ini boleh dikosongkan jika tidak diperlukan.
-                            </p>
-                        </div>
+                                <p class="mt-2 text-xs leading-5 text-slate-500">
+                                    Skala 0 - 100. Menjadi kriteria penentu urutan (tie-breaker) pada seleksi Beasiswa Tidak Mampu.
+                                    Isi nilai rata-rata raport Kelas XII Semester Genap.
+                                    <strong>Nilai ini digunakan sebagai nilai akademik bagi mahasiswa
+                                    yang belum memiliki IPK (IPK diisi 0).</strong>
+                                    Kolom ini boleh dikosongkan jika tidak diperlukan.
+                                </p>
+                            </div>
+                        @endif
 
 
                         {{-- TAHUN MASUK --}}
@@ -346,7 +346,7 @@
 
 
                         {{-- TAHUN LULUS --}}
-                        <div>
+                        {{-- <div>
                             <label class="form-label">
                                 Tahun Lulus
                                 <span class="font-normal text-slate-400">
@@ -367,7 +367,7 @@
                             <p class="mt-2 text-xs leading-5 text-slate-500">
                                 Kosongkan apabila mahasiswa masih menempuh pendidikan.
                             </p>
-                        </div>
+                        </div> --}}
 
                     </div>
 
@@ -613,13 +613,19 @@
                 </a>
 
 
+                <?php
+                    $isNonAkademik = $pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::NON_AKADEMIK;
+                    $nextRoute = $isNonAkademik ? route('mahasiswa.prestasi.index') : route('mahasiswa.orang-tua.index');
+                    $nextLabel = $isNonAkademik ? 'Prestasi' : 'Data Orang Tua';
+                ?>
+
                 @if($canEdit)
 
                     <button
                         type="submit"
                         class="btn-primary"
                     >
-                        Simpan & Lanjut ke Prestasi
+                        Simpan & Lanjut ke {{ $nextLabel }}
 
                         <x-icon
                             name="arrow-right"
@@ -630,10 +636,10 @@
                 @else
 
                     <a
-                        href="{{ route('mahasiswa.prestasi.index') }}"
+                        href="{{ $nextRoute }}"
                         class="btn-primary"
                     >
-                        Lanjut ke Prestasi
+                        Lanjut ke {{ $nextLabel }}
                     </a>
 
                 @endif

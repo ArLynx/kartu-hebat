@@ -35,6 +35,12 @@ class PrestasiController extends Controller
                 ->with('error', 'Buat pendaftaran beasiswa terlebih dahulu.');
         }
 
+        if (! $this->flow->requiresPrestasi($pendaftaran)) {
+            return redirect()
+                ->route('mahasiswa.orang-tua.index')
+                ->with('info', 'Tahap prestasi hanya berlaku untuk beasiswa jalur Non-Akademik / Prestasi.');
+        }
+
         $pendaftaran->load(['prestasis' => fn ($query) => $query->latest('tahun')->latest('id')]);
 
         return view('mahasiswa.prestasi.index', [
@@ -166,6 +172,7 @@ class PrestasiController extends Controller
         $pendaftaran = $this->flow->currentFor($request->user());
         abort_unless($pendaftaran, 404);
         abort_unless($this->flow->isEditable($pendaftaran), 403, 'Pendaftaran tidak dapat diubah.');
+        abort_unless($this->flow->requiresPrestasi($pendaftaran), 403, 'Tahap prestasi hanya untuk jalur Non-Akademik / Prestasi.');
 
         return $pendaftaran;
     }

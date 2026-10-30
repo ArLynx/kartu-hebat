@@ -67,6 +67,7 @@ class OrangTuaController extends Controller
             ],
 
             'nik_ayah' => [
+                'required_if:status_ayah,hidup',
                 'nullable',
                 'digits:16',
             ],
@@ -101,6 +102,7 @@ class OrangTuaController extends Controller
             ],
 
             'nik_ibu' => [
+                'required_if:status_ibu,hidup',
                 'nullable',
                 'digits:16',
             ],
@@ -129,32 +131,42 @@ class OrangTuaController extends Controller
             ],
 
             'nama_wali' => [
+                'required_if:memiliki_wali,true,1',
                 'nullable',
-                'required_if:memiliki_wali,1',
                 'string',
                 'max:150',
             ],
 
             'nik_wali' => [
+                'required_if:memiliki_wali,true,1',
                 'nullable',
-                'required_if:memiliki_wali,1',
                 'digits:16',
             ],
 
             'pekerjaan_wali' => [
+                'required_if:memiliki_wali,true,1',
                 'nullable',
-                'required_if:memiliki_wali,1',
                 'string',
                 'max:150',
             ],
 
             'penghasilan_wali' => [
+                'required_if:memiliki_wali,true,1',
                 'nullable',
-                'required_if:memiliki_wali,1',
                 'numeric',
                 'min:0',
                 'max:9999999999999.99',
             ],
+        ], [
+            'nik_ayah.required_if' => 'NIK Ayah wajib diisi 16 digit apabila status ayah hidup.',
+            'nik_ayah.digits' => 'NIK Ayah harus terdiri dari 16 digit angka.',
+            'nik_ibu.required_if' => 'NIK Ibu wajib diisi 16 digit apabila status ibu hidup.',
+            'nik_ibu.digits' => 'NIK Ibu harus terdiri dari 16 digit angka.',
+            'nama_wali.required_if' => 'Nama wali wajib diisi jika memiliki wali.',
+            'nik_wali.required_if' => 'NIK Wali wajib diisi jika memiliki wali.',
+            'nik_wali.digits' => 'NIK Wali harus terdiri dari 16 digit angka.',
+            'pekerjaan_wali.required_if' => 'Pekerjaan wali wajib diisi jika memiliki wali.',
+            'penghasilan_wali.required_if' => 'Penghasilan wali wajib diisi jika memiliki wali.',
         ]);
 
         /*

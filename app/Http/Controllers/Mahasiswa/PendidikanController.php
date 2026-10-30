@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\Enums\ApplicationType;
 use App\Http\Controllers\Controller;
 use App\Models\Pendidikan;
 use App\Services\MahasiswaPendaftaranService;
@@ -296,6 +297,12 @@ class PendidikanController extends Controller
 
         ]);
 
+        $pendaftaran->loadMissing('kategoriBeasiswa');
+
+        if ($pendaftaran->kategoriBeasiswa?->application_type !== ApplicationType::TIDAK_MAMPU) {
+            $validated['nilai_raport'] = null;
+        }
+
         DB::transaction(function () use ($pendaftaran, $validated): void {
 
             Pendidikan::query()->updateOrCreate(
@@ -319,8 +326,12 @@ class PendidikanController extends Controller
                 ->save();
         });
 
+        $nextRoute = $this->flow->requiresPrestasi($pendaftaran)
+            ? 'mahasiswa.prestasi.index'
+            : 'mahasiswa.orang-tua.index';
+
         return redirect()
-            ->route('mahasiswa.prestasi.index')
+            ->route($nextRoute)
             ->with(
                 'success',
                 'Data pendidikan berhasil disimpan.'

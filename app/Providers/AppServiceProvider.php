@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Application;
 use App\Policies\ApplicationPolicy;
+use App\Services\MahasiswaPendaftaranService;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
@@ -30,10 +31,17 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('layouts.portal', function ($view): void {
             $user = auth()->user();
+            $activePendaftaran = null;
+
+            if ($user && method_exists($user, 'isMahasiswa') && $user->isMahasiswa()) {
+                $activePendaftaran = app(MahasiswaPendaftaranService::class)->currentFor($user);
+                $activePendaftaran?->loadMissing('kategoriBeasiswa');
+            }
 
             $view->with([
                 'unreadNotifications' => $user?->unreadNotifications()->count() ?? 0,
                 'headerNotifications' => $user?->notifications()->latest()->limit(5)->get() ?? collect(),
+                'activePendaftaran' => $activePendaftaran,
             ]);
         });
     }
