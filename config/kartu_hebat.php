@@ -56,6 +56,7 @@ return [
         'dukcapil' => 'Dinas Kependudukan dan Pencatatan Sipil',
         'sosial' => 'Dinas Sosial',
         'pendidikan' => 'Dinas Pendidikan dan Kebudayaan',
+        'bkpsdm' => 'Badan Kepegawaian dan Pengembangan Sumber Daya Manusia',
         'kesehatan' => 'Dinas Kesehatan',
         'parsepor' => 'Dinas Parsepor',
     ],

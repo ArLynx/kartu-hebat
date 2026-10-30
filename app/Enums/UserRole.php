@@ -11,6 +11,7 @@ enum UserRole: string
     case OPERATOR_DUKCAPIL = 'operator_dukcapil';
     case OPERATOR_SOSIAL = 'operator_sosial';
     case OPERATOR_PENDIDIKAN = 'operator_pendidikan';
+    case OPERATOR_BKPSDM = 'operator_bkpsdm';
     case OPERATOR_DINKES = 'operator_dinkes';
     case OPERATOR_PARSEPOR = 'operator_parsepor';
     case OPERATOR_KABUPATEN = 'operator_kabupaten';
@@ -25,6 +26,7 @@ enum UserRole: string
             self::OPERATOR_DUKCAPIL => 'Operator Dinas Dukcapil',
             self::OPERATOR_SOSIAL => 'Operator Dinas Sosial',
             self::OPERATOR_PENDIDIKAN => 'Operator Dinas Pendidikan dan Kebudayaan',
+            self::OPERATOR_BKPSDM => 'Operator BKPSDM',
             self::OPERATOR_DINKES => 'Operator Dinas Kesehatan',
             self::OPERATOR_PARSEPOR => 'Operator Dinas Parsepor',
             self::OPERATOR_KABUPATEN => 'Operator Kabupaten',
@@ -42,6 +44,7 @@ enum UserRole: string
             self::OPERATOR_DUKCAPIL,
             self::OPERATOR_SOSIAL,
             self::OPERATOR_PENDIDIKAN,
+            self::OPERATOR_BKPSDM,
             self::OPERATOR_DINKES,
             self::OPERATOR_PARSEPOR,
         ], true);
@@ -53,6 +56,7 @@ enum UserRole: string
             self::OPERATOR_DUKCAPIL => 'dukcapil',
             self::OPERATOR_SOSIAL => 'sosial',
             self::OPERATOR_PENDIDIKAN => 'pendidikan',
+            self::OPERATOR_BKPSDM => 'bkpsdm',
             self::OPERATOR_DINKES => 'kesehatan',
             self::OPERATOR_PARSEPOR => 'parsepor',
             default => null,
@@ -62,6 +66,7 @@ enum UserRole: string
     public function verifiedTrack(): ?ApplicationType
     {
         return match ($this) {
+            self::OPERATOR_SOSIAL => ApplicationType::TIDAK_MAMPU,
             self::OPERATOR_DINKES => ApplicationType::DISABILITAS,
             self::OPERATOR_PARSEPOR => ApplicationType::NON_AKADEMIK,
             default => null,

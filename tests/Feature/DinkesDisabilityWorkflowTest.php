@@ -47,26 +47,26 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $this->seedDocuments($application, $student);
 
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
         $dinkes = $this->operator(UserRole::OPERATOR_DINKES, $village);
 
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
             $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
             $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
             $documentService->assessDocument($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->fresh()->status);
 
-        $workflow->verify($application, $social, VerificationDecision::MS);
+        $workflow->verify($application, $education, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->fresh()->status);
 
-        $workflow->verify($application, $education, VerificationDecision::MS);
+        $workflow->verify($application, $bkpsdm, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->fresh()->status);
 
         $application = $workflow->verify($application, $dinkes, VerificationDecision::MS);
@@ -86,22 +86,22 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $this->seedDocuments($application, $student);
 
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
         $dinkes = $this->operator(UserRole::OPERATOR_DINKES, $village);
 
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
             $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
             $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
             $documentService->assessDocument($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
-        $workflow->verify($application, $social, VerificationDecision::MS);
         $workflow->verify($application, $education, VerificationDecision::MS);
+        $workflow->verify($application, $bkpsdm, VerificationDecision::MS);
 
         $application = $workflow->verify($application, $dinkes, VerificationDecision::TMS, 'Keterangan disabilitas tidak sesuai');
         $this->assertSame(ApplicationStatus::TMS, $application->status);
@@ -148,21 +148,21 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $this->seedDocuments($application, $student);
 
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
             $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
             $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
-        $workflow->verify($application, $social, VerificationDecision::MS);
+        $workflow->verify($application, $education, VerificationDecision::MS);
 
-        $application = $workflow->verify($application, $education, VerificationDecision::MS);
+        $application = $workflow->verify($application, $bkpsdm, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->status);
         $this->assertCount(3, $application->agencyVerifications);
         $this->assertFalse($application->agencyVerifications->contains('agency', 'kesehatan'));

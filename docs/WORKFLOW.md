@@ -28,9 +28,10 @@ Diagram teks (ASCII):
 PENDAFTARAN (wizard 7 langkah)
         │  submit
         ▼
-VERIFIKASI_DINAS  (3 dinas paralel: Dukcapil, Sosial, Pendidikan;
-                   4 dinas utk jalur Disabilitas: + Dinkes;
-                   4 dinas utk jalur Prestasi: + Parsepor)
+VERIFIKASI_DINAS  (3 dinas paralel untuk semua jalur: Dukcapil, Pendidikan, BKPSDM;
+                   + Dinas Sosial khusus jalur Tidak Mampu;
+                   + Dinkes khusus jalur Disabilitas;
+                   + Parsepor khusus jalur Prestasi)
       │
       ├── ada TMS ─────► TMS
       │
@@ -48,8 +49,9 @@ VERIFIKASI_DINAS  (3 dinas paralel: Dukcapil, Sosial, Pendidikan;
 |---|---|---|
 | `mahasiswa` | Pendaftaran | Mengisi wizard & submit |
 | `operator_dukcapil` | Lintas Dinas | MS / TMS (paralel) |
-| `operator_sosial` | Lintas Dinas | MS / TMS + desil sosial |
+| `operator_sosial` | Lintas Dinas (jalur Tidak Mampu saja) | MS / TMS + desil sosial |
 | `operator_pendidikan` | Lintas Dinas | MS / TMS |
+| `operator_bkpsdm` | Lintas Dinas | MS / TMS |
 | `operator_dinkes` | Lintas Dinas (jalur Disabilitas saja) | MS / TMS |
 | `operator_parsepor` | Lintas Dinas (jalur Prestasi saja) | MS / TMS |
 | `operator_kabupaten` | Seleksi Kabupaten | Pemeringkatan Perbup, export rekap, import keputusan + PDF SK, publikasi |
@@ -103,16 +105,17 @@ Setiap operator dinas memberi **satu keputusan keseluruhan** (MS/TMS) atas aplik
 Inti logika verifikasi dinas dikelola oleh modul mendalam `AgencyVerificationService`:
 
 - Prasyarat status: `VERIFIKASI_DINAS`.
-- Dinas Dukcapil, Sosial, Pendidikan memverifikasi **paralel** untuk semua jalur; Dinas Kesehatan (**Dinkes**) hanya untuk jalur **DISABILITAS**, Dinas **Parsepor** hanya untuk jalur **NON_AKADEMIK** (Prestasi). Masing-masing menyimpan keputusan di `agency_verifications` (kunci: `application_id` + `agency`).
-- Jumlah dinas yang wajib memutuskan ditentukan oleh `AgencyVerificationService::requiredAgencies()`: 3 untuk AKADEMIK/TIDAK_MAMPU, 4 (termasuk Dinkes) untuk DISABILITAS, 4 (termasuk Parsepor) untuk NON_AKADEMIK.
+- Dinas Dukcapil, Pendidikan, dan BKPSDM memverifikasi **paralel** untuk semua jalur; **Dinas Sosial hanya untuk jalur TIDAK_MAMPU**, Dinas Kesehatan (**Dinkes**) hanya untuk jalur **DISABILITAS**, dan Dinas **Parsepor** hanya untuk jalur **NON_AKADEMIK** (Prestasi). Masing-masing menyimpan keputusan di `agency_verifications` (kunci: `application_id` + `agency`).
+- Jumlah dinas yang wajib memutuskan ditentukan oleh `AgencyVerificationService::requiredAgencies()`: 3 untuk AKADEMIK, 4 untuk TIDAK_MAMPU (termasuk Sosial), 4 untuk DISABILITAS (termasuk Dinkes), dan 4 untuk NON_AKADEMIK (termasuk Parsepor).
 - **Status application belum berubah** sampai seluruh dinas yang wajib selesai memutuskan (`return null` selama belum lengkap).
 - Saat seluruh dinas wajib telah memutuskan:
   - Ada minimal satu TMS → langsung menjadi `TMS`.
   - Semua dinas memutuskan MS → hitung skor (`SelectionScoringService::calculate`) dan status naik ke `SELEKSI_KABUPATEN`.
 - Efek keputusan dinas ke profil mahasiswa:
   - Dukcapil → `status_kependudukan` (`sesuai` / `tidak_sesuai`).
-  - Sosial → `desil_sosial` (DTSEN).
+  - Sosial → `desil_sosial` (DTSEN), khusus jalur Tidak Mampu.
   - Pendidikan → rekomendasi kelayakan MS / TMS (kolom `desil_pendidikan` telah dihapus).
+  - BKPSDM → rekomendasi kelayakan MS / TMS (semua jalur).
   - Dinkes → rekomendasi kelayakan MS / TMS (khusus jalur Disabilitas).
   - Parsepor → rekomendasi kelayakan MS / TMS (khusus jalur Non-Akademik/Prestasi).
 
@@ -187,7 +190,7 @@ Jika terjadi persaingan nilai antarkandidat, pemeringkatan kabupaten (`recalcula
 | Status | Keterangan |
 |---|---|
 | `DRAFT` | Belum dikirim / dikembalikan untuk diperbaiki |
-| `VERIFIKASI_DINAS` | Antrean verifikasi lintas dinas (3 dinas paralel; 4 utk Disabilitas/Prestasi) |
+| `VERIFIKASI_DINAS` | Antrean verifikasi lintas dinas (3 dinas paralel; +Sosial utk Tidak Mampu, +Dinkes/Parsepor utk Disabilitas/Prestasi) |
 | `SELEKSI_KABUPATEN` | Seleksi kabupaten (skoring & peringkat) |
 | `TMS` | Final — tidak memenuhi syarat |
 | `DITERIMA` | Final — diterima |

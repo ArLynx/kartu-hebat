@@ -161,7 +161,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
             });
 
         Route::middleware([
-            'role:operator_desa,operator_kecamatan,operator_dukcapil,operator_sosial,operator_pendidikan,operator_dinkes,operator_parsepor,operator_kabupaten',
+            'role:operator_desa,operator_kecamatan,operator_dukcapil,operator_sosial,operator_pendidikan,operator_bkpsdm,operator_dinkes,operator_parsepor,operator_kabupaten',
             '2fa.ensure',
         ])
             ->prefix('operator')

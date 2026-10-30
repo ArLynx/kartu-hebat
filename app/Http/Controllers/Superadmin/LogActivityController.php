@@ -728,9 +728,10 @@ class LogActivityController extends Controller
         $operators = User::query()
             ->whereIn('role', [
                 'operator_dukcapil',
-                'operator_dinas_sosial',
-                'operator_dinas_pendidikan',
-                'operator_dinas_kesehatan',
+                'operator_sosial',
+                'operator_pendidikan',
+                'operator_bkpsdm',
+                'operator_dinkes',
                 'operator_parsepor',
                 'operator_kabupaten',
             ])
@@ -779,11 +780,13 @@ class LogActivityController extends Controller
 
             'operator_dukcapil' => 'Dukcapil',
 
-            'operator_dinas_sosial' => 'Dinas Sosial',
+            'operator_sosial' => 'Dinas Sosial',
 
-            'operator_dinas_pendidikan' => 'Dinas Pendidikan',
+            'operator_pendidikan' => 'Dinas Pendidikan',
 
-            'operator_dinas_kesehatan' => 'Dinas Kesehatan',
+            'operator_bkpsdm' => 'BKPSDM',
+
+            'operator_dinkes' => 'Dinas Kesehatan',
 
             'operator_parsepor' => 'Parsepor',
 

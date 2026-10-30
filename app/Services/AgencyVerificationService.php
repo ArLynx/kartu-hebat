@@ -24,6 +24,8 @@ class AgencyVerificationService
 
     public const STAGE_PENDIDIKAN = 'pendidikan';
 
+    public const STAGE_BKPSDM = 'bkpsdm';
+
     public const STAGE_KESEHATAN = 'kesehatan';
 
     public const STAGE_PARSEPOR = 'parsepor';
@@ -38,6 +40,7 @@ class AgencyVerificationService
             UserRole::OPERATOR_DUKCAPIL => self::STAGE_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL => self::STAGE_SOSIAL,
             UserRole::OPERATOR_PENDIDIKAN => self::STAGE_PENDIDIKAN,
+            UserRole::OPERATOR_BKPSDM => self::STAGE_BKPSDM,
             UserRole::OPERATOR_DINKES => self::STAGE_KESEHATAN,
             UserRole::OPERATOR_PARSEPOR => self::STAGE_PARSEPOR,
             default => throw new \LogicException('Role tidak memiliki tahap penilaian dokumen.'),
@@ -50,6 +53,7 @@ class AgencyVerificationService
             self::STAGE_DUKCAPIL => 'Dukcapil',
             self::STAGE_SOSIAL => 'Dinas Sosial',
             self::STAGE_PENDIDIKAN => 'Disdikbud',
+            self::STAGE_BKPSDM => 'BKPSDM',
             self::STAGE_KESEHATAN => 'Dinkes',
             self::STAGE_PARSEPOR => 'Parsepor',
             default => $stage,
@@ -57,9 +61,9 @@ class AgencyVerificationService
     }
 
     /**
-     * Dinas yang wajib memutuskan sebuah application. Agensi yang terikat
-     * satu jalur (Dinkes→Disabilitas, Parsepor→Prestasi) hanya ikut jika
-     * jalur aplikasi cocok; selain itu cukup 3 dinas utama (Dukcapil, Sosial, Disdikbud).
+     * Dinas yang wajib memutuskan sebuah application. Dukcapil, Disdikbud,
+     * dan BKPSDM menilai semua jalur; Dinas Sosial hanya jalur Tidak Mampu,
+     * Dinkes hanya Disabilitas, dan Parsepor hanya Prestasi.
      *
      * @return array<int, string> kode agency
      */
@@ -350,10 +354,12 @@ class AgencyVerificationService
             };
         }
 
-        $verifications = $application->agencyVerifications()->get();
         $requiredAgencies = self::requiredAgencies($application);
+        $verifications = $application->agencyVerifications()
+            ->whereIn('agency', $requiredAgencies)
+            ->get();
 
-        if (count($verifications) < count($requiredAgencies)) {
+        if ($verifications->count() < count($requiredAgencies)) {
             return null;
         }
 

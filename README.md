@@ -16,7 +16,7 @@ Implementasi Laravel untuk pendaftaran bantuan pendidikan mahasiswa dengan verif
 Mahasiswa mengisi wizard 7 langkah → application diverifikasi lintas dinas:
 
 ```
-Pendaftaran → Verifikasi Lintas Dinas (3 dinas paralel; 4 utk jalur Disabilitas) → Seleksi Kabupaten → Publikasi Hasil
+Pendaftaran → Verifikasi Lintas Dinas (3 dinas inti; +Dinas Sosial utk Tidak Mampu, +Dinkes/Parsepor utk Disabilitas/Prestasi) → Seleksi Kabupaten → Publikasi Hasil
 ```
 
 Keputusan tiap operator dinas: **MS** (lanjut), **TMS** (ditolak).

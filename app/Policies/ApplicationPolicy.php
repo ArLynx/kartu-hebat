@@ -61,6 +61,7 @@ class ApplicationPolicy
             UserRole::OPERATOR_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL,
             UserRole::OPERATOR_PENDIDIKAN,
+            UserRole::OPERATOR_BKPSDM,
             UserRole::OPERATOR_DINKES,
             UserRole::OPERATOR_PARSEPOR => $application->status === ApplicationStatus::VERIFIKASI_DINAS,
             default => false,
