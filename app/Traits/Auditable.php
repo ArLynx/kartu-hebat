@@ -64,7 +64,7 @@ trait Auditable
             return;
         }
 
-        $actorId = auth()->id();
+        $actorId = auth()->user()?->getKey();
 
         if ($event === 'deleted' && $model instanceof User && $actorId === $model->getKey()) {
             $actorId = null;

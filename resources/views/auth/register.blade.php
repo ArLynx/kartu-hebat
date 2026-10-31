@@ -23,15 +23,18 @@
         <div x-data="{ show: false }">
             <label for="password" class="form-label">Kata Sandi</label>
             <div class="relative">
-                <input id="password" :type="show ? 'text' : 'password'" name="password" class="form-input !pr-16" autocomplete="new-password" required>
-                <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-4 text-xs font-semibold text-slate-500" x-text="show ? 'Sembunyi' : 'Lihat'"></button>
+                <input id="password" :type="show ? 'text' : 'password'" name="password" class="form-input !pr-16" autocomplete="new-password" required placeholder="Minimal 8 karakter">
+                <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-4 text-xs font-semibold text-slate-500 hover:text-brand-600" x-text="show ? 'Sembunyi' : 'Lihat'"></button>
             </div>
-            <p class="form-help">Gunakan kombinasi yang kuat dan tidak digunakan pada layanan lain.</p>
+            <p class="form-help">Minimal 8 karakter. Disarankan menggunakan kombinasi huruf dan angka agar akun Anda aman.</p>
         </div>
 
-        <div>
+        <div x-data="{ show: false }">
             <label for="password_confirmation" class="form-label">Konfirmasi Kata Sandi</label>
-            <input id="password_confirmation" type="password" name="password_confirmation" class="form-input" autocomplete="new-password" required>
+            <div class="relative">
+                <input id="password_confirmation" :type="show ? 'text' : 'password'" name="password_confirmation" class="form-input !pr-16" autocomplete="new-password" required placeholder="Ulangi kata sandi">
+                <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-4 text-xs font-semibold text-slate-500 hover:text-brand-600" x-text="show ? 'Sembunyi' : 'Lihat'"></button>
+            </div>
         </div>
 
         @if (Laravel\Jetstream\Jetstream::hasTermsAndPrivacyPolicyFeature())

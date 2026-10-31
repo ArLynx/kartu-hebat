@@ -60,6 +60,32 @@ class EmailVerificationTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
     }
 
+    public function test_email_can_be_verified_without_active_session_and_redirects_to_login(): void
+    {
+        if (! Features::enabled(Features::emailVerification())) {
+            $this->markTestSkipped('Email verification not enabled.');
+        }
+
+        Event::fake();
+
+        $user = User::factory()->unverified()->create();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        // Dibuka tanpa sesi login (misal dari HP/browser lain atau sesi sudah keluar)
+        $response = $this->get($verificationUrl);
+
+        Event::assertDispatched(Verified::class);
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+        $response->assertRedirect(route('login', absolute: false));
+        $response->assertSessionHas('status', 'Email Anda telah berhasil diverifikasi! Silakan masuk ke akun Anda.');
+    }
+
     public function test_email_can_not_verified_with_invalid_hash(): void
     {
         if (! Features::enabled(Features::emailVerification())) {
@@ -77,5 +103,19 @@ class EmailVerificationTest extends TestCase
         $this->actingAs($user)->get($verificationUrl);
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
+    }
+
+    public function test_gracefully_handles_mailer_failure_when_resending_verification_email(): void
+    {
+        $user = User::factory()->unverified()->create();
+
+        \Illuminate\Support\Facades\Notification::shouldReceive('send')
+            ->andThrow(new \Symfony\Component\Mailer\Exception\TransportException('Connection timed out'));
+
+        $response = $this->actingAs($user)->post(route('verification.send'));
+
+        $response->assertSessionHas('verification_mail_error');
+        $response->assertSessionMissing('status');
+        $response->assertRedirect();
     }
 }

@@ -11,33 +11,25 @@ class Pendidikan extends Model
         'pendaftaran_id',
         'nim',
         'universitas',
+        'status_perguruan_tinggi',
         'fakultas',
+        'jurusan',
         'program_studi',
         'jenjang',
         'semester',
         'ipk',
-        'nilai_raport',
+        'nominal_ukt',
         'tahun_masuk',
-        'tahun_lulus',
-        'status_mahasiswa',
-        'pddikti_verified_at',
-        'jurusan',
-        'status_perguruan_tinggi',
         'akreditasi_perguruan_tinggi',
-        'akreditasi_program_studi',
-        'nama_ketua_prodi',
-        'nama_ketua_jurusan',
-        'nama_direktur',
-        'nama_rektor',
         'alamat_perguruan_tinggi',
-        'no_telp_perguruan_tinggi',
+        'pddikti_verified_at',
     ];
 
     protected function casts(): array
     {
         return [
             'ipk' => 'decimal:2',
-            'nilai_raport' => 'decimal:2',
+            'nominal_ukt' => 'decimal:2',
             'pddikti_verified_at' => 'datetime',
         ];
     }

@@ -442,32 +442,22 @@
         <tr>
             <td class="statement-letter">b.</td>
             <td class="statement-content">
-                Saya akan menggunakan dana Bantuan Biaya pendidikan ini untuk
-                ...........; (diisi sesuai dengan ketentuan Pasal 8 Peraturan
-                Bupati Nomor ... Tahun ..... tentang Kartu Hebat Mahasiswa)
+                Saya akan mempertanggungjawabkan semua dana Bantuan Biaya
+                Pendidikan ini sesuai dengan peruntukannya dan menyampaikan
+                laporan pertanggungjawabannya tepat waktu;
             </td>
         </tr>
 
         <tr>
             <td class="statement-letter">c.</td>
             <td class="statement-content">
-                Saya akan mempertanggungjawabkan semua dana Bantuan Biaya
-                Pendidikan ini sesuai dengan peruntukannya sesuai dengan huruf b
-                tersebut di atas dan menyampaikan laporan pertanggungjawabannya
-                tepat waktu;
+                Saya tidak sedang menerima beasiswa sejenis yang bersumber dari
+                APBN, APBD;
             </td>
         </tr>
 
         <tr>
             <td class="statement-letter">d.</td>
-            <td class="statement-content">
-                Saya tidak sedang menerima beasiswa sejenis yang bersumber dari
-                APBN, APBD, atau pihak lain;
-            </td>
-        </tr>
-
-        <tr>
-            <td class="statement-letter">e.</td>
             <td class="statement-content">
                 Saya bersedia mematuhi seluruh ketentuan Program Kartu Hebat
                 Mahasiswa; dan
@@ -475,7 +465,7 @@
         </tr>
 
         <tr>
-            <td class="statement-letter">f.</td>
+            <td class="statement-letter">e.</td>
             <td class="statement-content">
                 Apabila saya melanggar Pakta Integritas ini, saya bersedia
                 mengembalikan secara keseluruhan dana Bantuan Biaya pendidikan

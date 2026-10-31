@@ -18,8 +18,16 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => $this->passwordRules(),
+            'password' => array_merge(['bail'], $this->passwordRules()),
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : [],
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Alamat email aktif wajib diisi.',
+            'email.email' => 'Format alamat email tidak valid.',
+            'email.unique' => 'Alamat email sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min' => 'Kata sandi wajib minimal 8 karakter dan konfirmasi kata sandi harus sesuai.',
+            'password.confirmed' => 'Kata sandi wajib minimal 8 karakter dan konfirmasi kata sandi harus sesuai.',
         ])->validate();
 
         $user = new User([

@@ -113,17 +113,6 @@ class PendidikanController extends Controller
                 ]),
             ],
 
-            'status_mahasiswa' => [
-                'required',
-                Rule::in([
-                    'aktif',
-                    'cuti',
-                    'lulus',
-                    'drop_out',
-                    'nonaktif',
-                ]),
-            ],
-
             'semester' => [
                 'required',
                 'integer',
@@ -136,10 +125,11 @@ class PendidikanController extends Controller
                 'between:0,4',
             ],
 
-            'nilai_raport' => [
-                'nullable',
+            'nominal_ukt' => [
+                'required',
                 'numeric',
-                'between:0,100',
+                'min:0',
+                'max:9999999999999.99',
             ],
 
             'tahun_masuk' => [
@@ -149,86 +139,16 @@ class PendidikanController extends Controller
                 'between:1990,'.$currentYear,
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Tahun Lulus
-            |--------------------------------------------------------------------------
-            | Tidak wajib karena mahasiswa aktif belum tentu lulus.
-            |--------------------------------------------------------------------------
-            */
-
-            'tahun_lulus' => [
-                'nullable',
-                'integer',
-                'digits:4',
-                'gte:tahun_masuk',
-                'max:'.($currentYear + 10),
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | AKREDITASI
-            |--------------------------------------------------------------------------
-            */
-
             'akreditasi_perguruan_tinggi' => [
                 'required',
                 'string',
                 'max:50',
             ],
 
-            'akreditasi_program_studi' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | PEJABAT / PIMPINAN PERGURUAN TINGGI
-            |--------------------------------------------------------------------------
-            */
-
-            'nama_ketua_prodi' => [
-                'nullable',
-                'string',
-                'max:150',
-            ],
-
-            'nama_ketua_jurusan' => [
-                'nullable',
-                'string',
-                'max:150',
-            ],
-
-            'nama_direktur' => [
-                'nullable',
-                'string',
-                'max:150',
-            ],
-
-            'nama_rektor' => [
-                'nullable',
-                'string',
-                'max:150',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | KONTAK PERGURUAN TINGGI
-            |--------------------------------------------------------------------------
-            */
-
             'alamat_perguruan_tinggi' => [
                 'required',
                 'string',
                 'max:1000',
-            ],
-
-            'no_telp_perguruan_tinggi' => [
-                'required',
-                'string',
-                'max:30',
             ],
 
         ], [
@@ -259,25 +179,23 @@ class PendidikanController extends Controller
 
             'jenjang.in' => 'Jenjang pendidikan tidak valid.',
 
-            'status_mahasiswa.required' => 'Status mahasiswa wajib dipilih.',
-
-            'status_mahasiswa.in' => 'Status mahasiswa tidak valid.',
-
             'semester.required' => 'Semester wajib diisi.',
 
             'semester.integer' => 'Semester harus berupa angka.',
 
             'semester.between' => 'Semester harus berada antara 1 sampai 14.',
 
-            'ipk.required' => 'IPK wajib diisi.',
+            'ipk.required' => 'Indeks Prestasi Total wajib diisi.',
 
-            'ipk.numeric' => 'IPK harus berupa angka.',
+            'ipk.numeric' => 'Indeks Prestasi Total harus berupa angka.',
 
-            'ipk.between' => 'IPK harus berada pada rentang 0,00 sampai 4,00.',
+            'ipk.between' => 'Indeks Prestasi Total harus berada pada rentang 0,00 sampai 4,00.',
 
-            'nilai_raport.numeric' => 'Nilai raport harus berupa angka.',
+            'nominal_ukt.required' => 'Besaran nilai UKT wajib diisi.',
 
-            'nilai_raport.between' => 'Nilai raport harus berada pada rentang 0 sampai 100.',
+            'nominal_ukt.numeric' => 'Besaran nilai UKT harus berupa angka.',
+
+            'nominal_ukt.min' => 'Besaran nilai UKT tidak boleh kurang dari 0.',
 
             'tahun_masuk.required' => 'Tahun masuk wajib diisi.',
 
@@ -285,23 +203,13 @@ class PendidikanController extends Controller
 
             'tahun_masuk.between' => 'Tahun masuk tidak valid.',
 
-            'tahun_lulus.gte' => 'Tahun lulus tidak boleh lebih awal dari tahun masuk.',
-
-            'tahun_lulus.digits' => 'Tahun lulus harus terdiri dari 4 digit.',
-
             'akreditasi_perguruan_tinggi.required' => 'Akreditasi perguruan tinggi wajib diisi.',
 
             'alamat_perguruan_tinggi.required' => 'Alamat perguruan tinggi wajib diisi.',
 
-            'no_telp_perguruan_tinggi.required' => 'Nomor telepon perguruan tinggi wajib diisi.',
-
         ]);
 
         $pendaftaran->loadMissing('kategoriBeasiswa');
-
-        if ($pendaftaran->kategoriBeasiswa?->application_type !== ApplicationType::TIDAK_MAMPU) {
-            $validated['nilai_raport'] = null;
-        }
 
         DB::transaction(function () use ($pendaftaran, $validated): void {
 

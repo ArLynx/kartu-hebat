@@ -201,13 +201,8 @@ class SelectionScoringService
                 $desilL = $this->resolveDesil($appL);
                 $desilR = $this->resolveDesil($appR);
 
-                // 3. nilai raport kelas XII (dua belas) semester genap (DESC)
-                $raportL = (float) ($penL?->nilai_raport ?? 0);
-                $raportR = (float) ($penR?->nilai_raport ?? 0);
-
                 return ($desilL <=> $desilR)
                     ?: ($ipkR <=> $ipkL)
-                    ?: ($raportR <=> $raportL)
                     ?: ($tahunL <=> $tahunR)
                     ?: ($akreditasiR <=> $akreditasiL)
                     ?: ($left->application_id <=> $right->application_id);

@@ -7,8 +7,10 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Models\User;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -23,7 +25,21 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\EmailVerificationNotificationSentResponse::class,
+            function () {
+                return new class implements \Laravel\Fortify\Contracts\EmailVerificationNotificationSentResponse {
+                    public function toResponse($request)
+                    {
+                        if (session()->has('verification_mail_error')) {
+                            return back();
+                        }
+
+                        return back()->with('status', \Laravel\Fortify\Fortify::VERIFICATION_LINK_SENT);
+                    }
+                };
+            }
+        );
     }
 
     /**
@@ -31,6 +47,18 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Bersihkan hash kata sandi sesi lama (web & sanctum) setiap kali login baru
+        // agar jika akun sebelumnya dihapus manual dari database, AuthenticateSession
+        // tidak me-logout akun yang baru masuk.
+        Event::listen(Login::class, function (): void {
+            if (request()->hasSession()) {
+                request()->session()->forget([
+                    'password_hash_web',
+                    'password_hash_sanctum',
+                ]);
+            }
+        });
+
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);

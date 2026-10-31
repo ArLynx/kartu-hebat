@@ -9,25 +9,7 @@
         $data = $pendaftaran->dataPribadi;
         $pendidikan = $pendaftaran->pendidikan;
         $orangTua = $pendaftaran->orangTua;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Penentuan Form
-        |--------------------------------------------------------------------------
-        | Untuk sementara:
-        | IPK >= 2.75 = Form A
-        | IPK < 2.75  = Form B
-        |
-        | Jika ketentuan berubah, logic ini nanti kita pindahkan
-        | ke satu tempat di backend.
-        |--------------------------------------------------------------------------
-        */
-
-        $jenisForm = null;
-
-        if ($pendidikan?->ipk !== null) {
-            $jenisForm = (float) $pendidikan->ipk >= 2.75 ? 'A' : 'B';
-        }
+        $namaKategoriFormulir = $pendaftaran->kategoriBeasiswa?->nama;
     @endphp
 
 
@@ -81,41 +63,46 @@
             PERINGATAN DATA FORMULIR
             ========================================================= --}}
 
-        <div class="rounded-xl border border-red-200 bg-red-50 p-5">
-
-            <div class="flex items-start gap-3">
-
-                <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                    <x-icon name="exclamation-triangle" class="h-5 w-5" />
+        @if (! $dataLengkapFormulir)
+            <div class="mt-7 rounded-xl border border-amber-300 bg-amber-50 p-5">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                        <x-icon name="information-circle" class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p class="font-bold text-amber-900">
+                            Lengkapi Data Pendaftaran Terlebih Dahulu
+                        </p>
+                        <p class="mt-1 text-sm leading-6 text-amber-800">
+                            Surat Permohonan dan Pakta Integritas otomatis digenerate dari data yang Anda masukkan ke sistem.
+                            Tombol unduh formulir akan aktif setelah Anda melengkapi <strong>Data Pribadi</strong>, <strong>Pendidikan</strong>, dan <strong>Orang Tua / Wali</strong>.
+                        </p>
+                    </div>
                 </div>
-
-                <div>
-                    <p class="font-bold text-red-800">
-                        Periksa kembali data sebelum mengunduh formulir
-                    </p>
-
-                    <p class="mt-1 text-sm leading-6 text-red-700">
-                        Surat Permohonan dan Pakta Integritas dibuat berdasarkan
-                        data yang Anda isi pada sistem.
-                    </p>
-
-                    <p class="mt-2 text-sm font-semibold leading-6 text-red-800">
-                        Jika terdapat kesalahan pada nama, NIK, alamat, perguruan
-                        tinggi, NIM, data orang tua/wali, atau data lainnya pada
-                        formulir, berarti terdapat kesalahan pada data pendaftaran
-                        yang Anda isi di sistem.
-                    </p>
-
-                    <p class="mt-2 text-sm leading-6 text-red-700">
-                        Silakan kembali ke bagian data yang bersangkutan melalui
-                        tombol <strong>Perbaiki</strong>, kemudian periksa kembali
-                        formulir sebelum dicetak dan ditandatangani.
-                    </p>
-                </div>
-
             </div>
-
-        </div>
+        @else
+            <div class="mt-7 rounded-xl border border-red-200 bg-red-50 p-5">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                        <x-icon name="exclamation-triangle" class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p class="font-bold text-red-800">
+                            Periksa kembali data sebelum mengunduh formulir
+                        </p>
+                        <p class="mt-1 text-sm leading-6 text-red-700">
+                            Surat Permohonan dan Pakta Integritas dibuat berdasarkan data yang Anda isi pada sistem.
+                        </p>
+                        <p class="mt-2 text-sm font-semibold leading-6 text-red-800">
+                            Jika terdapat kesalahan pada nama, NIK, alamat, perguruan tinggi, NIM, data orang tua/wali, atau data lainnya pada formulir, berarti terdapat kesalahan pada data pendaftaran yang Anda isi di sistem.
+                        </p>
+                        <p class="mt-2 text-sm leading-6 text-red-700">
+                            Silakan kembali ke bagian data yang bersangkutan melalui tombol <strong>Perbaiki</strong>, kemudian periksa kembali formulir sebelum dicetak dan ditandatangani.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
 
 
         <div class="mt-7 space-y-6">
@@ -167,6 +154,17 @@
 
                         <dd class="mt-1 font-semibold">
                             {{ $data?->nik ?: '-' }}
+                        </dd>
+                    </div>
+
+
+                    <div>
+                        <dt class="text-slate-500">
+                            Nomor Kartu Keluarga (KK)
+                        </dt>
+
+                        <dd class="mt-1 font-semibold">
+                            {{ $data?->nomor_kk ?: '-' }}
                         </dd>
                     </div>
 
@@ -357,38 +355,23 @@
 
                     <div>
                         <dt class="text-slate-500">
-                            IPK
+                            Indeks Prestasi Total
                         </dt>
 
                         <dd class="mt-1 font-semibold">
-                            {{ $pendidikan?->ipk ?? '-' }}
+                            {{ $pendidikan?->ipk !== null ? number_format((float) $pendidikan->ipk, 2) : '-' }}
                         </dd>
                     </div>
-
-
-                    @if ($pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::TIDAK_MAMPU)
-                        <div>
-                            <dt class="text-slate-500">
-                                Nilai Rata-rata Raport Kelas XII
-                            </dt>
-
-                            <dd class="mt-1 font-semibold">
-                                {{ $pendidikan?->nilai_raport !== null ? number_format((float) $pendidikan->nilai_raport, 2) : '-' }}
-                            </dd>
-                        </div>
-                    @endif
-
 
                     <div>
                         <dt class="text-slate-500">
-                            Status Mahasiswa
+                            Besaran Nilai UKT
                         </dt>
 
                         <dd class="mt-1 font-semibold">
-                            {{ $pendidikan?->status_mahasiswa ? ucfirst(str_replace('_', ' ', $pendidikan->status_mahasiswa)) : '-' }}
+                            {{ $pendidikan?->nominal_ukt !== null ? 'Rp ' . number_format((float) $pendidikan->nominal_ukt, 0, ',', '.') : '-' }}
                         </dd>
                     </div>
-
 
                     <div>
                         <dt class="text-slate-500">
@@ -399,18 +382,6 @@
                             {{ $pendidikan?->tahun_masuk ?: '-' }}
                         </dd>
                     </div>
-
-
-                    <div>
-                        <dt class="text-slate-500">
-                            Tahun Lulus
-                        </dt>
-
-                        <dd class="mt-1 font-semibold">
-                            {{ $pendidikan?->tahun_lulus ?: '-' }}
-                        </dd>
-                    </div>
-
 
                     <div>
                         <dt class="text-slate-500">
@@ -434,15 +405,15 @@
                         </dd>
                     </div>
 
-                    <div>
+                    <div class="md:col-span-2">
                         <dt class="text-slate-500">
-                            Akreditasi Program Studi
+                            Alamat Perguruan Tinggi
                         </dt>
 
                         <dd class="mt-1 font-semibold">
-                            {{ $pendidikan?->akreditasi_program_studi ?: '-' }}
+                            {{ $pendidikan?->alamat_perguruan_tinggi ?: '-' }}
                         </dd>
-</div>
+                    </div>
 
                 </dl>
 
@@ -485,18 +456,22 @@
                         @forelse ($pendaftaran->prestasis as $prestasi)
                             <div class="border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0">
 
-                                <p class="font-semibold">
+                                <p class="font-semibold text-slate-900">
                                     {{ $prestasi->nama_prestasi }}
                                 </p>
 
                                 <p class="mt-1 text-sm text-slate-500">
-                                    {{ ucfirst(str_replace('_', ' ', $prestasi->jenis)) }}
+                                    @if($prestasi->is_pengurus_inti_ormawa)
+                                        Pengurus Ormawa ({{ $prestasi->jabatan_ormawa ?? 'Pengurus' }})
+                                    @else
+                                        {{ $prestasi->peringkat_label }}
+                                    @endif
                                     ·
                                     {{ ucfirst($prestasi->tingkat) }}
                                     ·
-                                    {{ $prestasi->peringkat }}
+                                    {{ $prestasi->penyelenggara }}
                                     ·
-                                    {{ $prestasi->tahun }}
+                                    Tahun {{ $prestasi->tahun }}
                                 </p>
 
                             </div>
@@ -530,7 +505,7 @@
                         </h2>
 
                         <p class="mt-1 text-sm text-slate-500">
-                            Identitas dan penghasilan keluarga.
+                            Identitas dan pekerjaan orang tua / wali.
                         </p>
 
                     </div>
@@ -555,12 +530,9 @@
                             {{ $orangTua?->nama_ayah ?: '-' }}
                             ·
                             {{ $orangTua?->pekerjaan_ayah ?: '-' }}
-                        </dd>
-
-                        <dd class="mt-1 text-slate-600">
-                            Rp
-                            {{ number_format((float) ($orangTua?->penghasilan_ayah ?? 0), 0, ',', '.') }}
-                            /bulan
+                            @if ($orangTua?->jabatan_ayah)
+                                ({{ $orangTua->jabatan_ayah }})
+                            @endif
                         </dd>
 
                         <dd class="mt-1 text-xs text-slate-500">
@@ -583,12 +555,9 @@
                             {{ $orangTua?->nama_ibu ?: '-' }}
                             ·
                             {{ $orangTua?->pekerjaan_ibu ?: '-' }}
-                        </dd>
-
-                        <dd class="mt-1 text-slate-600">
-                            Rp
-                            {{ number_format((float) ($orangTua?->penghasilan_ibu ?? 0), 0, ',', '.') }}
-                            /bulan
+                            @if ($orangTua?->jabatan_ibu)
+                                ({{ $orangTua->jabatan_ibu }})
+                            @endif
                         </dd>
 
                         <dd class="mt-1 text-xs text-slate-500">
@@ -612,12 +581,9 @@
                                 {{ $orangTua->nama_wali ?: '-' }}
                                 ·
                                 {{ $orangTua->pekerjaan_wali ?: '-' }}
-                            </dd>
-
-                            <dd class="mt-1 text-slate-600">
-                                Rp
-                                {{ number_format((float) ($orangTua->penghasilan_wali ?? 0), 0, ',', '.') }}
-                                /bulan
+                                @if ($orangTua->jabatan_wali)
+                                    ({{ $orangTua->jabatan_wali }})
+                                @endif
                             </dd>
 
                             @if ($orangTua->nik_wali)
@@ -800,43 +766,37 @@
                         </div>
 
 
-                        @if ($jenisForm)
-                            <div class="mt-5 rounded-lg bg-slate-50 px-4 py-3">
+                        <div class="mt-5 rounded-lg bg-slate-50 px-4 py-3">
 
-                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                    Formulir
-                                </p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Dokumen
+                            </p>
 
-                                <p class="mt-1 text-base font-bold text-slate-900">
-                                    Form {{ $jenisForm }}
-                                </p>
+                            <p class="mt-1 text-base font-bold text-slate-900">
+                                Surat Permohonan{{ $namaKategoriFormulir ? ' — ' . $namaKategoriFormulir : '' }}
+                            </p>
 
-                            </div>
-                        @else
-                            <div class="mt-5 rounded-lg bg-amber-50 px-4 py-3">
-
-                                <p class="text-sm font-semibold text-amber-800">
-                                    Formulir belum dapat ditentukan.
-                                </p>
-
-                                <p class="mt-1 text-xs leading-5 text-amber-700">
-                                    Lengkapi data pendidikan terlebih dahulu.
-                                </p>
-
-                            </div>
-                        @endif
+                        </div>
 
 
                         <div class="mt-5">
-
-                            <a href="{{ route('mahasiswa.formulir.surat-permohonan') }}"
-                                class="btn-secondary inline-flex items-center gap-2">
-
-                                <x-icon name="arrow-down-tray" class="h-4 w-4" />
-
-                                Unduh Surat Permohonan
-                            </a>
-
+                            @if ($dataLengkapFormulir)
+                                <a href="{{ route('mahasiswa.formulir.surat-permohonan') }}"
+                                    class="btn-secondary inline-flex items-center gap-2">
+                                    <x-icon name="arrow-down-tray" class="h-4 w-4" />
+                                    Unduh Surat Permohonan
+                                </a>
+                            @else
+                                <button type="button" disabled
+                                    class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-400"
+                                    title="Lengkapi Data Pribadi, Pendidikan, dan Orang Tua terlebih dahulu">
+                                    <x-icon name="arrow-down-tray" class="h-4 w-4 text-slate-400" />
+                                    Unduh Surat Permohonan
+                                </button>
+                                <p class="mt-2 text-xs text-amber-700">
+                                    * Lengkapi Data Pribadi, Pendidikan, dan Orang Tua untuk mengunduh.
+                                </p>
+                            @endif
                         </div>
 
                     </div>
@@ -889,15 +849,23 @@
 
 
                         <div class="mt-5">
-
-                            <a href="{{ route('mahasiswa.formulir.pakta-integritas') }}"
-                                class="btn-secondary inline-flex items-center gap-2">
-
-                                <x-icon name="arrow-down-tray" class="h-4 w-4" />
-
-                                Unduh Pakta Integritas
-                            </a>
-
+                            @if ($dataLengkapFormulir)
+                                <a href="{{ route('mahasiswa.formulir.pakta-integritas') }}"
+                                    class="btn-secondary inline-flex items-center gap-2">
+                                    <x-icon name="arrow-down-tray" class="h-4 w-4" />
+                                    Unduh Pakta Integritas
+                                </a>
+                            @else
+                                <button type="button" disabled
+                                    class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-400"
+                                    title="Lengkapi Data Pribadi, Pendidikan, dan Orang Tua terlebih dahulu">
+                                    <x-icon name="arrow-down-tray" class="h-4 w-4 text-slate-400" />
+                                    Unduh Pakta Integritas
+                                </button>
+                                <p class="mt-2 text-xs text-amber-700">
+                                    * Lengkapi Data Pribadi, Pendidikan, dan Orang Tua untuk mengunduh.
+                                </p>
+                            @endif
                         </div>
 
                     </div>
@@ -982,7 +950,7 @@
             {{-- UPLOAD FORMULIR --}}
             {{-- ========================================================= --}}
 
-            <section class="card overflow-hidden">
+            <section id="section-upload-formulir" class="card overflow-hidden">
 
                 <div class="border-b border-slate-200 px-6 py-5 sm:px-8">
 
@@ -1035,7 +1003,7 @@
                                 </div>
 
                                 <p class="mt-1 text-sm leading-6 text-slate-500">
-                                    Form {{ $jenisForm ?: '-' }}
+                                    {{ $namaKategoriFormulir ? 'Surat Permohonan — ' . $namaKategoriFormulir : 'Surat Permohonan Beasiswa' }}
                                 </p>
 
                             </div>
@@ -1444,3 +1412,30 @@
     </div>
 
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            // Restore scroll position after upload/delete formulir so page stays in place
+            const savedScroll = sessionStorage.getItem('khm_review_scroll');
+            if (savedScroll !== null) {
+                window.scrollTo(0, parseInt(savedScroll, 10));
+                sessionStorage.removeItem('khm_review_scroll');
+                window.addEventListener('load', function () {
+                    window.scrollTo(0, parseInt(savedScroll, 10));
+                }, { once: true });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const uploadSection = document.getElementById('section-upload-formulir');
+                if (uploadSection) {
+                    uploadSection.querySelectorAll('form').forEach(function (form) {
+                        form.addEventListener('submit', function () {
+                            sessionStorage.setItem('khm_review_scroll', window.scrollY || window.pageYOffset || document.documentElement.scrollTop);
+                        });
+                    });
+                }
+            });
+        })();
+    </script>
+@endpush

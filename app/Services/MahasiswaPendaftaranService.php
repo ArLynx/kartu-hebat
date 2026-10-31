@@ -75,6 +75,7 @@ class MahasiswaPendaftaranService
         $dataPribadiComplete = $data
             && $this->allFilled($data, [
                 'nik',
+                'nomor_kk',
                 'nama_lengkap',
                 'tempat_lahir',
                 'tanggal_lahir',
@@ -97,24 +98,35 @@ class MahasiswaPendaftaranService
                 'jenjang',
                 'semester',
                 'ipk',
+                'nominal_ukt',
                 'tahun_masuk',
-                'status_mahasiswa',
             ]);
 
         $prestasiComplete = ! $this->requiresPrestasi($pendaftaran)
-            || $pendaftaran->prestasi_dikonfirmasi_at !== null;
+            || ($pendaftaran->prestasi_dikonfirmasi_at !== null && $pendaftaran->prestasis->isNotEmpty());
 
-        $ayahFields = ['nama_ayah', 'status_ayah', 'pekerjaan_ayah', 'penghasilan_ayah'];
+        $ayahFields = ['nama_ayah', 'status_ayah'];
         if ($orangTua?->status_ayah === 'hidup') {
             $ayahFields[] = 'nik_ayah';
+            $ayahFields[] = 'pekerjaan_ayah';
+        }
+        if ($orangTua?->pekerjaan_ayah === 'ASN') {
+            $ayahFields[] = 'jabatan_ayah';
         }
 
-        $ibuFields = ['nama_ibu', 'status_ibu', 'pekerjaan_ibu', 'penghasilan_ibu'];
+        $ibuFields = ['nama_ibu', 'status_ibu'];
         if ($orangTua?->status_ibu === 'hidup') {
             $ibuFields[] = 'nik_ibu';
+            $ibuFields[] = 'pekerjaan_ibu';
+        }
+        if ($orangTua?->pekerjaan_ibu === 'ASN') {
+            $ibuFields[] = 'jabatan_ibu';
         }
 
-        $waliFields = ['nama_wali', 'nik_wali', 'pekerjaan_wali', 'penghasilan_wali'];
+        $waliFields = ['nama_wali', 'nik_wali', 'pekerjaan_wali'];
+        if ($orangTua?->pekerjaan_wali === 'ASN') {
+            $waliFields[] = 'jabatan_wali';
+        }
 
         $orangTuaComplete = $orangTua
             && $this->allFilled($orangTua, array_merge($ayahFields, $ibuFields))

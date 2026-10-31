@@ -54,6 +54,8 @@ class RegionSeeder extends Seeder
                     'Muara Untu',
                     "Panu'ut",
                     'Penyang',
+                    'Juking Pajang',
+                    'Muara Sumpoi',
                 ],
             ],
 
@@ -62,7 +64,7 @@ class RegionSeeder extends Seeder
                 'Tanah Siang',
                 [
                     'Saripoi',
-                    'Dirung Lingkin',
+                    'Dirung Bakung',
                     'Kolam',
                     'Belawan',
                     'Doan Arung',
@@ -115,7 +117,7 @@ class RegionSeeder extends Seeder
                     'Narui',
                     'Pelaci',
                     'Penda Siron',
-                    'Tahujang Laung',
+                    'Tahujan Laung',
                     'Tawai Haui',
                     'Tumbang Bahan',
                     'Tumbang Bana',
@@ -165,7 +167,7 @@ class RegionSeeder extends Seeder
                 [
                     'Tumbang Bantian',
                     'Tumbang Apat',
-                    'Tumbang Saan',
+                    "Tumbang Sa'an",
                     'Mirau',
                     'Tambelum',
                     'Tumbang Kolon',
@@ -221,7 +223,7 @@ class RegionSeeder extends Seeder
                 'Tanah Siang Selatan',
                 [
                     'Datah Kotou',
-                    'Dirung Bakung',
+                    'Dirung Lingkin',
                     'Oreng',
                     'Olung Hanangan',
                     'Olung Muro',

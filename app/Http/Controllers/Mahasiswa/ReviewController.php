@@ -67,6 +67,12 @@ class ReviewController extends Controller
             ! empty($formulir?->surat_permohonan) &&
             ! empty($formulir?->pakta_integritas);
 
+        $dataLengkapFormulir = (bool) (
+            $pendaftaran->dataPribadi &&
+            $pendaftaran->pendidikan &&
+            $pendaftaran->orangTua
+        );
+
         /*
         |--------------------------------------------------------------------------
         | Data yang dikirim ke Blade
@@ -85,6 +91,8 @@ class ReviewController extends Controller
             'canEdit' => $this->flow->isEditable($pendaftaran),
 
             'formulirLengkap' => $formulirLengkap,
+
+            'dataLengkapFormulir' => $dataLengkapFormulir,
         ]);
     }
 

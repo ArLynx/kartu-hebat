@@ -76,6 +76,11 @@ class DataPribadiController extends Controller
                 Rule::unique('data_pribadis', 'nik')->ignore($dataPribadiId),
             ],
 
+            'nomor_kk' => [
+                'required',
+                'digits:16',
+            ],
+
             'nomor_rekening' => [
                 'required',
                 'string',
@@ -146,6 +151,10 @@ class DataPribadiController extends Controller
             'nik.digits' => 'NIK harus terdiri dari 16 digit.',
 
             'nik.unique' => 'NIK tersebut sudah digunakan pada pendaftaran lain.',
+
+            'nomor_kk.required' => 'Nomor Kartu Keluarga (KK) wajib diisi.',
+
+            'nomor_kk.digits' => 'Nomor Kartu Keluarga (KK) harus terdiri dari 16 digit angka.',
 
             'nomor_rekening.required' => 'Nomor rekening Bank Kalteng wajib diisi.',
 
