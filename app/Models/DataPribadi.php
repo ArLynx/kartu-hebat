@@ -10,6 +10,7 @@ class DataPribadi extends Model
     protected $fillable = [
         'pendaftaran_id',
         'nik',
+        'nomor_kk',
         'nomor_rekening',
         'nama_lengkap',
         'tempat_lahir',

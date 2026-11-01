@@ -1,14 +1,14 @@
 @extends('layouts.portal')
 
-@section('title', 'Prestasi Beasiswa')
+@section('title', 'Prestasi Beasiswa Non-Akademik')
 @section('header', 'Prestasi')
 
 @section('content')
     <div class="max-w-6xl">
 
         @include('mahasiswa.partials.flow-header', [
-            'title' => 'Prestasi',
-            'description' => 'Tambahkan prestasi akademik atau nonakademik jika ada. Jika tidak memiliki prestasi, Anda tetap dapat melanjutkan ke tahap berikutnya.',
+            'title' => 'Prestasi & Keunggulan Non-Akademik',
+            'description' => 'Calon penerima Beasiswa Prestasi Non-Akademik wajib memiliki keunggulan berupa sertifikat kompetisi/lomba atau SK penunjukan kepengurusan organisasi mahasiswa (Ormawa) di perguruan tinggi.',
             'currentStep' => 3,
         ])
 
@@ -20,21 +20,21 @@
 
 
         {{-- ========================================================= --}}
-        {{-- TAMBAH PRESTASI --}}
+        {{-- TAMBAH PRESTASI / ORMAWA --}}
         {{-- ========================================================= --}}
 
         @if($canEdit)
 
-            <section class="card mt-7 overflow-hidden">
+            <section class="card mt-7 overflow-hidden" x-data="{ kategoriBukti: '{{ old('kategori_bukti', 'lomba') }}' }">
 
                 <div class="border-b border-slate-200 px-6 py-5 sm:px-8">
 
                     <h2 class="text-xl font-bold">
-                        Tambah Prestasi
+                        Tambah Bukti Prestasi / Keunggulan
                     </h2>
 
                     <p class="mt-1 text-sm text-slate-500">
-                        Tambahkan prestasi yang pernah diperoleh. Anda dapat menambahkan lebih dari satu prestasi.
+                        Tambahkan sertifikat kompetisi/lomba atau SK kepengurusan organisasi mahasiswa yang diperoleh selama masa perkuliahan. Anda dapat menambahkan lebih dari satu data.
                     </p>
 
                 </div>
@@ -49,244 +49,314 @@
 
                     @csrf
 
-
-                    {{-- JENIS --}}
-                    <div>
-
-                        <label class="form-label">
-                            Jenis Prestasi
-                            <span class="text-red-500">*</span>
-                        </label>
-
-                        <select
-                            class="form-input"
-                            name="jenis"
-                            required
-                        >
-                            <option value="">
-                                Pilih jenis prestasi
-                            </option>
-
-                            <option
-                                value="akademik"
-                                @selected(old('jenis') === 'akademik')
-                            >
-                                Akademik
-                            </option>
-
-                            <option
-                                value="non_akademik"
-                                @selected(old('jenis') === 'non_akademik')
-                            >
-                                Nonakademik
-                            </option>
-                        </select>
-
-                    </div>
-
-
-                    {{-- TINGKAT --}}
-                    <div>
-
-                        <label class="form-label">
-                            Tingkat
-                            <span class="text-red-500">*</span>
-                        </label>
-
-                        <select
-                            class="form-input"
-                            name="tingkat"
-                            required
-                        >
-                            <option value="">
-                                Pilih tingkat
-                            </option>
-
-                            @foreach([
-                                'kampus' => 'Kampus',
-                                'kabupaten' => 'Kabupaten/Kota',
-                                'provinsi' => 'Provinsi',
-                                'nasional' => 'Nasional',
-                                'internasional' => 'Internasional',
-                            ] as $value => $label)
-
-                                <option
-                                    value="{{ $value }}"
-                                    @selected(old('tingkat') === $value)
-                                >
-                                    {{ $label }}
-                                </option>
-
-                            @endforeach
-
-                        </select>
-
-                    </div>
-
-
-                    {{-- NAMA PRESTASI --}}
+                    {{-- PILIHAN KATEGORI BUKTI --}}
                     <div class="md:col-span-2">
-
-                        <label class="form-label">
-                            Nama Prestasi
+                        <label class="form-label mb-2">
+                            Pilih Kategori Bukti Keunggulan
                             <span class="text-red-500">*</span>
                         </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition"
+                                :class="kategoriBukti === 'lomba' ? 'border-brand-600 bg-brand-50/60 text-brand-900 ring-2 ring-brand-100 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'">
+                                <input type="radio" name="kategori_bukti" value="lomba" x-model="kategoriBukti" class="sr-only">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 text-xl font-bold shadow-inner">
+                                    🏆
+                                </span>
+                                <div>
+                                    <p class="text-sm font-bold">Kompetisi / Lomba Non-Akademik</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sertifikat lomba di bidang olahraga, keagamaan, seni & budaya, kepemudaan</p>
+                                </div>
+                            </label>
 
-                        <input
-                            class="form-input"
-                            type="text"
-                            name="nama_prestasi"
-                            value="{{ old('nama_prestasi') }}"
-                            placeholder="Contoh: Juara 1 Lomba Karya Tulis Ilmiah"
-                            required
-                        >
-
-                    </div>
-
-
-                    {{-- PERINGKAT --}}
-                    <div>
-
-                        <label class="form-label">
-                            Peringkat/Penghargaan
-                            <span class="text-red-500">*</span>
-                        </label>
-
-                        <input
-                            class="form-input"
-                            type="text"
-                            name="peringkat"
-                            value="{{ old('peringkat') }}"
-                            placeholder="Contoh: Juara 1"
-                            required
-                        >
-
-                    </div>
-
-
-                    {{-- TAHUN --}}
-                    <div>
-
-                        <label class="form-label">
-                            Tahun
-                            <span class="text-red-500">*</span>
-                        </label>
-
-                        <input
-                            class="form-input"
-                            type="number"
-                            name="tahun"
-                            min="1990"
-                            max="{{ now()->year }}"
-                            value="{{ old('tahun') }}"
-                            placeholder="Contoh: {{ now()->year }}"
-                            required
-                        >
-
-                    </div>
-
-
-                    {{-- PENYELENGGARA --}}
-                    <div class="md:col-span-2">
-
-                        <label class="form-label">
-                            Penyelenggara
-                            <span class="text-red-500">*</span>
-                        </label>
-
-                        <input
-                            class="form-input"
-                            type="text"
-                            name="penyelenggara"
-                            value="{{ old('penyelenggara') }}"
-                            placeholder="Contoh: Universitas Palangka Raya"
-                            required
-                        >
-
-                    </div>
-
-
-                    {{-- KEPENGURUSAN ORMAWA UNIVERSITAS (PERBUP) --}}
-                    <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4" x-data="{ isOrmawa: {{ old('is_pengurus_inti_ormawa') ? 'true' : 'false' }} }">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                name="is_pengurus_inti_ormawa"
-                                value="1"
-                                x-model="isOrmawa"
-                                @checked(old('is_pengurus_inti_ormawa'))
-                                class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                            >
-                            <span class="text-sm font-semibold text-slate-800">
-                                Merupakan Kepengurusan Inti Organisasi Mahasiswa Tingkat Universitas
-                            </span>
-                        </label>
-                        <p class="mt-1 text-xs text-slate-500 ml-7">
-                            Centang jika ini merupakan SK Kepengurusan Inti (Ketua / Wakil / Sekretaris / Bendahara) BEM/DPM/MPM universitas sebagai dasar penilaian Beasiswa Non-Akademik sesuai Perbup.
-                        </p>
-                        <div x-show="isOrmawa" class="mt-3 ml-7" x-cloak>
-                            <label class="form-label !text-xs">Jabatan Kepengurusan Inti</label>
-                            <input
-                                class="form-input !py-1.5 text-sm"
-                                type="text"
-                                name="jabatan_ormawa"
-                                value="{{ old('jabatan_ormawa') }}"
-                                placeholder="Contoh: Ketua BEM Universitas / Bendahara DPM Universitas"
-                            >
+                            <label class="flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition"
+                                :class="kategoriBukti === 'organisasi' ? 'border-brand-600 bg-brand-50/60 text-brand-900 ring-2 ring-brand-100 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'">
+                                <input type="radio" name="kategori_bukti" value="organisasi" x-model="kategoriBukti" class="sr-only">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 text-xl font-bold shadow-inner">
+                                    🏛️
+                                </span>
+                                <div>
+                                    <p class="text-sm font-bold">Pengurus Organisasi Mahasiswa</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">SK penunjukan pengurus Ormawa (BEM, DPM, HMJ, UKM, dll.) di kampus</p>
+                                </div>
+                            </label>
                         </div>
                     </div>
 
 
-                    {{-- DOKUMEN --}}
-                    <div class="md:col-span-2">
+                    {{-- ========================================================= --}}
+                    {{-- FORM KHUSUS KOMPETISI / LOMBA --}}
+                    {{-- ========================================================= --}}
+                    <template x-if="kategoriBukti === 'lomba'">
+                        <div class="contents">
 
-                        <label class="form-label">
-                            Dokumen Prestasi
-                            <span class="font-normal text-slate-400">(opsional)</span>
-                        </label>
+                            {{-- NAMA PRESTASI / LOMBA --}}
+                            <div class="md:col-span-2">
+                                <label class="form-label">
+                                    Nama Kompetisi / Kegiatan Lomba
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="text"
+                                    name="nama_prestasi"
+                                    value="{{ old('nama_prestasi') }}"
+                                    placeholder="Contoh: Juara 1 Pekan Olahraga Mahasiswa Cabang Bulutangkis / MTQ Mahasiswa"
+                                    required
+                                >
+                                @error('nama_prestasi')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <input
-                            class="form-input"
-                            type="file"
-                            name="dokumen"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                        >
+                            {{-- TINGKAT --}}
+                            <div>
+                                <label class="form-label">
+                                    Tingkat Perlombaan
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    class="form-input"
+                                    name="tingkat"
+                                    required
+                                >
+                                    <option value="">Pilih tingkat</option>
+                                    @foreach(\App\Models\Prestasi::TINGKAT_OPTIONS as $value => $label)
+                                        <option value="{{ $value }}" @selected(old('tingkat') === $value)>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('tingkat')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <p class="mt-2 text-xs text-slate-500">
-                            Format PDF, JPG, JPEG, atau PNG. Maksimal 2 MB.
-                        </p>
+                            {{-- PERINGKAT (DROPDOWN OPSI A) --}}
+                            <div>
+                                <label class="form-label">
+                                    Peringkat / Capaian
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    class="form-input"
+                                    name="peringkat"
+                                    required
+                                >
+                                    <option value="">Pilih peringkat / capaian</option>
+                                    @foreach(\App\Models\Prestasi::PERINGKAT_OPTIONS as $value => $label)
+                                        <option value="{{ $value }}" @selected(old('peringkat') === $value)>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('peringkat')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                    </div>
+                            {{-- PENYELENGGARA --}}
+                            <div>
+                                <label class="form-label">
+                                    Penyelenggara
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="text"
+                                    name="penyelenggara"
+                                    value="{{ old('penyelenggara') }}"
+                                    placeholder="Contoh: BAPOMI / Dispora / Universitas X"
+                                    required
+                                >
+                                @error('penyelenggara')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- TAHUN --}}
+                            <div>
+                                <label class="form-label">
+                                    Tahun Perolehan
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="number"
+                                    name="tahun"
+                                    min="1990"
+                                    max="{{ now()->year }}"
+                                    value="{{ old('tahun', now()->year) }}"
+                                    placeholder="Contoh: {{ now()->year }}"
+                                    required
+                                >
+                                <p class="mt-1 text-xs text-slate-500">Diterbitkan pada saat sedang menempuh perkuliahan.</p>
+                                @error('tahun')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- DOKUMEN SERTIFIKAT --}}
+                            <div class="md:col-span-2">
+                                <label class="form-label">
+                                    Dokumen Sertifikat / Piagam Penghargaan
+                                    <span class="font-normal text-slate-400">(opsional / PDF, JPG, PNG maks 2 MB)</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="file"
+                                    name="dokumen"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                >
+                                @error('dokumen')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- KETERANGAN --}}
+                            <div class="md:col-span-2">
+                                <label class="form-label">
+                                    Keterangan Tambahan
+                                    <span class="font-normal text-slate-400">(opsional)</span>
+                                </label>
+                                <textarea
+                                    class="form-input"
+                                    name="keterangan"
+                                    rows="2"
+                                    placeholder="Catatan tambahan mengenai prestasi lomba ini jika diperlukan"
+                                >{{ old('keterangan') }}</textarea>
+                            </div>
+
+                        </div>
+                    </template>
 
 
-                    {{-- KETERANGAN --}}
-                    <div class="md:col-span-2">
+                    {{-- ========================================================= --}}
+                    {{-- FORM KHUSUS PENGURUS ORGANISASI MAHASISWA --}}
+                    {{-- ========================================================= --}}
+                    <template x-if="kategoriBukti === 'organisasi'">
+                        <div class="contents">
 
-                        <label class="form-label">
-                            Keterangan
-                            <span class="font-normal text-slate-400">(opsional)</span>
-                        </label>
+                            {{-- NAMA ORGANISASI --}}
+                            <div class="md:col-span-2">
+                                <label class="form-label">
+                                    Nama Organisasi Mahasiswa
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="text"
+                                    name="nama_organisasi"
+                                    value="{{ old('nama_organisasi') }}"
+                                    placeholder="Contoh: Badan Eksekutif Mahasiswa (BEM) / Dewan Perwakilan Mahasiswa (DPM) / HMJ"
+                                    required
+                                >
+                                @error('nama_organisasi')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <textarea
-                            class="form-input"
-                            name="keterangan"
-                            rows="3"
-                            placeholder="Keterangan tambahan jika diperlukan"
-                        >{{ old('keterangan') }}</textarea>
+                            {{-- JABATAN DALAM ORMAWA --}}
+                            <div>
+                                <label class="form-label">
+                                    Jabatan dalam Kepengurusan
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="text"
+                                    name="jabatan_ormawa"
+                                    value="{{ old('jabatan_ormawa') }}"
+                                    placeholder="Contoh: Ketua Umum / Sekretaris / Bendahara / Koordinator Divisi"
+                                    required
+                                >
+                                @error('jabatan_ormawa')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                    </div>
+                            {{-- NAMA KAMPUS / PENYELENGGARA --}}
+                            <div>
+                                <label class="form-label">
+                                    Nama Perguruan Tinggi / Kampus
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="text"
+                                    name="penyelenggara"
+                                    value="{{ old('penyelenggara', $pendaftaran->pendidikan?->universitas) }}"
+                                    placeholder="Contoh: Universitas Palangka Raya"
+                                    required
+                                >
+                                @error('penyelenggara')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- TAHUN SK / MASA BAKTI --}}
+                            <div>
+                                <label class="form-label">
+                                    Tahun Masa Bakti / SK
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="number"
+                                    name="tahun"
+                                    min="1990"
+                                    max="{{ now()->year }}"
+                                    value="{{ old('tahun', now()->year) }}"
+                                    placeholder="Contoh: {{ now()->year }}"
+                                    required
+                                >
+                                @error('tahun')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- DOKUMEN SK --}}
+                            <div>
+                                <label class="form-label">
+                                    Dokumen Surat Keputusan (SK)
+                                    <span class="font-normal text-slate-400">(opsional / PDF, JPG, PNG maks 2 MB)</span>
+                                </label>
+                                <input
+                                    class="form-input"
+                                    type="file"
+                                    name="dokumen"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                >
+                                @error('dokumen')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- NOMOR SK / KETERANGAN --}}
+                            <div class="md:col-span-2">
+                                <label class="form-label">
+                                    Nomor SK & Keterangan Tambahan
+                                    <span class="font-normal text-slate-400">(opsional)</span>
+                                </label>
+                                <textarea
+                                    class="form-input"
+                                    name="keterangan"
+                                    rows="2"
+                                    placeholder="Contoh: SK Rektor No. 123/UN/2025 tentang Susunan Pengurus BEM"
+                                >{{ old('keterangan') }}</textarea>
+                            </div>
+
+                        </div>
+                    </template>
 
 
-                    {{-- BUTTON --}}
+                    {{-- BUTTON SUBMIT --}}
                     <div class="md:col-span-2 flex justify-end">
-
                         <button
                             class="btn-primary"
                             type="submit"
                         >
-                            Tambah Prestasi
+                            Tambah ke Daftar
                         </button>
-
                     </div>
 
                 </form>
@@ -297,7 +367,7 @@
 
 
         {{-- ========================================================= --}}
-        {{-- DAFTAR PRESTASI --}}
+        {{-- DAFTAR PRESTASI & KEPENGURUSAN TERCATAT --}}
         {{-- ========================================================= --}}
 
         <section class="card mt-7 overflow-hidden">
@@ -305,11 +375,11 @@
             <div class="border-b border-slate-200 px-6 py-5 sm:px-8">
 
                 <h2 class="text-xl font-bold">
-                    Daftar Prestasi
+                    Daftar Prestasi & Keunggulan
                 </h2>
 
                 <p class="mt-1 text-sm text-slate-500">
-                    {{ $pendaftaran->prestasis->count() }} prestasi tercatat.
+                    {{ $pendaftaran->prestasis->count() }} data keunggulan non-akademik tercatat.
                 </p>
 
             </div>
@@ -327,55 +397,60 @@
 
                                 <div class="flex flex-wrap gap-2">
 
-                                    <span class="status-chip status-info">
-                                        {{ $prestasi->jenis === 'akademik' ? 'Akademik' : 'Nonakademik' }}
-                                    </span>
-
-                                    <span class="status-chip status-neutral">
-                                        {{ ucfirst($prestasi->tingkat) }}
-                                    </span>
-
                                     @if($prestasi->is_pengurus_inti_ormawa)
                                         <span class="status-chip bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold">
-                                            Pengurus Inti Ormawa Univ {{ $prestasi->jabatan_ormawa ? '('.$prestasi->jabatan_ormawa.')' : '' }}
+                                            🏛️ Pengurus Ormawa
+                                        </span>
+                                        @if($prestasi->jabatan_ormawa)
+                                            <span class="status-chip bg-blue-100 text-blue-800 border-blue-300 font-semibold">
+                                                {{ $prestasi->jabatan_ormawa }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="status-chip status-info">
+                                            🏆 {{ $prestasi->peringkat_label }}
+                                        </span>
+                                        <span class="status-chip status-neutral">
+                                            Tingkat {{ ucfirst($prestasi->tingkat) }}
                                         </span>
                                     @endif
 
                                 </div>
 
 
-                                <h3 class="mt-3 text-lg font-bold">
+                                <h3 class="mt-3 text-lg font-bold text-slate-900">
                                     {{ $prestasi->nama_prestasi }}
                                 </h3>
 
 
                                 <p class="mt-1 text-sm text-slate-600">
-                                    {{ $prestasi->peringkat }}
+                                    @if($prestasi->is_pengurus_inti_ormawa)
+                                        {{ $prestasi->jabatan_ormawa }}
+                                    @else
+                                        {{ $prestasi->peringkat_label }}
+                                    @endif
                                     ·
                                     {{ $prestasi->penyelenggara }}
                                     ·
-                                    {{ $prestasi->tahun }}
+                                    Tahun {{ $prestasi->tahun }}
                                 </p>
 
 
                                 @if($prestasi->keterangan)
-
                                     <p class="mt-2 text-sm leading-6 text-slate-500">
                                         {{ $prestasi->keterangan }}
                                     </p>
-
                                 @endif
 
 
                                 @if($prestasi->dokumen_prestasi)
-
                                     <a
                                         href="{{ route('mahasiswa.prestasi.download', $prestasi) }}"
-                                        class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline"
+                                        class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline"
                                     >
-                                        Unduh dokumen prestasi
+                                        <x-icon name="document-arrow-down" class="h-4 w-4" />
+                                        Unduh berkas bukti
                                     </a>
-
                                 @endif
 
                             </div>
@@ -386,9 +461,8 @@
                                 <form
                                     method="POST"
                                     action="{{ route('mahasiswa.prestasi.destroy', $prestasi) }}"
-                                    onsubmit="return confirm('Hapus prestasi ini?')"
+                                    onsubmit="return confirm('Hapus data prestasi ini?')"
                                 >
-
                                     @csrf
                                     @method('DELETE')
 
@@ -398,7 +472,6 @@
                                     >
                                         Hapus
                                     </button>
-
                                 </form>
 
                             @endif
@@ -406,15 +479,14 @@
                         </div>
 
 
-                        {{-- EDIT --}}
+                        {{-- EDIT FORM --}}
                         @if($canEdit)
 
                             <details class="mt-4 border-t border-slate-200 pt-4">
 
-                                <summary class="cursor-pointer text-sm font-semibold text-brand-700">
-                                    Ubah data prestasi
+                                <summary class="cursor-pointer text-sm font-semibold text-brand-700 hover:underline">
+                                    Ubah data ini
                                 </summary>
-
 
                                 <form
                                     method="POST"
@@ -422,196 +494,191 @@
                                     enctype="multipart/form-data"
                                     class="mt-4 grid gap-4 md:grid-cols-2"
                                 >
-
                                     @csrf
                                     @method('PUT')
 
+                                    @if($prestasi->is_pengurus_inti_ormawa)
+                                        <input type="hidden" name="kategori_bukti" value="organisasi">
 
-                                    {{-- JENIS --}}
-                                    <div>
-
-                                        <label class="form-label">
-                                            Jenis Prestasi
-                                        </label>
-
-                                        <select
-                                            class="form-input"
-                                            name="jenis"
-                                            required
-                                        >
-
-                                            <option
-                                                value="akademik"
-                                                @selected($prestasi->jenis === 'akademik')
+                                        {{-- NAMA ORGANISASI --}}
+                                        <div class="md:col-span-2">
+                                            <label class="form-label">Nama Organisasi Mahasiswa</label>
+                                            <input
+                                                class="form-input"
+                                                type="text"
+                                                name="nama_organisasi"
+                                                value="{{ $prestasi->nama_prestasi }}"
+                                                required
                                             >
-                                                Akademik
-                                            </option>
+                                        </div>
 
-                                            <option
-                                                value="non_akademik"
-                                                @selected($prestasi->jenis === 'non_akademik')
+                                        {{-- JABATAN --}}
+                                        <div>
+                                            <label class="form-label">Jabatan dalam Kepengurusan</label>
+                                            <input
+                                                class="form-input"
+                                                type="text"
+                                                name="jabatan_ormawa"
+                                                value="{{ $prestasi->jabatan_ormawa }}"
+                                                required
                                             >
-                                                Nonakademik
-                                            </option>
+                                        </div>
 
-                                        </select>
+                                        {{-- KAMPUS --}}
+                                        <div>
+                                            <label class="form-label">Perguruan Tinggi / Kampus</label>
+                                            <input
+                                                class="form-input"
+                                                type="text"
+                                                name="penyelenggara"
+                                                value="{{ $prestasi->penyelenggara }}"
+                                                required
+                                            >
+                                        </div>
 
-                                    </div>
+                                        {{-- TAHUN --}}
+                                        <div>
+                                            <label class="form-label">Tahun SK / Masa Bakti</label>
+                                            <input
+                                                class="form-input"
+                                                type="number"
+                                                name="tahun"
+                                                min="1990"
+                                                max="{{ now()->year }}"
+                                                value="{{ $prestasi->tahun }}"
+                                                required
+                                            >
+                                        </div>
 
+                                        {{-- DOKUMEN --}}
+                                        <div>
+                                            <label class="form-label">Ganti Dokumen SK <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                            <input
+                                                class="form-input"
+                                                type="file"
+                                                name="dokumen"
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                            >
+                                        </div>
 
-                                    {{-- TINGKAT --}}
-                                    <div>
+                                        {{-- KETERANGAN --}}
+                                        <div class="md:col-span-2">
+                                            <label class="form-label">Nomor SK / Keterangan</label>
+                                            <textarea
+                                                class="form-input"
+                                                name="keterangan"
+                                                rows="2"
+                                            >{{ $prestasi->keterangan }}</textarea>
+                                        </div>
 
-                                        <label class="form-label">
-                                            Tingkat
-                                        </label>
+                                    @else
+                                        <input type="hidden" name="kategori_bukti" value="lomba">
 
-                                        <select
-                                            class="form-input"
-                                            name="tingkat"
-                                            required
-                                        >
+                                        {{-- NAMA LOMBA --}}
+                                        <div class="md:col-span-2">
+                                            <label class="form-label">Nama Kompetisi / Kegiatan</label>
+                                            <input
+                                                class="form-input"
+                                                type="text"
+                                                name="nama_prestasi"
+                                                value="{{ $prestasi->nama_prestasi }}"
+                                                required
+                                            >
+                                        </div>
 
-                                            @foreach([
-                                                'kampus' => 'Kampus',
-                                                'kabupaten' => 'Kabupaten/Kota',
-                                                'provinsi' => 'Provinsi',
-                                                'nasional' => 'Nasional',
-                                                'internasional' => 'Internasional',
-                                            ] as $value => $label)
+                                        {{-- TINGKAT --}}
+                                        <div>
+                                            <label class="form-label">Tingkat</label>
+                                            <select
+                                                class="form-input"
+                                                name="tingkat"
+                                                required
+                                            >
+                                                @foreach(\App\Models\Prestasi::TINGKAT_OPTIONS as $value => $label)
+                                                    <option
+                                                        value="{{ $value }}"
+                                                        @selected($prestasi->tingkat === $value)
+                                                    >
+                                                        {{ $label }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
 
-                                                <option
-                                                    value="{{ $value }}"
-                                                    @selected($prestasi->tingkat === $value)
-                                                >
-                                                    {{ $label }}
-                                                </option>
+                                        {{-- PERINGKAT --}}
+                                        <div>
+                                            <label class="form-label">Peringkat / Capaian</label>
+                                            <select
+                                                class="form-input"
+                                                name="peringkat"
+                                                required
+                                            >
+                                                @foreach(\App\Models\Prestasi::PERINGKAT_OPTIONS as $value => $label)
+                                                    <option
+                                                        value="{{ $value }}"
+                                                        @selected($prestasi->peringkat === $value)
+                                                    >
+                                                        {{ $label }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
 
-                                            @endforeach
+                                        {{-- PENYELENGGARA --}}
+                                        <div>
+                                            <label class="form-label">Penyelenggara</label>
+                                            <input
+                                                class="form-input"
+                                                type="text"
+                                                name="penyelenggara"
+                                                value="{{ $prestasi->penyelenggara }}"
+                                                required
+                                            >
+                                        </div>
 
-                                        </select>
+                                        {{-- TAHUN --}}
+                                        <div>
+                                            <label class="form-label">Tahun</label>
+                                            <input
+                                                class="form-input"
+                                                type="number"
+                                                name="tahun"
+                                                min="1990"
+                                                max="{{ now()->year }}"
+                                                value="{{ $prestasi->tahun }}"
+                                                required
+                                            >
+                                        </div>
 
-                                    </div>
+                                        {{-- DOKUMEN --}}
+                                        <div class="md:col-span-2">
+                                            <label class="form-label">Ganti Dokumen Sertifikat <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                            <input
+                                                class="form-input"
+                                                type="file"
+                                                name="dokumen"
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                            >
+                                        </div>
 
-
-                                    {{-- NAMA --}}
-                                    <div class="md:col-span-2">
-
-                                        <label class="form-label">
-                                            Nama Prestasi
-                                        </label>
-
-                                        <input
-                                            class="form-input"
-                                            type="text"
-                                            name="nama_prestasi"
-                                            value="{{ $prestasi->nama_prestasi }}"
-                                            required
-                                        >
-
-                                    </div>
-
-
-                                    {{-- PERINGKAT --}}
-                                    <div>
-
-                                        <label class="form-label">
-                                            Peringkat/Penghargaan
-                                        </label>
-
-                                        <input
-                                            class="form-input"
-                                            type="text"
-                                            name="peringkat"
-                                            value="{{ $prestasi->peringkat }}"
-                                            required
-                                        >
-
-                                    </div>
-
-
-                                    {{-- TAHUN --}}
-                                    <div>
-
-                                        <label class="form-label">
-                                            Tahun
-                                        </label>
-
-                                        <input
-                                            class="form-input"
-                                            type="number"
-                                            name="tahun"
-                                            min="1990"
-                                            max="{{ now()->year }}"
-                                            value="{{ $prestasi->tahun }}"
-                                            required
-                                        >
-
-                                    </div>
-
-
-                                    {{-- PENYELENGGARA --}}
-                                    <div class="md:col-span-2">
-
-                                        <label class="form-label">
-                                            Penyelenggara
-                                        </label>
-
-                                        <input
-                                            class="form-input"
-                                            type="text"
-                                            name="penyelenggara"
-                                            value="{{ $prestasi->penyelenggara }}"
-                                            required
-                                        >
-
-                                    </div>
-
-
-                                    {{-- DOKUMEN --}}
-                                    <div class="md:col-span-2">
-
-                                        <label class="form-label">
-                                            Ganti Dokumen Prestasi
-                                            <span class="font-normal text-slate-400">(opsional)</span>
-                                        </label>
-
-                                        <input
-                                            class="form-input"
-                                            type="file"
-                                            name="dokumen"
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                        >
-
-                                    </div>
-
-
-                                    {{-- KETERANGAN --}}
-                                    <div class="md:col-span-2">
-
-                                        <label class="form-label">
-                                            Keterangan
-                                            <span class="font-normal text-slate-400">(opsional)</span>
-                                        </label>
-
-                                        <textarea
-                                            class="form-input"
-                                            name="keterangan"
-                                            rows="2"
-                                        >{{ $prestasi->keterangan }}</textarea>
-
-                                    </div>
-
+                                        {{-- KETERANGAN --}}
+                                        <div class="md:col-span-2">
+                                            <label class="form-label">Keterangan</label>
+                                            <textarea
+                                                class="form-input"
+                                                name="keterangan"
+                                                rows="2"
+                                            >{{ $prestasi->keterangan }}</textarea>
+                                        </div>
+                                    @endif
 
                                     <div class="md:col-span-2 flex justify-end">
-
                                         <button
                                             class="btn-secondary"
                                             type="submit"
                                         >
                                             Simpan Perubahan
                                         </button>
-
                                     </div>
 
                                 </form>
@@ -624,14 +691,18 @@
 
                 @empty
 
-                    <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                    <div class="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 p-8 text-center">
 
-                        <p class="text-sm font-semibold text-slate-600">
-                            Belum ada prestasi yang ditambahkan.
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-2xl">
+                            ⚠️
+                        </div>
+
+                        <p class="mt-3 text-base font-bold text-amber-900">
+                            Belum Ada Data Prestasi atau SK Organisasi
                         </p>
 
-                        <p class="mt-1 text-sm text-slate-500">
-                            Jika Anda tidak memiliki prestasi, Anda dapat langsung melanjutkan ke tahap berikutnya.
+                        <p class="mx-auto mt-1 max-w-md text-sm text-amber-800">
+                            Pendaftar jalur Beasiswa Prestasi Non-Akademik <strong>wajib menambahkan minimal 1 data</strong> prestasi kompetisi/lomba atau SK kepengurusan organisasi mahasiswa untuk dapat melanjutkan.
                         </p>
 
                     </div>
@@ -644,10 +715,10 @@
 
 
         {{-- ========================================================= --}}
-        {{-- NAVIGASI --}}
+        {{-- NAVIGASI TAHAPAN --}}
         {{-- ========================================================= --}}
 
-        <div class="mt-6 flex flex-wrap justify-between gap-3">
+        <div class="mt-6 flex flex-wrap justify-between items-center gap-3">
 
             <a
                 href="{{ route('mahasiswa.pendidikan.index') }}"
@@ -663,21 +734,17 @@
                     method="POST"
                     action="{{ route('mahasiswa.prestasi.confirm') }}"
                 >
-
                     @csrf
-
                     <button
                         type="submit"
                         class="btn-primary"
                     >
-                        Konfirmasi & Lanjut ke Orang Tua
-
+                        Simpan & Lanjut ke Orang Tua
                         <x-icon
                             name="arrow-right"
                             class="h-4 w-4"
                         />
                     </button>
-
                 </form>
 
             @else

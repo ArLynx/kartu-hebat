@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\Enums\ApplicationType;
 use App\Http\Controllers\Controller;
 use App\Services\MahasiswaPendaftaranService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -17,10 +19,13 @@ class FormulirController extends Controller
     /**
      * Surat Permohonan
      *
-     * Form A : Mahasiswa yang sudah memiliki IPK
-     * Form B : Mahasiswa yang belum memiliki IPK (IPK = 0 / kosong)
+     * Setiap jenis beasiswa memiliki format formulir tersendiri (4 Formulir Spesifik):
+     * 1. Prestasi Non-Akademik   -> surat-permohonan-non-akademik.blade.php
+     * 2. Tidak Mampu             -> surat-permohonan-tidak-mampu.blade.php
+     * 3. Prestasi Akademik       -> surat-permohonan-akademik.blade.php
+     * 4. Mahasiswa Disabilitas   -> surat-permohonan-disabilitas.blade.php
      */
-    public function suratPermohonan(Request $request): Response
+    public function suratPermohonan(Request $request): Response|RedirectResponse
     {
         $pendaftaran = $this->flow->currentFor($request->user());
 
@@ -41,81 +46,83 @@ class FormulirController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        abort_unless(
-            $pendaftaran->pendidikan,
-            422,
-            'Data pendidikan belum dilengkapi.'
-        );
+        if (! $pendaftaran->dataPribadi || ! $pendaftaran->pendidikan || ! $pendaftaran->orangTua) {
+            $missing = [];
+            if (! $pendaftaran->dataPribadi) {
+                $missing[] = 'Data Pribadi';
+            }
+            if (! $pendaftaran->pendidikan) {
+                $missing[] = 'Data Pendidikan';
+            }
+            if (! $pendaftaran->orangTua) {
+                $missing[] = 'Data Orang Tua';
+            }
 
-        abort_unless(
-            $pendaftaran->dataPribadi,
-            422,
-            'Data pribadi belum dilengkapi.'
-        );
-
-        abort_unless(
-            $pendaftaran->orangTua,
-            422,
-            'Data orang tua belum dilengkapi.'
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tentukan Form A / Form B berdasarkan IPK
-        |--------------------------------------------------------------------------
-        |
-        | IPK = 0 / kosong
-        |     -> Form B
-        |
-        | IPK > 0
-        |     -> Form A
-        |
-        */
-
-        $pendidikan = $pendaftaran->pendidikan;
-
-        $ipk = $pendidikan->ipk;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tentukan jenis formulir
-        |--------------------------------------------------------------------------
-        */
-
-        $jenisForm = (
-            $ipk === null ||
-            (float) $ipk <= 0
-        )
-            ? 'B'
-            : 'A';
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Form A wajib mempunyai IPK
-        |--------------------------------------------------------------------------
-        */
-
-        if ($jenisForm === 'A') {
-
-            abort_unless(
-                (float) $ipk > 0,
-                422,
-                'IPK belum diisi.'
-            );
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    'Surat Permohonan belum dapat diunduh. Silakan lengkapi ' . implode(', ', $missing) . ' terlebih dahulu.'
+                );
         }
 
+        $applicationType = $pendaftaran->kategoriBeasiswa?->application_type;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tentukan Blade Form
-        |--------------------------------------------------------------------------
-        */
+        if ($applicationType === ApplicationType::NON_AKADEMIK) {
+            $viewName = 'mahasiswa.formulir.surat-permohonan-non-akademik';
+            $jenisForm = 'Non-Akademik';
+            $namaFile = 'Surat-Permohonan-'
+                . $pendaftaran->nomor_pendaftaran
+                . '-Non-Akademik.pdf';
+        } elseif ($applicationType === ApplicationType::TIDAK_MAMPU) {
+            $viewName = 'mahasiswa.formulir.surat-permohonan-tidak-mampu';
+            $jenisForm = 'Tidak-Mampu';
+            $namaFile = 'Surat-Permohonan-'
+                . $pendaftaran->nomor_pendaftaran
+                . '-Tidak-Mampu.pdf';
+        } elseif ($applicationType === ApplicationType::AKADEMIK) {
+            $viewName = 'mahasiswa.formulir.surat-permohonan-akademik';
+            $jenisForm = 'Prestasi-Akademik';
+            $namaFile = 'Surat-Permohonan-'
+                . $pendaftaran->nomor_pendaftaran
+                . '-Prestasi-Akademik.pdf';
+        } elseif ($applicationType === ApplicationType::DISABILITAS) {
+            $viewName = 'mahasiswa.formulir.surat-permohonan-disabilitas';
+            $jenisForm = 'Disabilitas';
+            $namaFile = 'Surat-Permohonan-'
+                . $pendaftaran->nomor_pendaftaran
+                . '-Disabilitas.pdf';
+        } else {
+            /*
+            |--------------------------------------------------------------------------
+            | Tentukan Form A / Form B berdasarkan IPK
+            |--------------------------------------------------------------------------
+            */
+            $pendidikan = $pendaftaran->pendidikan;
+            $ipk = $pendidikan->ipk;
 
-        $viewName = $jenisForm === 'B'
-            ? 'mahasiswa.formulir.surat-permohonan-b'
-            : 'mahasiswa.formulir.surat-permohonan-a';
+            $jenisForm = (
+                $ipk === null ||
+                (float) $ipk <= 0
+            )
+                ? 'B'
+                : 'A';
 
+            if ($jenisForm === 'A' && (float) $ipk <= 0) {
+                return redirect()
+                    ->back()
+                    ->with('error', 'IPK belum diisi pada Data Pendidikan.');
+            }
+
+            $viewName = $jenisForm === 'B'
+                ? 'mahasiswa.formulir.surat-permohonan-b'
+                : 'mahasiswa.formulir.surat-permohonan-a';
+
+            $namaFile = 'Surat-Permohonan-'
+                . $pendaftaran->nomor_pendaftaran
+                . '-Form-' . $jenisForm
+                . '.pdf';
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -131,15 +138,10 @@ class FormulirController extends Controller
             ]
         );
 
-
         /*
         |--------------------------------------------------------------------------
-        | F4 Indonesia
+        | F4 Indonesia (215.9 mm x 330.2 mm / 612 pt x 935.43 pt)
         |--------------------------------------------------------------------------
-        |
-        | 215.9 mm x 330.2 mm
-        | 612 pt x 935.43 pt
-        |
         */
 
         $pdf->setPaper([
@@ -149,26 +151,13 @@ class FormulirController extends Controller
             935.43,
         ]);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Nama File
-        |--------------------------------------------------------------------------
-        */
-
-        $namaFile = 'Surat-Permohonan-'
-            . $pendaftaran->nomor_pendaftaran
-            . '-Form-' . $jenisForm
-            . '.pdf';
-
-
         return $pdf->download($namaFile);
     }
 
     /**
      * Pakta Integritas
      */
-    public function paktaIntegritas(Request $request): Response
+    public function paktaIntegritas(Request $request): Response|RedirectResponse
     {
         $pendaftaran = $this->flow->currentFor($request->user());
 
@@ -189,23 +178,25 @@ class FormulirController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        abort_unless(
-            $pendaftaran->dataPribadi,
-            422,
-            'Data pribadi belum dilengkapi.'
-        );
+        if (! $pendaftaran->dataPribadi || ! $pendaftaran->pendidikan || ! $pendaftaran->orangTua) {
+            $missing = [];
+            if (! $pendaftaran->dataPribadi) {
+                $missing[] = 'Data Pribadi';
+            }
+            if (! $pendaftaran->pendidikan) {
+                $missing[] = 'Data Pendidikan';
+            }
+            if (! $pendaftaran->orangTua) {
+                $missing[] = 'Data Orang Tua';
+            }
 
-        abort_unless(
-            $pendaftaran->pendidikan,
-            422,
-            'Data pendidikan belum dilengkapi.'
-        );
-
-        abort_unless(
-            $pendaftaran->orangTua,
-            422,
-            'Data orang tua belum dilengkapi.'
-        );
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    'Pakta Integritas belum dapat diunduh. Silakan lengkapi ' . implode(', ', $missing) . ' terlebih dahulu.'
+                );
+        }
 
         /*
         |--------------------------------------------------------------------------

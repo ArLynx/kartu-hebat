@@ -50,4 +50,102 @@ class RegistrationTest extends TestCase
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
     }
+
+    public function test_new_user_with_stale_session_hash_lands_on_verify_email_not_login(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        $response = $this->withSession([
+            'password_hash_web' => 'stale-hash-from-deleted-user',
+            'password_hash_sanctum' => 'stale-hash-from-deleted-user',
+        ])
+            ->post('/register', [
+                'name' => 'Elsha Test',
+                'email' => 'elsha@example.com',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+                'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+            ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard', absolute: false));
+
+        // Saat mengikuti redirect ke /dashboard, harus diarahkan ke /email/verify (bukan /login)
+        $follow = $this->get(route('dashboard'));
+        $follow->assertRedirect(route('verification.notice'));
+
+        // Halaman /email/verify harus berhasil dirender (status 200)
+        $verifyScreen = $this->get(route('verification.notice'));
+        $verifyScreen->assertOk();
+    }
+
+    public function test_registration_rolls_back_and_returns_to_form_when_email_sending_fails(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        \Illuminate\Support\Facades\Notification::shouldReceive('send')
+            ->andThrow(new \Symfony\Component\Mailer\Exception\TransportException('Connection timed out'));
+
+        $response = $this->from('/register')->post('/register', [
+            'name' => 'Offline Student',
+            'email' => 'offline@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        // Akun harus dibatalkan dari database (rollback)
+        $this->assertDatabaseMissing('users', ['email' => 'offline@example.com']);
+        $this->assertGuest();
+
+        // Dikembalikan ke halaman register dengan error dan input lama tetap terisi
+        $response->assertRedirect('/register');
+        $response->assertSessionHasErrors(['email']);
+        $this->assertSame('Offline Student', session('_old_input.name'));
+        $this->assertSame('offline@example.com', session('_old_input.email'));
+    }
+
+    public function test_registration_validates_minimum_password_length(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        $response = $this->from('/register')->post('/register', [
+            'name' => 'Short Pw Student',
+            'email' => 'shortpw@example.com',
+            'password' => 'short',
+            'password_confirmation' => 'short',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $response->assertRedirect('/register');
+        $response->assertSessionHasErrors(['password']);
+        $this->assertDatabaseMissing('users', ['email' => 'shortpw@example.com']);
+        $this->assertGuest();
+    }
+
+    public function test_registration_validates_password_confirmation_match(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        $response = $this->from('/register')->post('/register', [
+            'name' => 'Mismatch Student',
+            'email' => 'mismatch@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'different123',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $response->assertRedirect('/register');
+        $response->assertSessionHasErrors(['password']);
+        $this->assertDatabaseMissing('users', ['email' => 'mismatch@example.com']);
+        $this->assertGuest();
+    }
 }

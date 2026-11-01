@@ -20,7 +20,6 @@
             </div>
         @endunless
 
-
         <form
             method="POST"
             action="{{ route('mahasiswa.pendidikan.update') }}"
@@ -32,21 +31,20 @@
             <fieldset @disabled(!$canEdit) class="space-y-6">
 
                 {{-- ========================================================= --}}
-                {{-- INFORMASI AKADEMIK --}}
+                {{-- INFORMASI PENDIDIKAN & PERGURUAN TINGGI (1 CARD) --}}
                 {{-- ========================================================= --}}
 
                 <section class="card overflow-hidden">
 
                     <div class="border-b border-slate-200 px-6 py-5 sm:px-8">
-                        <h2 class="text-xl font-bold">
-                            Informasi Akademik
+                        <h2 class="text-xl font-bold text-slate-800">
+                            Informasi Pendidikan & Perguruan Tinggi
                         </h2>
 
                         <p class="mt-1 text-sm text-slate-500">
                             Gunakan data yang sesuai dengan dokumen resmi perguruan tinggi.
                         </p>
                     </div>
-
 
                     <div class="grid gap-5 p-6 sm:p-8 md:grid-cols-2">
 
@@ -67,7 +65,6 @@
                             >
                         </div>
 
-
                         {{-- PERGURUAN TINGGI --}}
                         <div>
                             <label class="form-label">
@@ -84,7 +81,6 @@
                                 required
                             >
                         </div>
-
 
                         {{-- STATUS PERGURUAN TINGGI --}}
                         <div>
@@ -118,7 +114,6 @@
                             </select>
                         </div>
 
-
                         {{-- FAKULTAS --}}
                         <div>
                             <label class="form-label">
@@ -136,7 +131,6 @@
                             >
                         </div>
 
-
                         {{-- JURUSAN --}}
                         <div>
                             <label class="form-label">
@@ -149,15 +143,14 @@
                                 name="jurusan"
                                 maxlength="150"
                                 value="{{ old('jurusan', $pendidikan?->jurusan) }}"
-                                placeholder="Masukkan jurusan atau '-' jika tidak ada"
+                                placeholder="Masukkan jurusan atau - jika tidak ada"
                                 required
                             >
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi <strong>'-'</strong> apabila perguruan tinggi tidak memiliki jurusan.
+                                Isi <strong>-</strong> apabila perguruan tinggi tidak memiliki jurusan.
                             </p>
                         </div>
-
 
                         {{-- PROGRAM STUDI --}}
                         <div>
@@ -171,15 +164,14 @@
                                 name="program_studi"
                                 maxlength="150"
                                 value="{{ old('program_studi', $pendidikan?->program_studi) }}"
-                                placeholder="Masukkan program studi atau '-' jika tidak ada"
+                                placeholder="Masukkan program studi atau - jika tidak ada"
                                 required
                             >
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi <strong>'-' </strong> apabila perguruan tinggi tidak memiliki program studi.
+                                Isi <strong>-</strong> apabila perguruan tinggi tidak memiliki program studi.
                             </p>
                         </div>
-
 
                         {{-- JENJANG --}}
                         <div>
@@ -201,53 +193,15 @@
                                     'D4' => 'Diploma IV (D4)',
                                     'S1' => 'Strata 1 (S1)',
                                 ] as $value => $label)
-
                                     <option
                                         value="{{ $value }}"
                                         @selected(old('jenjang', $pendidikan?->jenjang) === $value)
                                     >
                                         {{ $label }}
                                     </option>
-
                                 @endforeach
                             </select>
                         </div>
-
-
-                        {{-- STATUS MAHASISWA --}}
-                        <div>
-                            <label class="form-label">
-                                Status Mahasiswa <span class="text-red-500">*</span>
-                            </label>
-
-                            <select
-                                class="form-input"
-                                name="status_mahasiswa"
-                                required
-                            >
-                                <option value="">
-                                    Pilih status mahasiswa
-                                </option>
-
-                                @foreach([
-                                    'aktif' => 'Aktif',
-                                    'cuti' => 'Cuti',
-                                    'lulus' => 'Lulus',
-                                    'drop_out' => 'Drop Out',
-                                    'nonaktif' => 'Nonaktif',
-                                ] as $value => $label)
-
-                                    <option
-                                        value="{{ $value }}"
-                                        @selected(old('status_mahasiswa', $pendidikan?->status_mahasiswa) === $value)
-                                    >
-                                        {{ $label }}
-                                    </option>
-
-                                @endforeach
-                            </select>
-                        </div>
-
 
                         {{-- SEMESTER --}}
                         <div>
@@ -267,11 +221,10 @@
                             >
                         </div>
 
-
-                        {{-- IPK --}}
+                        {{-- INDEKS PRESTASI TOTAL --}}
                         <div>
                             <label class="form-label">
-                                IPK <span class="text-red-500">*</span>
+                                Indeks Prestasi Total <span class="text-red-500">*</span>
                             </label>
 
                             <input
@@ -287,44 +240,36 @@
                             >
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Masukkan IPK terakhir sesuai dokumen akademik.
-                                {{-- <strong>Jika belum memiliki IPK, seperti mahasiswa baru/semester 1,
-                                isi dengan 0.</strong> --}}
+                                Masukkan Indeks Prestasi Total / Kumulatif terakhir sesuai transkrip nilai atau KHS resmi, bukan Indeks Prestasi Semester (IPS).
                             </p>
                         </div>
 
+                        {{-- BESARAN NILAI UKT --}}
+                        <div>
+                            <label class="form-label">
+                                Besaran Nilai UKT (per semester) <span class="text-red-500">*</span>
+                            </label>
 
-                        {{-- NILAI RAPORT KELAS XII SEMESTER GENAP (HANYA UNTUK KATEGORI TIDAK MAMPU) --}}
-                        @if ($pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::TIDAK_MAMPU)
-                            <div>
-                                <label class="form-label">
-                                    Nilai Rata-rata Raport Kelas XII Semester Genap
-                                    <span class="text-xs font-normal text-slate-500">
-                                        (Opsional)
-                                    </span>
-                                </label>
-
+                            <div class="relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-400">
+                                    Rp
+                                </span>
                                 <input
-                                    class="form-input"
+                                    class="form-input pl-10"
                                     type="number"
-                                    name="nilai_raport"
+                                    name="nominal_ukt"
                                     min="0"
-                                    max="100"
-                                    step="0.01"
-                                    value="{{ old('nilai_raport', $pendidikan?->nilai_raport) }}"
-                                    placeholder="Contoh: 85.50"
+                                    step="1000"
+                                    value="{{ old('nominal_ukt', $pendidikan?->nominal_ukt !== null ? (int) $pendidikan->nominal_ukt : '') }}"
+                                    placeholder="Contoh: 3500000"
+                                    required
                                 >
-
-                                <p class="mt-2 text-xs leading-5 text-slate-500">
-                                    Skala 0 - 100. Menjadi kriteria penentu urutan (tie-breaker) pada seleksi Beasiswa Tidak Mampu.
-                                    Isi nilai rata-rata raport Kelas XII Semester Genap.
-                                    <strong>Nilai ini digunakan sebagai nilai akademik bagi mahasiswa
-                                    yang belum memiliki IPK (IPK diisi 0).</strong>
-                                    Kolom ini boleh dikosongkan jika tidak diperlukan.
-                                </p>
                             </div>
-                        @endif
 
+                            <p class="mt-2 text-xs leading-5 text-slate-500">
+                                Masukkan nominal Uang Kuliah Tunggal (UKT) per semester sesuai slip pembayaran atau SK penetapan UKT, isi tanpa tanda titik (1000000).
+                            </p>
+                        </div>
 
                         {{-- TAHUN MASUK --}}
                         <div>
@@ -344,58 +289,7 @@
                             >
                         </div>
 
-
-                        {{-- TAHUN LULUS --}}
-                        {{-- <div>
-                            <label class="form-label">
-                                Tahun Lulus
-                                <span class="font-normal text-slate-400">
-                                    (opsional)
-                                </span>
-                            </label>
-
-                            <input
-                                class="form-input"
-                                type="number"
-                                name="tahun_lulus"
-                                min="1990"
-                                max="{{ now()->year + 10 }}"
-                                value="{{ old('tahun_lulus', $pendidikan?->tahun_lulus) }}"
-                                placeholder="Kosongkan jika belum lulus"
-                            >
-
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Kosongkan apabila mahasiswa masih menempuh pendidikan.
-                            </p>
-                        </div> --}}
-
-                    </div>
-
-                </section>
-
-
-                {{-- ========================================================= --}}
-                {{-- INFORMASI PERGURUAN TINGGI --}}
-                {{-- ========================================================= --}}
-
-                <section class="card overflow-hidden">
-
-                    <div class="border-b border-slate-200 px-6 py-5 sm:px-8">
-
-                        <h2 class="text-xl font-bold">
-                            Informasi Perguruan Tinggi
-                        </h2>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            Lengkapi informasi sesuai dokumen resmi perguruan tinggi.
-                        </p>
-
-                    </div>
-
-
-                    <div class="grid gap-5 p-6 sm:p-8 md:grid-cols-2">
-
-                        {{-- AKREDITASI PT --}}
+                        {{-- AKREDITASI PERGURUAN TINGGI --}}
                         <div>
                             <label class="form-label">
                                 Akreditasi Perguruan Tinggi
@@ -413,130 +307,12 @@
                             >
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi akreditasi institusi/perguruan tinggi.
+                                Isi akreditasi institusi / perguruan tinggi sesuai dokumen resmi.
                             </p>
                         </div>
 
-
-                        {{-- AKREDITASI JURUSAN / PRODI --}}
-                        <div>
-                            <label class="form-label">
-                                Akreditasi Jurusan / Program Studi
-                                <span class="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                class="form-input"
-                                type="text"
-                                name="akreditasi_program_studi"
-                                maxlength="50"
-                                value="{{ old('akreditasi_program_studi', $pendidikan?->akreditasi_program_studi) }}"
-                                placeholder="Contoh: Unggul / A / Baik Sekali atau '-'"
-                                required
-                            >
-
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi akreditasi jurusan/program studi sesuai data resmi.
-                                Isi <strong>'-'</strong> apabila tidak tersedia.
-                            </p>
-                        </div>
-
-
-                        {{-- KETUA PRODI --}}
-                        <div>
-                            <label class="form-label">
-                                Nama Ketua Prodi
-                                <span class="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                class="form-input"
-                                type="text"
-                                name="nama_ketua_prodi"
-                                maxlength="150"
-                                value="{{ old('nama_ketua_prodi', $pendidikan?->nama_ketua_prodi) }}"
-                                placeholder="Nama Ketua Prodi atau '-' "
-                                required
-                            >
-
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi <strong>'-'</strong> apabila tidak memiliki Ketua Prodi.
-                            </p>
-                        </div>
-
-
-                        {{-- KETUA JURUSAN --}}
-                        <div>
-                            <label class="form-label">
-                                Nama Ketua Jurusan
-                                <span class="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                class="form-input"
-                                type="text"
-                                name="nama_ketua_jurusan"
-                                maxlength="150"
-                                value="{{ old('nama_ketua_jurusan', $pendidikan?->nama_ketua_jurusan) }}"
-                                placeholder="Nama Ketua Jurusan atau '-'"
-                                required
-                            >
-
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi <strong>'-'</strong> apabila tidak memiliki Ketua Jurusan.
-                            </p>
-                        </div>
-
-
-                        {{-- REKTOR --}}
-                        <div>
-                            <label class="form-label">
-                                Nama Rektor
-                                <span class="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                class="form-input"
-                                type="text"
-                                name="nama_rektor"
-                                maxlength="150"
-                                value="{{ old('nama_rektor', $pendidikan?->nama_rektor) }}"
-                                placeholder="Nama Rektor atau '-' "
-                                required
-                            >
-
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi <strong>'-'</strong> apabila perguruan tinggi tidak menggunakan jabatan Rektor.
-                            </p>
-                        </div>
-
-
-                        {{-- DIREKTUR --}}
-                        <div>
-                            <label class="form-label">
-                                Nama Direktur
-                                <span class="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                class="form-input"
-                                type="text"
-                                name="nama_direktur"
-                                maxlength="150"
-                                value="{{ old('nama_direktur', $pendidikan?->nama_direktur) }}"
-                                placeholder="Nama Direktur atau '-'"
-                                required
-                            >
-
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Isi <strong>'-'</strong> apabila perguruan tinggi tidak menggunakan jabatan Direktur.
-                            </p>
-                        </div>
-
-
-                        {{-- ALAMAT PT --}}
+                        {{-- ALAMAT PERGURUAN TINGGI --}}
                         <div class="md:col-span-2">
-
                             <label class="form-label">
                                 Alamat Perguruan Tinggi
                                 <span class="text-red-500">*</span>
@@ -547,38 +323,14 @@
                                 name="alamat_perguruan_tinggi"
                                 rows="3"
                                 maxlength="1000"
-                                placeholder="Masukkan alamat lengkap perguruan tinggi"
+                                placeholder="Masukkan alamat lengkap kampus perguruan tinggi"
                                 required
                             >{{ old('alamat_perguruan_tinggi', $pendidikan?->alamat_perguruan_tinggi) }}</textarea>
-
-                        </div>
-
-
-                        {{-- TELEPON PT --}}
-                        <div>
-
-                            <label class="form-label">
-                                No. Telp/HP Perguruan Tinggi
-                                <span class="text-red-500">*</span>
-                            </label>
-
-                            <input
-                                class="form-input"
-                                type="text"
-                                name="no_telp_perguruan_tinggi"
-                                maxlength="30"
-                                inputmode="tel"
-                                value="{{ old('no_telp_perguruan_tinggi', $pendidikan?->no_telp_perguruan_tinggi) }}"
-                                placeholder="Masukkan nomor telepon perguruan tinggi atau isi '-'"
-                                required
-                            >
-
                         </div>
 
                     </div>
 
                 </section>
-
 
                 {{-- ========================================================= --}}
                 {{-- STATUS VERIFIKASI PDDIKTI --}}
@@ -588,7 +340,6 @@
                     class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600"
                 >
                     Status verifikasi PDDikti:
-
                     <strong>
                         {{ $pendidikan?->pddikti_verified_at
                             ? 'Terverifikasi pada ' . $pendidikan->pddikti_verified_at->format('d/m/Y H:i')
@@ -597,7 +348,6 @@
                 </section>
 
             </fieldset>
-
 
             {{-- ========================================================= --}}
             {{-- NAVIGASI --}}
@@ -612,7 +362,6 @@
                     Kembali ke Data Pribadi
                 </a>
 
-
                 <?php
                     $isNonAkademik = $pendaftaran->kategoriBeasiswa?->application_type === \App\Enums\ApplicationType::NON_AKADEMIK;
                     $nextRoute = $isNonAkademik ? route('mahasiswa.prestasi.index') : route('mahasiswa.orang-tua.index');
@@ -620,7 +369,6 @@
                 ?>
 
                 @if($canEdit)
-
                     <button
                         type="submit"
                         class="btn-primary"
@@ -632,16 +380,13 @@
                             class="h-4 w-4"
                         />
                     </button>
-
                 @else
-
                     <a
                         href="{{ $nextRoute }}"
                         class="btn-primary"
                     >
                         Lanjut ke {{ $nextLabel }}
                     </a>
-
                 @endif
 
             </div>

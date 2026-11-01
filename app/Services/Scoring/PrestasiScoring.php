@@ -63,6 +63,14 @@ class PrestasiScoring implements ScoringStrategy
         $normalized = strtolower(trim((string) $peringkat));
         $normalized = preg_replace('/\s+/', '_', $normalized) ?? '';
 
-        return (float) ($rubric[$normalized] ?? 0);
+        if (isset($rubric[$normalized])) {
+            return (float) $rubric[$normalized];
+        }
+
+        if (str_contains($normalized, 'harapan') && isset($rubric['favorit'])) {
+            return (float) $rubric['favorit'];
+        }
+
+        return (float) ($rubric['peserta'] ?? 20);
     }
 }

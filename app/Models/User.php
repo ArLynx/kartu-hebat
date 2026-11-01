@@ -112,4 +112,12 @@ class User extends Authenticatable implements MustVerifyEmail
             && filled($profile->alamat)
             && filled($profile->village_id);
     }
+
+    /**
+     * Kirim notifikasi verifikasi email ke mahasiswa.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \Illuminate\Auth\Notifications\VerifyEmail);
+    }
 }

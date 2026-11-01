@@ -153,12 +153,12 @@
 
                                                 </div>
 
-                                                @if (isset($kategori->kuota))
+                                                {{-- @if (isset($kategori->kuota))
                                                     <span
                                                         class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
                                                         Kuota {{ $kategori->kuota }}
                                                     </span>
-                                                @endif
+                                                @endif --}}
 
                                             </div>
 

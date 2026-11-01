@@ -163,11 +163,7 @@ class ApplicationWorkflowService
             ]);
         }
 
-        $income = (int) round(
-            (float) ($parent->penghasilan_ayah ?? 0)
-            + (float) ($parent->penghasilan_ibu ?? 0)
-            + ($parent->memiliki_wali ? (float) ($parent->penghasilan_wali ?? 0) : 0)
-        );
+        $income = 0;
 
         $achievements = $pendaftaran->prestasis
             ->map(fn ($achievement): string => implode(' — ', array_filter([

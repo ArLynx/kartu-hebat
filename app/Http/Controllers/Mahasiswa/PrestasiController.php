@@ -53,7 +53,7 @@ class PrestasiController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $pendaftaran = $this->editablePendaftaran($request);
-        $validated = $this->validatedPrestasi($request);
+        $validated = $this->validatedPrestasi($request, true);
         $path = $this->storeCertificate($request, $pendaftaran->id);
 
         if ($path) {
@@ -76,7 +76,7 @@ class PrestasiController extends Controller
             throw $exception;
         }
 
-        return back()->with('success', 'Prestasi berhasil ditambahkan.');
+        return back()->with('success', 'Data prestasi / organisasi berhasil ditambahkan.');
     }
 
     public function update(Request $request, Prestasi $prestasi): RedirectResponse
@@ -84,7 +84,7 @@ class PrestasiController extends Controller
         $pendaftaran = $this->editablePendaftaran($request);
         $this->assertOwned($prestasi, $pendaftaran->id);
 
-        $validated = $this->validatedPrestasi($request);
+        $validated = $this->validatedPrestasi($request, false);
         $oldPath = $prestasi->dokumen_prestasi;
         $newPath = $this->storeCertificate($request, $pendaftaran->id);
 
@@ -112,7 +112,7 @@ class PrestasiController extends Controller
             Storage::disk(config('kartu_hebat.document_disk'))->delete($oldPath);
         }
 
-        return back()->with('success', 'Prestasi berhasil diperbarui.');
+        return back()->with('success', 'Data prestasi / organisasi berhasil diperbarui.');
     }
 
     public function destroy(Request $request, Prestasi $prestasi): RedirectResponse
@@ -125,7 +125,7 @@ class PrestasiController extends Controller
         DB::transaction(function () use ($prestasi, $pendaftaran): void {
             $prestasi->delete();
             $pendaftaran->forceFill([
-                'prestasi_dikonfirmasi_at' => now(),
+                'prestasi_dikonfirmasi_at' => $pendaftaran->prestasis()->count() > 0 ? now() : null,
                 'review_dikonfirmasi_at' => null,
             ])->save();
         });
@@ -140,6 +140,11 @@ class PrestasiController extends Controller
     public function confirm(Request $request): RedirectResponse
     {
         $pendaftaran = $this->editablePendaftaran($request);
+
+        if ($pendaftaran->prestasis()->count() === 0) {
+            return back()->with('error', 'Wajib menambahkan minimal 1 data prestasi lomba atau SK kepengurusan organisasi mahasiswa untuk melanjutkan.');
+        }
+
         $pendaftaran->forceFill([
             'prestasi_dikonfirmasi_at' => now(),
             'review_dikonfirmasi_at' => null,
@@ -177,25 +182,62 @@ class PrestasiController extends Controller
         return $pendaftaran;
     }
 
-    private function validatedPrestasi(Request $request): array
+    private function validatedPrestasi(Request $request, bool $isStore = false): array
     {
-        $validated = $request->validate([
-            'jenis' => ['required', Rule::in(['akademik', 'non_akademik'])],
-            'nama_prestasi' => ['required', 'string', 'max:200'],
-            'tingkat' => [
-                'required',
-                Rule::in(['kampus', 'kabupaten', 'provinsi', 'nasional', 'internasional']),
-            ],
-            'peringkat' => ['required', 'string', 'max:100'],
-            'is_pengurus_inti_ormawa' => ['nullable', 'boolean'],
-            'jabatan_ormawa' => ['nullable', 'string', 'max:150'],
-            'penyelenggara' => ['required', 'string', 'max:200'],
-            'tahun' => ['required', 'integer', 'digits:4', 'between:1990,'.now()->year],
-            'dokumen' => ['nullable', File::types(self::CERTIFICATE_FORMATS)->max(2048)],
-            'keterangan' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $isOrmawa = $request->input('kategori_bukti') === 'organisasi' || $request->boolean('is_pengurus_inti_ormawa');
 
-        $validated['is_pengurus_inti_ormawa'] = $request->boolean('is_pengurus_inti_ormawa');
+        if ($isOrmawa) {
+            $validated = $request->validate([
+                'kategori_bukti' => ['nullable', 'string', 'in:lomba,organisasi'],
+                'nama_organisasi' => ['required_without:nama_prestasi', 'nullable', 'string', 'max:200'],
+                'nama_prestasi' => ['required_without:nama_organisasi', 'nullable', 'string', 'max:200'],
+                'jabatan_ormawa' => ['required', 'string', 'max:150'],
+                'penyelenggara' => ['required', 'string', 'max:200'],
+                'tahun' => ['required', 'integer', 'digits:4', 'between:1990,'.now()->year],
+                'dokumen' => ['nullable', File::types(self::CERTIFICATE_FORMATS)->max(2048)],
+                'keterangan' => ['nullable', 'string', 'max:2000'],
+            ], [
+                'nama_organisasi.required_without' => 'Nama organisasi mahasiswa wajib diisi.',
+                'nama_prestasi.required_without' => 'Nama organisasi mahasiswa wajib diisi.',
+                'jabatan_ormawa.required' => 'Jabatan dalam organisasi wajib diisi.',
+                'penyelenggara.required' => 'Nama perguruan tinggi / penyelenggara wajib diisi.',
+                'tahun.required' => 'Tahun masa bakti / SK wajib diisi.',
+            ]);
+
+            $validated['nama_prestasi'] = $validated['nama_organisasi'] ?? $validated['nama_prestasi'];
+            unset($validated['nama_organisasi'], $validated['kategori_bukti']);
+
+            $validated['jenis'] = 'non_akademik';
+            $validated['tingkat'] = $request->input('tingkat') ?: 'kampus';
+            $validated['peringkat'] = $request->input('peringkat') ?: 'Pengurus Organisasi';
+            $validated['is_pengurus_inti_ormawa'] = true;
+        } else {
+            $validated = $request->validate([
+                'kategori_bukti' => ['nullable', 'string', 'in:lomba,organisasi'],
+                'nama_prestasi' => ['required', 'string', 'max:200'],
+                'tingkat' => [
+                    'required',
+                    Rule::in(['kampus', 'kabupaten', 'provinsi', 'nasional', 'internasional']),
+                ],
+                'peringkat' => ['required', 'string', 'max:100'],
+                'penyelenggara' => ['required', 'string', 'max:200'],
+                'tahun' => ['required', 'integer', 'digits:4', 'between:1990,'.now()->year],
+                'dokumen' => ['nullable', File::types(self::CERTIFICATE_FORMATS)->max(2048)],
+                'keterangan' => ['nullable', 'string', 'max:2000'],
+            ], [
+                'nama_prestasi.required' => 'Nama kompetisi / kegiatan wajib diisi.',
+                'tingkat.required' => 'Tingkat kompetisi / kegiatan wajib dipilih.',
+                'peringkat.required' => 'Peringkat / capaian kejuaraan wajib dipilih.',
+                'penyelenggara.required' => 'Penyelenggara kompetisi / kegiatan wajib diisi.',
+                'tahun.required' => 'Tahun perolehan prestasi wajib diisi.',
+            ]);
+
+            unset($validated['kategori_bukti']);
+
+            $validated['jenis'] = 'non_akademik';
+            $validated['is_pengurus_inti_ormawa'] = false;
+            $validated['jabatan_ormawa'] = null;
+        }
 
         unset($validated['dokumen']);
 

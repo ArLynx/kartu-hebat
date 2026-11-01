@@ -81,7 +81,30 @@
 
     <div class="mt-6 flex flex-wrap justify-between gap-3">
         <a href="{{ route('mahasiswa.orang-tua.index') }}" class="btn-secondary">Kembali ke Orang Tua</a>
-        <a href="{{ route('mahasiswa.review.index') }}" class="btn-primary">Lanjut ke Review <x-icon name="arrow-right" class="h-4 w-4" /></a>
+        <a href="{{ route('mahasiswa.review.index') }}" class="btn-primary">Simpan & Lanjut ke Review <x-icon name="arrow-right" class="h-4 w-4" /></a>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        const savedScroll = sessionStorage.getItem('khm_dokumen_scroll');
+        if (savedScroll !== null) {
+            window.scrollTo(0, parseInt(savedScroll, 10));
+            sessionStorage.removeItem('khm_dokumen_scroll');
+            window.addEventListener('load', function () {
+                window.scrollTo(0, parseInt(savedScroll, 10));
+            }, { once: true });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                form.addEventListener('submit', function () {
+                    sessionStorage.setItem('khm_dokumen_scroll', window.scrollY || window.pageYOffset || document.documentElement.scrollTop);
+                });
+            });
+        });
+    })();
+</script>
+@endpush

@@ -229,21 +229,20 @@ class VillageLookupTest extends TestCase
             'jenjang' => 'S1',
             'semester' => 5,
             'ipk' => 3.75,
+            'nominal_ukt' => 5000000,
             'tahun_masuk' => 2024,
-            'tahun_lulus' => null,
-            'status_mahasiswa' => 'aktif',
         ]);
 
         OrangTua::query()->create([
             'pendaftaran_id' => $pendaftaran->id,
             'nama_ayah' => 'Ayah Pengujian',
+            'status_ayah' => 'hidup',
             'nik_ayah' => '6212123456789013',
             'pekerjaan_ayah' => 'Petani',
-            'penghasilan_ayah' => 2000000,
             'nama_ibu' => 'Ibu Pengujian',
+            'status_ibu' => 'hidup',
             'nik_ibu' => '6212123456789014',
             'pekerjaan_ibu' => 'Pedagang',
-            'penghasilan_ibu' => 1500000,
             'memiliki_wali' => false,
         ]);
 

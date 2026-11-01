@@ -202,25 +202,25 @@ class SelectionScoringServiceTest extends TestCase
         $appA = $this->application(ApplicationType::TIDAK_MAMPU, [
             'desil_sosial' => 1,
             'ipk' => 3.10,
-        ], null, ['nilai_raport' => 75.0, 'tahun_masuk' => 2023, 'akreditasi_perguruan_tinggi' => 'C']);
+        ], null, ['tahun_masuk' => 2023, 'akreditasi_perguruan_tinggi' => 'C']);
 
         // B: Desil 2, IPK 3.99 (harus kalah dari A karena Desil 1 > Desil 2)
         $appB = $this->application(ApplicationType::TIDAK_MAMPU, [
             'desil_sosial' => 2,
             'ipk' => 3.99,
-        ], null, ['nilai_raport' => 98.0, 'tahun_masuk' => 2020, 'akreditasi_perguruan_tinggi' => 'Unggul']);
+        ], null, ['tahun_masuk' => 2020, 'akreditasi_perguruan_tinggi' => 'Unggul']);
 
-        // C: Desil 2, IPK 3.80, Raport 90, Masuk 2022, Akr B
+        // C: Desil 2, IPK 3.80, Masuk 2023, Akr B
         $appC = $this->application(ApplicationType::TIDAK_MAMPU, [
             'desil_sosial' => 2,
             'ipk' => 3.80,
-        ], null, ['nilai_raport' => 90.0, 'tahun_masuk' => 2022, 'akreditasi_perguruan_tinggi' => 'B']);
+        ], null, ['tahun_masuk' => 2023, 'akreditasi_perguruan_tinggi' => 'B']);
 
-        // D: Desil 2, IPK 3.80, Raport 95 (harus menang dari C karena Raport lebih tinggi)
+        // D: Desil 2, IPK 3.80, Masuk 2021 (harus menang dari C karena angkatan lebih awal)
         $appD = $this->application(ApplicationType::TIDAK_MAMPU, [
             'desil_sosial' => 2,
             'ipk' => 3.80,
-        ], null, ['nilai_raport' => 95.0, 'tahun_masuk' => 2022, 'akreditasi_perguruan_tinggi' => 'B']);
+        ], null, ['tahun_masuk' => 2021, 'akreditasi_perguruan_tinggi' => 'B']);
 
         $scoring = app(SelectionScoringService::class);
         $scoring->calculate($appA);
@@ -419,11 +419,10 @@ class SelectionScoringServiceTest extends TestCase
             'jenjang' => 'S1',
             'semester' => $profileOverrides['semester'] ?? 4,
             'ipk' => $profileOverrides['ipk'] ?? 3.00,
-            'nilai_raport' => $profileOverrides['nilai_raport'] ?? 80.0,
+            'nominal_ukt' => $profileOverrides['nominal_ukt'] ?? 3500000,
             'tahun_masuk' => $profileOverrides['tahun_masuk'] ?? 2022,
             'akreditasi_perguruan_tinggi' => $profileOverrides['akreditasi_perguruan_tinggi'] ?? 'B',
             'alamat_perguruan_tinggi' => 'Palangka Raya',
-            'no_telp_perguruan_tinggi' => '0812345678',
         ], $pendidikanOverrides));
 
         foreach ($prestasiList as $prestasi) {

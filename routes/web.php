@@ -32,18 +32,29 @@ use App\Http\Controllers\Superadmin\LogActivityController;
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
 use App\Http\Controllers\Superadmin\PeriodeController as SuperadminPeriodeController;
 use App\Http\Controllers\TwoFactorSetupController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Http\Controllers\RegisteredUserController;
 
 Route::get('/', LandingController::class)->name('home');
 
-// Override route POST /register dari Fortify dengan throttle agar registrasi
-// publik (yang tidak dilimit Fortify secara bawaan) tidak bisa disalahgunakan
-// untuk membuat akun massal. Didefinisikan di sini agar lebih dulu terdaftar
-// dibandingkan rute Fortify, sehingga yang menang adalah versi ini.
+// Override route POST /register dari Fortify dengan throttle dan proteksi rollback database
+// jika pengiriman email verifikasi gagal (misal koneksi offline/SMTP timeout).
 Route::post('/register', [RegisteredUserController::class, 'store'])
     ->middleware(['guest:'.config('fortify.guard'), 'throttle:register'])
     ->name('register.store');
+
+// Override route GET /email/verify/{id}/{hash} agar tautan verifikasi email tetap berfungsi
+// meskipun dibuka dari perangkat/browser berbeda atau saat sesi login sudah keluar.
+Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
+
+// Override route POST /email/verification-notification dari Fortify dengan penanganan aman saat offline.
+Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+    ->middleware(['auth:'.config('fortify.guard'), 'throttle:6,1'])
+    ->name('verification.send');
 Route::get('/pengumuman-hasil', [ResultController::class, 'index'])
     ->middleware('throttle:20,1')
     ->name('public.results');
