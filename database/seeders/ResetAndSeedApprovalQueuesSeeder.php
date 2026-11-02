@@ -43,6 +43,11 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
             ->where('aktif', true)
             ->where('application_type', ApplicationType::NON_AKADEMIK->value)
             ->first();
+        $unableCategory = KategoriBeasiswa::query()
+            ->where('periode_id', $period->id)
+            ->where('aktif', true)
+            ->where('application_type', ApplicationType::TIDAK_MAMPU->value)
+            ->first();
 
         DB::transaction(function () use (
             $period,
@@ -50,14 +55,16 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
             $category,
             $disabilityCategory,
             $prestasiCategory,
+            $unableCategory,
             $applicationType
         ): void {
             $this->deleteApplicationsAndWorkflowData();
 
             $queues = [
                 [UserRole::OPERATOR_DUKCAPIL, ApplicationStatus::VERIFIKASI_DINAS, $category, $applicationType],
-                [UserRole::OPERATOR_SOSIAL, ApplicationStatus::VERIFIKASI_DINAS, $category, $applicationType],
+                [UserRole::OPERATOR_SOSIAL, ApplicationStatus::VERIFIKASI_DINAS, $unableCategory ?? $category, ApplicationType::TIDAK_MAMPU],
                 [UserRole::OPERATOR_PENDIDIKAN, ApplicationStatus::VERIFIKASI_DINAS, $category, $applicationType],
+                [UserRole::OPERATOR_BKPSDM, ApplicationStatus::VERIFIKASI_DINAS, $category, $applicationType],
                 [UserRole::OPERATOR_DINKES, ApplicationStatus::VERIFIKASI_DINAS, $disabilityCategory ?? $category, ApplicationType::DISABILITAS],
                 [UserRole::OPERATOR_PARSEPOR, ApplicationStatus::VERIFIKASI_DINAS, $prestasiCategory ?? $category, ApplicationType::NON_AKADEMIK],
                 [UserRole::OPERATOR_KABUPATEN, ApplicationStatus::SELEKSI_KABUPATEN, $category, $applicationType],
@@ -68,9 +75,10 @@ class ResetAndSeedApprovalQueuesSeeder extends Seeder
                     'operator_dukcapil' => 1,
                     'operator_sosial' => 2,
                     'operator_pendidikan' => 3,
-                    'operator_dinkes' => 4,
-                    'operator_parsepor' => 5,
-                    'operator_kabupaten' => 6,
+                    'operator_bkpsdm' => 4,
+                    'operator_dinkes' => 5,
+                    'operator_parsepor' => 6,
+                    'operator_kabupaten' => 7,
                 ][$role->value];
 
                 $student = User::query()->updateOrCreate(

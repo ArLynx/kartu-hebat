@@ -136,6 +136,7 @@ class ApplicationController extends Controller
             UserRole::OPERATOR_DUKCAPIL,
             UserRole::OPERATOR_SOSIAL,
             UserRole::OPERATOR_PENDIDIKAN,
+            UserRole::OPERATOR_BKPSDM,
             UserRole::OPERATOR_DINKES,
             UserRole::OPERATOR_PARSEPOR => [ApplicationStatus::VERIFIKASI_DINAS->value],
             UserRole::OPERATOR_KABUPATEN => [

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgencyVerification;
 use App\Models\Application;
 use App\Models\AuditLog;
-use App\Models\AgencyVerification;
 use App\Models\DocumentVerification;
 use App\Models\Pendaftaran;
 use App\Models\User;
@@ -179,7 +179,6 @@ class LogActivityController extends Controller
                 return $log;
             });
 
-
         /*
         |--------------------------------------------------------------------------
         | AUDIT PERUBAHAN DATA
@@ -270,7 +269,6 @@ class LogActivityController extends Controller
             )
             ->withQueryString();
 
-
         /*
         |--------------------------------------------------------------------------
         | SIAPKAN DATA AUDIT
@@ -290,7 +288,6 @@ class LogActivityController extends Controller
                 $log->student_info = null;
 
                 $log->document_verification_info = null;
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -330,27 +327,20 @@ class LogActivityController extends Controller
 
                         $log->student_info = [
 
-                            'name' =>
-                                $student->name,
+                            'name' => $student->name,
 
-                            'user_id' =>
-                                $student->id,
+                            'user_id' => $student->id,
 
-                            'nik' =>
-                                $profile->nik,
+                            'nik' => $profile->nik,
 
-                            'nim' =>
-                                $profile->nim,
+                            'nim' => $profile->nim,
 
-                            'nomor_pendaftaran' =>
-                                $pendaftaran?->nomor_pendaftaran,
+                            'nomor_pendaftaran' => $pendaftaran?->nomor_pendaftaran,
 
-                            'pendaftaran_id' =>
-                                $pendaftaran?->id,
+                            'pendaftaran_id' => $pendaftaran?->id,
                         ];
                     }
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -400,34 +390,26 @@ class LogActivityController extends Controller
                     $pendaftaran =
                         $application->pendaftaran;
 
-
                     if ($student) {
 
                         $log->student_info = [
 
-                            'name' =>
-                                $student->name,
+                            'name' => $student->name,
 
-                            'user_id' =>
-                                $student->id,
+                            'user_id' => $student->id,
 
-                            'nik' =>
-                                $profile?->nik,
+                            'nik' => $profile?->nik,
 
-                            'nim' =>
-                                $profile?->nim,
+                            'nim' => $profile?->nim,
 
-                            'nomor_pendaftaran' =>
-                                $application->nomor_pengajuan
+                            'nomor_pendaftaran' => $application->nomor_pengajuan
                                 ??
                                 $pendaftaran?->nomor_pendaftaran,
 
-                            'pendaftaran_id' =>
-                                $pendaftaran?->id,
+                            'pendaftaran_id' => $pendaftaran?->id,
                         ];
                     }
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -461,34 +443,26 @@ class LogActivityController extends Controller
                     $pendaftaran =
                         $application?->pendaftaran;
 
-
                     if ($student) {
 
                         $log->student_info = [
 
-                            'name' =>
-                                $student->name,
+                            'name' => $student->name,
 
-                            'user_id' =>
-                                $student->id,
+                            'user_id' => $student->id,
 
-                            'nik' =>
-                                $profile?->nik,
+                            'nik' => $profile?->nik,
 
-                            'nim' =>
-                                $profile?->nim,
+                            'nim' => $profile?->nim,
 
-                            'nomor_pendaftaran' =>
-                                $application?->nomor_pengajuan
+                            'nomor_pendaftaran' => $application?->nomor_pengajuan
                                 ??
                                 $pendaftaran?->nomor_pendaftaran,
 
-                            'pendaftaran_id' =>
-                                $pendaftaran?->id,
+                            'pendaftaran_id' => $pendaftaran?->id,
                         ];
                     }
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -536,7 +510,6 @@ class LogActivityController extends Controller
                     $pendaftaran =
                         $application?->pendaftaran;
 
-
                     /*
                     |--------------------------------------------------------------------------
                     | DATA MAHASISWA
@@ -547,28 +520,21 @@ class LogActivityController extends Controller
 
                         $log->student_info = [
 
-                            'name' =>
-                                $student->name,
+                            'name' => $student->name,
 
-                            'user_id' =>
-                                $student->id,
+                            'user_id' => $student->id,
 
-                            'nik' =>
-                                $profile?->nik,
+                            'nik' => $profile?->nik,
 
-                            'nim' =>
-                                $profile?->nim,
+                            'nim' => $profile?->nim,
 
-                            'nomor_pendaftaran' =>
-                                $application?->nomor_pengajuan
+                            'nomor_pendaftaran' => $application?->nomor_pengajuan
                                 ??
                                 $pendaftaran?->nomor_pendaftaran,
 
-                            'pendaftaran_id' =>
-                                $pendaftaran?->id,
+                            'pendaftaran_id' => $pendaftaran?->id,
                         ];
                     }
-
 
                     /*
                     |--------------------------------------------------------------------------
@@ -592,22 +558,17 @@ class LogActivityController extends Controller
 
                     $log->document_verification_info = [
 
-                        'document_name' =>
-                            $documentName,
+                        'document_name' => $documentName,
 
-                        'stage' =>
-                            $verification->stage,
+                        'stage' => $verification->stage,
 
-                        'result' =>
-                            $this->formatVerificationResult(
-                                $verification->result
-                            ),
+                        'result' => $this->formatVerificationResult(
+                            $verification->result
+                        ),
 
-                        'notes' =>
-                            $verification->notes,
+                        'notes' => $verification->notes,
                     ];
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -646,35 +607,27 @@ class LogActivityController extends Controller
                         $pendaftaran =
                             $application?->pendaftaran;
 
-
                         if ($student) {
 
                             $log->student_info = [
 
-                                'name' =>
-                                    $student->name,
+                                'name' => $student->name,
 
-                                'user_id' =>
-                                    $student->id,
+                                'user_id' => $student->id,
 
-                                'nik' =>
-                                    $profile?->nik,
+                                'nik' => $profile?->nik,
 
-                                'nim' =>
-                                    $profile?->nim,
+                                'nim' => $profile?->nim,
 
-                                'nomor_pendaftaran' =>
-                                    $application?->nomor_pengajuan
+                                'nomor_pendaftaran' => $application?->nomor_pengajuan
                                     ??
                                     $pendaftaran?->nomor_pendaftaran,
 
-                                'pendaftaran_id' =>
-                                    $pendaftaran?->id,
+                                'pendaftaran_id' => $pendaftaran?->id,
                             ];
                         }
                     }
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -708,29 +661,22 @@ class LogActivityController extends Controller
 
                             $log->student_info = [
 
-                                'name' =>
-                                    $student->name,
+                                'name' => $student->name,
 
-                                'user_id' =>
-                                    $student->id,
+                                'user_id' => $student->id,
 
-                                'nik' =>
-                                    $profile?->nik,
+                                'nik' => $profile?->nik,
 
-                                'nim' =>
-                                    $profile?->nim,
+                                'nim' => $profile?->nim,
 
-                                'nomor_pendaftaran' =>
-                                    $pendaftaran
+                                'nomor_pendaftaran' => $pendaftaran
                                     ?->nomor_pendaftaran,
 
-                                'pendaftaran_id' =>
-                                    $pendaftaran?->id,
+                                'pendaftaran_id' => $pendaftaran?->id,
                             ];
                         }
                     }
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -742,7 +688,6 @@ class LogActivityController extends Controller
                     $this->dataLabel(
                         $log->auditable_type
                     );
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -758,7 +703,6 @@ class LogActivityController extends Controller
                         $log->auditable_type
                     );
 
-
                 /*
                 |--------------------------------------------------------------------------
                 | RINGKASAN PERUBAHAN
@@ -772,10 +716,8 @@ class LogActivityController extends Controller
                         $log->event
                     );
 
-
                 return $log;
             });
-
 
         /*
         |--------------------------------------------------------------------------
@@ -786,15 +728,15 @@ class LogActivityController extends Controller
         $operators = User::query()
             ->whereIn('role', [
                 'operator_dukcapil',
-                'operator_dinas_sosial',
-                'operator_dinas_pendidikan',
-                'operator_dinas_kesehatan',
+                'operator_sosial',
+                'operator_pendidikan',
+                'operator_bkpsdm',
+                'operator_dinkes',
                 'operator_parsepor',
                 'operator_kabupaten',
             ])
             ->orderBy('name')
             ->get();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -805,18 +747,14 @@ class LogActivityController extends Controller
         return view(
             'superadmin.log-aktivitas.index',
             [
-                'verificationLogs' =>
-                    $verificationLogs,
+                'verificationLogs' => $verificationLogs,
 
-                'auditLogs' =>
-                    $auditLogs,
+                'auditLogs' => $auditLogs,
 
-                'operators' =>
-                    $operators,
+                'operators' => $operators,
             ]
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -840,34 +778,27 @@ class LogActivityController extends Controller
 
         $agency = match ($role) {
 
-            'operator_dukcapil'
-                => 'Dukcapil',
+            'operator_dukcapil' => 'Dukcapil',
 
-            'operator_dinas_sosial'
-                => 'Dinas Sosial',
+            'operator_sosial' => 'Dinas Sosial',
 
-            'operator_dinas_pendidikan'
-                => 'Dinas Pendidikan',
+            'operator_pendidikan' => 'Dinas Pendidikan',
 
-            'operator_dinas_kesehatan'
-                => 'Dinas Kesehatan',
+            'operator_bkpsdm' => 'BKPSDM',
 
-            'operator_parsepor'
-                => 'Parsepor',
+            'operator_dinkes' => 'Dinas Kesehatan',
 
-            'operator_kabupaten'
-                => 'Kabupaten',
+            'operator_parsepor' => 'Parsepor',
 
-            default
-                => 'Sistem',
+            'operator_kabupaten' => 'Kabupaten',
+
+            default => 'Sistem',
         };
-
 
         $action =
             is_string($action)
             ? strtolower(trim($action))
             : '';
-
 
         $decision =
             $metadata['decision']
@@ -882,18 +813,15 @@ class LogActivityController extends Controller
             ??
             null;
 
-
         if ($decision instanceof \BackedEnum) {
             $decision =
                 $decision->value;
         }
 
-
         if (is_string($decision)) {
             $decision =
                 strtolower(trim($decision));
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -932,10 +860,8 @@ class LogActivityController extends Controller
             )
         ) {
 
-            return
-                "Verifikasi {$agency} — MS";
+            return "Verifikasi {$agency} — MS";
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -974,10 +900,8 @@ class LogActivityController extends Controller
             )
         ) {
 
-            return
-                "Verifikasi {$agency} — TMS";
+            return "Verifikasi {$agency} — TMS";
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -999,7 +923,6 @@ class LogActivityController extends Controller
 
             return 'Mengajukan Beasiswa';
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1035,10 +958,8 @@ class LogActivityController extends Controller
                 )
             ) {
 
-                return
-                    'Menetapkan Penerima Beasiswa';
+                return 'Menetapkan Penerima Beasiswa';
             }
-
 
             if (
                 in_array(
@@ -1053,15 +974,11 @@ class LogActivityController extends Controller
                 )
             ) {
 
-                return
-                    'Menolak Pengajuan Beasiswa';
+                return 'Menolak Pengajuan Beasiswa';
             }
 
-
-            return
-                'Memproses Seleksi Kabupaten';
+            return 'Memproses Seleksi Kabupaten';
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1082,10 +999,8 @@ class LogActivityController extends Controller
             )
         ) {
 
-            return
-                'Mempublikasikan Hasil Seleksi';
+            return 'Mempublikasikan Hasil Seleksi';
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1102,7 +1017,6 @@ class LogActivityController extends Controller
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | DATA LABEL
@@ -1118,74 +1032,61 @@ class LogActivityController extends Controller
             str_ends_with(
                 $type ?? '',
                 'MahasiswaProfile'
-            )
-                => 'Profil Mahasiswa',
+            ) => 'Profil Mahasiswa',
 
             str_ends_with(
                 $type ?? '',
                 'Pendaftaran'
-            )
-                => 'Pengajuan Beasiswa',
+            ) => 'Pengajuan Beasiswa',
 
             str_ends_with(
                 $type ?? '',
                 'DocumentVerification'
-            )
-                => 'Verifikasi Dokumen',
+            ) => 'Verifikasi Dokumen',
 
             str_ends_with(
                 $type ?? '',
                 'Dokumen'
-            )
-                => 'Dokumen Beasiswa',
+            ) => 'Dokumen Beasiswa',
 
             str_ends_with(
                 $type ?? '',
                 'Pendidikan'
-            )
-                => 'Data Pendidikan',
+            ) => 'Data Pendidikan',
 
             str_ends_with(
                 $type ?? '',
                 'Prestasi'
-            )
-                => 'Data Prestasi',
+            ) => 'Data Prestasi',
 
             str_ends_with(
                 $type ?? '',
                 'OrangTua'
-            )
-                => 'Data Orang Tua',
+            ) => 'Data Orang Tua',
 
             str_ends_with(
                 $type ?? '',
                 'Application'
-            )
-                => 'Pengajuan Beasiswa',
+            ) => 'Pengajuan Beasiswa',
 
             str_ends_with(
                 $type ?? '',
                 'AgencyVerification'
-            )
-                => 'Verifikasi Dinas',
+            ) => 'Verifikasi Dinas',
 
             str_ends_with(
                 $type ?? '',
                 'Selection'
-            )
-                => 'Keputusan Seleksi',
+            ) => 'Keputusan Seleksi',
 
             str_ends_with(
                 $type ?? '',
                 'User'
-            )
-                => 'Akun Pengguna',
+            ) => 'Akun Pengguna',
 
-            default
-                => 'Data Sistem',
+            default => 'Data Sistem',
         };
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1220,12 +1121,10 @@ class LogActivityController extends Controller
                 ??
                 null;
 
-
             if ($result instanceof \BackedEnum) {
                 $result =
                     $result->value;
             }
-
 
             $result =
                 strtolower(
@@ -1233,7 +1132,6 @@ class LogActivityController extends Controller
                         (string) $result
                     )
                 );
-
 
             if (
                 in_array(
@@ -1249,10 +1147,8 @@ class LogActivityController extends Controller
                 )
             ) {
 
-                return
-                    'Memverifikasi Dokumen — Memenuhi Syarat';
+                return 'Memverifikasi Dokumen — Memenuhi Syarat';
             }
-
 
             if (
                 in_array(
@@ -1268,14 +1164,11 @@ class LogActivityController extends Controller
                 )
             ) {
 
-                return
-                    'Memverifikasi Dokumen — Tidak Memenuhi Syarat';
+                return 'Memverifikasi Dokumen — Tidak Memenuhi Syarat';
             }
-
 
             return 'Memverifikasi Dokumen';
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1297,12 +1190,10 @@ class LogActivityController extends Controller
                 ??
                 null;
 
-
             if ($decision instanceof \BackedEnum) {
                 $decision =
                     $decision->value;
             }
-
 
             $decision =
                 strtolower(
@@ -1310,7 +1201,6 @@ class LogActivityController extends Controller
                         (string) $decision
                     )
                 );
-
 
             if (
                 in_array(
@@ -1326,10 +1216,8 @@ class LogActivityController extends Controller
                 )
             ) {
 
-                return
-                    'Menetapkan Penerima Beasiswa';
+                return 'Menetapkan Penerima Beasiswa';
             }
-
 
             if (
                 in_array(
@@ -1344,15 +1232,11 @@ class LogActivityController extends Controller
                 )
             ) {
 
-                return
-                    'Menolak Pengajuan Beasiswa';
+                return 'Menolak Pengajuan Beasiswa';
             }
 
-
-            return
-                'Memproses Keputusan Seleksi';
+            return 'Memproses Keputusan Seleksi';
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1372,12 +1256,11 @@ class LogActivityController extends Controller
         ) {
 
             return
-                'Menambahkan ' .
+                'Menambahkan '.
                 $this->dataLabel(
                     $auditableType
                 );
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1397,12 +1280,11 @@ class LogActivityController extends Controller
         ) {
 
             return
-                'Menghapus ' .
+                'Menghapus '.
                 $this->dataLabel(
                     $auditableType
                 );
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1427,16 +1309,14 @@ class LogActivityController extends Controller
                     $newValues
                 );
 
-
             if (empty($changedFields)) {
 
                 return
-                    'Mengubah ' .
+                    'Mengubah '.
                     $this->dataLabel(
                         $auditableType
                     );
             }
-
 
             /*
             | Satu field
@@ -1445,12 +1325,11 @@ class LogActivityController extends Controller
             if (count($changedFields) === 1) {
 
                 return
-                    'Mengubah ' .
+                    'Mengubah '.
                     $this->fieldLabel(
                         $changedFields[0]
                     );
             }
-
 
             /*
             | Dua field
@@ -1459,16 +1338,15 @@ class LogActivityController extends Controller
             if (count($changedFields) === 2) {
 
                 return
-                    'Mengubah ' .
+                    'Mengubah '.
                     $this->fieldLabel(
                         $changedFields[0]
-                    ) .
-                    ' dan ' .
+                    ).
+                    ' dan '.
                     $this->fieldLabel(
                         $changedFields[1]
                     );
             }
-
 
             /*
             | Lebih dari dua
@@ -1477,17 +1355,15 @@ class LogActivityController extends Controller
             $labels =
                 collect($changedFields)
                     ->map(
-                        fn ($field) =>
-                            $this->fieldLabel(
-                                $field
-                            )
+                        fn ($field) => $this->fieldLabel(
+                            $field
+                        )
                     )
                     ->values()
                     ->all();
 
-
             return
-                'Mengubah ' .
+                'Mengubah '.
                 implode(
                     ', ',
                     array_slice(
@@ -1495,18 +1371,17 @@ class LogActivityController extends Controller
                         0,
                         3
                     )
-                ) .
+                ).
                 (
                     count($labels) > 3
-                    ? ' dan ' .
+                    ? ' dan '.
                         (
                             count($labels) - 3
-                        ) .
+                        ).
                         ' data lainnya'
                     : ''
                 );
         }
-
 
         return ucfirst(
             str_replace(
@@ -1516,7 +1391,6 @@ class LogActivityController extends Controller
             )
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1538,7 +1412,6 @@ class LogActivityController extends Controller
             )
         );
 
-
         foreach ($fields as $field) {
 
             if (
@@ -1555,13 +1428,11 @@ class LogActivityController extends Controller
                 continue;
             }
 
-
             $oldValue =
                 $oldValues[$field] ?? null;
 
             $newValue =
                 $newValues[$field] ?? null;
-
 
             if (
                 $this->valuesAreEqual(
@@ -1572,15 +1443,12 @@ class LogActivityController extends Controller
                 continue;
             }
 
-
             $changedFields[] =
                 $field;
         }
 
-
         return $changedFields;
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1605,7 +1473,6 @@ class LogActivityController extends Controller
                 json_encode($newValue);
         }
 
-
         if (
             (
                 $oldValue === null
@@ -1623,13 +1490,11 @@ class LogActivityController extends Controller
             return true;
         }
 
-
         return
             (string) $oldValue
             ===
             (string) $newValue;
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1644,7 +1509,6 @@ class LogActivityController extends Controller
     ): array {
 
         $summary = [];
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1678,28 +1542,22 @@ class LogActivityController extends Controller
                     continue;
                 }
 
-
                 $summary[] = [
 
-                    'field' =>
-                        $this->fieldLabel(
-                            $field
-                        ),
+                    'field' => $this->fieldLabel(
+                        $field
+                    ),
 
-                    'before' =>
-                        null,
+                    'before' => null,
 
-                    'after' =>
-                        $this->formatValue(
-                            $value
-                        ),
+                    'after' => $this->formatValue(
+                        $value
+                    ),
                 ];
             }
 
-
             return $summary;
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1734,28 +1592,22 @@ class LogActivityController extends Controller
                     continue;
                 }
 
-
                 $summary[] = [
 
-                    'field' =>
-                        $this->fieldLabel(
-                            $field
-                        ),
+                    'field' => $this->fieldLabel(
+                        $field
+                    ),
 
-                    'before' =>
-                        $this->formatValue(
-                            $value
-                        ),
+                    'before' => $this->formatValue(
+                        $value
+                    ),
 
-                    'after' =>
-                        null,
+                    'after' => null,
                 ];
             }
 
-
             return $summary;
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1769,7 +1621,6 @@ class LogActivityController extends Controller
                 array_keys($newValues)
             )
         );
-
 
         foreach ($fields as $field) {
 
@@ -1787,13 +1638,11 @@ class LogActivityController extends Controller
                 continue;
             }
 
-
             $oldValue =
                 $oldValues[$field] ?? null;
 
             $newValue =
                 $newValues[$field] ?? null;
-
 
             if (
                 $this->valuesAreEqual(
@@ -1804,30 +1653,24 @@ class LogActivityController extends Controller
                 continue;
             }
 
-
             $summary[] = [
 
-                'field' =>
-                    $this->fieldLabel(
-                        $field
-                    ),
+                'field' => $this->fieldLabel(
+                    $field
+                ),
 
-                'before' =>
-                    $this->formatValue(
-                        $oldValue
-                    ),
+                'before' => $this->formatValue(
+                    $oldValue
+                ),
 
-                'after' =>
-                    $this->formatValue(
-                        $newValue
-                    ),
+                'after' => $this->formatValue(
+                    $newValue
+                ),
             ];
         }
 
-
         return $summary;
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1841,134 +1684,93 @@ class LogActivityController extends Controller
 
         return match ($field) {
 
-            'status_kependudukan'
-                => 'Status Kependudukan',
+            'status_kependudukan' => 'Status Kependudukan',
 
-            'status'
-                => 'Status Pengajuan',
+            'status' => 'Status Pengajuan',
 
-            'nik'
-                => 'NIK',
+            'nik' => 'NIK',
 
-            'nim'
-                => 'NIM',
+            'nim' => 'NIM',
 
-            'name'
-                => 'Nama',
+            'name' => 'Nama',
 
-            'email'
-                => 'Email',
+            'email' => 'Email',
 
-            'phone'
-                => 'Nomor HP',
+            'phone' => 'Nomor HP',
 
-            'alamat'
-                => 'Alamat',
+            'alamat' => 'Alamat',
 
-            'universitas'
-                => 'Perguruan Tinggi',
+            'universitas' => 'Perguruan Tinggi',
 
-            'fakultas'
-                => 'Fakultas',
+            'fakultas' => 'Fakultas',
 
-            'program_studi'
-                => 'Program Studi',
+            'program_studi' => 'Program Studi',
 
-            'jenjang'
-                => 'Jenjang Pendidikan',
+            'jenjang' => 'Jenjang Pendidikan',
 
-            'semester'
-                => 'Semester',
+            'semester' => 'Semester',
 
-            'ipk'
-                => 'IPK',
+            'ipk' => 'IPK',
 
-            'tahun_masuk'
-                => 'Tahun Masuk',
+            'tahun_masuk' => 'Tahun Masuk',
 
-            'status_mahasiswa'
-                => 'Status Mahasiswa',
+            'status_mahasiswa' => 'Status Mahasiswa',
 
-            'penghasilan_keluarga'
-                => 'Penghasilan Keluarga',
+            'penghasilan_keluarga' => 'Penghasilan Keluarga',
 
-            'jumlah_tanggungan'
-                => 'Jumlah Tanggungan',
+            'jumlah_tanggungan' => 'Jumlah Tanggungan',
 
-            'desil_sosial'
-                => 'Desil Sosial',
+            'desil_sosial' => 'Desil Sosial',
 
-            'prestasi'
-                => 'Prestasi',
+            'prestasi' => 'Prestasi',
 
-            'catatan'
-                => 'Catatan',
+            'catatan' => 'Catatan',
 
-            'nomor_pendaftaran'
-                => 'Nomor Pendaftaran',
+            'nomor_pendaftaran' => 'Nomor Pendaftaran',
 
-            'nomor_pengajuan'
-                => 'Nomor Pengajuan',
+            'nomor_pengajuan' => 'Nomor Pengajuan',
 
-            'kategori_beasiswa_id'
-                => 'Kategori Beasiswa',
+            'kategori_beasiswa_id' => 'Kategori Beasiswa',
 
-            'jalur_beasiswa_id'
-                => 'Jalur Beasiswa',
+            'jalur_beasiswa_id' => 'Jalur Beasiswa',
 
-            'periode_id'
-                => 'Periode Beasiswa',
+            'periode_id' => 'Periode Beasiswa',
 
-            'file'
-                => 'File Dokumen',
+            'file' => 'File Dokumen',
 
-            'jenis_dokumen'
-                => 'Jenis Dokumen',
+            'jenis_dokumen' => 'Jenis Dokumen',
 
-            'result'
-                => 'Hasil Verifikasi',
+            'result' => 'Hasil Verifikasi',
 
-            'decision'
-                => 'Keputusan Verifikasi',
+            'decision' => 'Keputusan Verifikasi',
 
-            'manual_decision'
-                => 'Keputusan Seleksi',
+            'manual_decision' => 'Keputusan Seleksi',
 
-            'stage'
-                => 'Tahap Verifikasi',
+            'stage' => 'Tahap Verifikasi',
 
-            'notes'
-                => 'Catatan Verifikasi',
+            'notes' => 'Catatan Verifikasi',
 
-            'agency'
-                => 'Dinas',
+            'agency' => 'Dinas',
 
-            'decided_by'
-                => 'Penentu Keputusan',
+            'decided_by' => 'Penentu Keputusan',
 
-            'decided_at'
-                => 'Waktu Keputusan',
+            'decided_at' => 'Waktu Keputusan',
 
-            'submitted_at'
-                => 'Waktu Pengajuan',
+            'submitted_at' => 'Waktu Pengajuan',
 
-            'locked_at'
-                => 'Waktu Penguncian',
+            'locked_at' => 'Waktu Penguncian',
 
-            'published_at'
-                => 'Waktu Publikasi',
+            'published_at' => 'Waktu Publikasi',
 
-            default
-                => ucwords(
-                    str_replace(
-                        '_',
-                        ' ',
-                        $field
-                    )
-                ),
+            default => ucwords(
+                str_replace(
+                    '_',
+                    ' ',
+                    $field
+                )
+            ),
         };
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1985,7 +1787,6 @@ class LogActivityController extends Controller
                 $value->value;
         }
 
-
         $value =
             strtolower(
                 trim(
@@ -1993,25 +1794,21 @@ class LogActivityController extends Controller
                 )
             );
 
-
         return match ($value) {
 
             'memenuhi',
             'memenuhi_syarat',
             'valid',
             'sesuai',
-            'ms'
-                => 'Memenuhi Syarat',
+            'ms' => 'Memenuhi Syarat',
 
             'tidak_memenuhi',
             'tidak_memenuhi_syarat',
             'tidak_valid',
             'tidak_sesuai',
-            'tms'
-                => 'Tidak Memenuhi Syarat',
+            'tms' => 'Tidak Memenuhi Syarat',
 
-            default
-                => $value !== ''
+            default => $value !== ''
                     ? ucfirst(
                         str_replace(
                             '_',
@@ -2022,7 +1819,6 @@ class LogActivityController extends Controller
                     : 'Belum Dinilai',
         };
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -2043,7 +1839,6 @@ class LogActivityController extends Controller
             return 'Tidak ada';
         }
 
-
         if (is_bool($value)) {
 
             return $value
@@ -2051,13 +1846,11 @@ class LogActivityController extends Controller
                 : 'Tidak';
         }
 
-
         if ($value instanceof \BackedEnum) {
 
             $value =
                 $value->value;
         }
-
 
         if (is_array($value)) {
 
@@ -2067,57 +1860,41 @@ class LogActivityController extends Controller
             );
         }
 
-
         return match (
             strtolower(
                 (string) $value
             )
         ) {
 
-            'belum_diverifikasi'
-                => 'Belum Diverifikasi',
+            'belum_diverifikasi' => 'Belum Diverifikasi',
 
-            'terverifikasi'
-                => 'Terverifikasi',
+            'terverifikasi' => 'Terverifikasi',
 
-            'valid'
-                => 'Valid',
+            'valid' => 'Valid',
 
-            'tidak_valid'
-                => 'Tidak Valid',
+            'tidak_valid' => 'Tidak Valid',
 
-            'sesuai'
-                => 'Sesuai',
+            'sesuai' => 'Sesuai',
 
-            'tidak_sesuai'
-                => 'Tidak Sesuai',
+            'tidak_sesuai' => 'Tidak Sesuai',
 
-            'memenuhi'
-                => 'Memenuhi Syarat',
+            'memenuhi' => 'Memenuhi Syarat',
 
-            'memenuhi_syarat'
-                => 'Memenuhi Syarat',
+            'memenuhi_syarat' => 'Memenuhi Syarat',
 
-            'tidak_memenuhi'
-                => 'Tidak Memenuhi Syarat',
+            'tidak_memenuhi' => 'Tidak Memenuhi Syarat',
 
-            'tidak_memenuhi_syarat'
-                => 'Tidak Memenuhi Syarat',
+            'tidak_memenuhi_syarat' => 'Tidak Memenuhi Syarat',
 
-            'diterima'
-                => 'Diterima',
+            'diterima' => 'Diterima',
 
-            'ditolak'
-                => 'Ditolak',
+            'ditolak' => 'Ditolak',
 
-            'seleksi_kabupaten'
-                => 'Seleksi Kabupaten',
+            'seleksi_kabupaten' => 'Seleksi Kabupaten',
 
-            'verifikasi_dinas'
-                => 'Verifikasi Dinas',
+            'verifikasi_dinas' => 'Verifikasi Dinas',
 
-            default
-                => (string) $value,
+            default => (string) $value,
         };
     }
 }

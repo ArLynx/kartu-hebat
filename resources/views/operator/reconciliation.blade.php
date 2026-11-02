@@ -8,7 +8,7 @@
     <div>
         <p class="section-kicker">Operator Kabupaten</p>
         <h1 class="mt-2 text-3xl font-extrabold">Rekonsiliasi Hasil Verifikasi</h1>
-        <p class="mt-2 text-sm text-slate-600">Konsolidasi keputusan lintas dinas per jalur. Dinas Kesehatan hanya terlibat pada jalur Disabilitas.</p>
+        <p class="mt-2 text-sm text-slate-600">Konsolidasi keputusan lintas dinas per jalur. Dinas Sosial hanya terlibat pada jalur Tidak Mampu, Dinas Kesehatan hanya pada jalur Disabilitas, dan Parsepor hanya pada jalur Prestasi.</p>
     </div>
     <form method="GET" class="flex gap-2">
         <select name="application_type" class="form-input">

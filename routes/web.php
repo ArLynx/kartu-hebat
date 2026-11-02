@@ -28,9 +28,9 @@ use App\Http\Controllers\Public\ResultController;
 use App\Http\Controllers\Superadmin\DashboardController as SuperadminDashboardController;
 use App\Http\Controllers\Superadmin\DocumentTypeController as SuperadminDocumentTypeController;
 use App\Http\Controllers\Superadmin\KategoriBeasiswaController as SuperadminKategoriBeasiswaController;
+use App\Http\Controllers\Superadmin\LogActivityController;
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
 use App\Http\Controllers\Superadmin\PeriodeController as SuperadminPeriodeController;
-use App\Http\Controllers\Superadmin\LogActivityController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -172,7 +172,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
             });
 
         Route::middleware([
-            'role:operator_desa,operator_kecamatan,operator_dukcapil,operator_sosial,operator_pendidikan,operator_dinkes,operator_parsepor,operator_kabupaten',
+            'role:operator_desa,operator_kecamatan,operator_dukcapil,operator_sosial,operator_pendidikan,operator_bkpsdm,operator_dinkes,operator_parsepor,operator_kabupaten',
             '2fa.ensure',
         ])
             ->prefix('operator')

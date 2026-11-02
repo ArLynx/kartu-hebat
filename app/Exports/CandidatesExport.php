@@ -10,13 +10,16 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping
+class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
 {
     public function __construct(
         private readonly int $kabupatenId,
         private readonly ?ApplicationType $applicationType = null,
         private readonly ?int $jalurBeasiswaId = null,
+        private readonly bool $onlyWithoutJalur = false,
+        private readonly ?string $sheetTitle = null,
     ) {}
 
     public function collection(): Collection
@@ -31,6 +34,10 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             ])
             ->where('periode', config('kartu_hebat.current_period'))
             ->when($this->applicationType, fn ($query) => $query->where('application_type', $this->applicationType->value))
+            ->when($this->onlyWithoutJalur, fn ($query) => $query->whereDoesntHave(
+                'pendaftaran',
+                fn ($pendaftaran) => $pendaftaran->whereNotNull('jalur_beasiswa_id'),
+            ))
             ->when($this->jalurBeasiswaId, fn ($query) => $query->whereHas('pendaftaran', fn ($q) => $q->where('jalur_beasiswa_id', $this->jalurBeasiswaId)))
             ->whereHas('mahasiswa.profile.village', fn ($query) => $query->where('kabupaten_id', $this->kabupatenId))
             ->whereIn('status', [
@@ -62,7 +69,7 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             'Program Studi',
             'Semester',
             'IPK',
-            'Nilai Raport XII',
+            'UKT',
             'Tahun Masuk (Angkatan)',
             'Akreditasi PT',
             'Pengurus Ormawa Univ',
@@ -92,7 +99,7 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             $application->mahasiswa->profile?->program_studi,
             $application->mahasiswa->profile?->semester,
             $application->mahasiswa->profile?->ipk,
-            $pendidikan?->nilai_raport !== null ? (float) $pendidikan->nilai_raport : '-',
+            $pendidikan?->nominal_ukt !== null ? (float) $pendidikan->nominal_ukt : '-',
             $pendidikan?->tahun_masuk ?? '-',
             $pendidikan?->akreditasi_perguruan_tinggi ?? '-',
             $hasOrmawa ? 'Ya' : 'Tidak',
@@ -103,6 +110,11 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             $this->decisionValue($application),
             $application->selection?->notes ?? '',
         ];
+    }
+
+    public function title(): string
+    {
+        return $this->sheetTitle ?? 'Rekap Seleksi';
     }
 
     private function decisionValue(Application $application): string

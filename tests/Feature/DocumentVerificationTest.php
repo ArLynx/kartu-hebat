@@ -116,7 +116,7 @@ class DocumentVerificationTest extends TestCase
 
     public function test_assessment_editable_while_application_in_agency_queue(): void
     {
-        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        [$student, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::TIDAK_MAMPU);
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
 
@@ -152,20 +152,22 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
         $documentVerificationService = app(AgencyVerificationService::class);
         foreach ($application->documents as $document) {
             $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
             $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow = app(ApplicationWorkflowService::class);
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
-        $workflow->verify($application, $social, VerificationDecision::MS);
         $workflow->verify($application, $education, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->fresh()->status);
+
+        $workflow->verify($application, $bkpsdm, VerificationDecision::MS);
 
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->fresh()->status);
 
@@ -226,18 +228,18 @@ class DocumentVerificationTest extends TestCase
             ->assertSee('KTP buram');
     }
 
-    private function applicationInAgencyQueue(): array
+    private function applicationInAgencyQueue(ApplicationType $applicationType = ApplicationType::AKADEMIK): array
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
         $application = $this->draftApplication($student);
-        $application->update(['application_type' => ApplicationType::AKADEMIK]);
+        $application->update(['application_type' => $applicationType]);
 
         foreach (DocumentType::query()
             ->where('is_required', true)
-            ->where(function ($query): void {
+            ->where(function ($query) use ($applicationType): void {
                 $query->whereNull('application_type')
-                    ->orWhere('application_type', ApplicationType::AKADEMIK->value);
+                    ->orWhere('application_type', $applicationType->value);
             })
             ->get() as $type) {
             $path = 'applications/'.$application->id.'/'.$type->code.'/test.pdf';

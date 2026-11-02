@@ -62,6 +62,6 @@ class ReconciliationController extends Controller
         $required = AgencyVerificationService::requiredAgencies($application);
 
         return count($required) > 0
-            && count($application->agencyVerifications) >= count($required);
+            && $application->agencyVerifications->whereIn('agency', $required)->count() >= count($required);
     }
 }

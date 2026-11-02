@@ -56,9 +56,10 @@
             return match ($user->role instanceof \BackedEnum ? $user->role->value : $user->role) {
                 'superadmin' => 'Superadmin',
                 'operator_dukcapil' => 'Operator Dinas Dukcapil',
-                'operator_dinas_sosial' => 'Operator Dinas Sosial',
-                'operator_dinas_pendidikan' => 'Operator Dinas Pendidikan',
-                'operator_dinas_kesehatan' => 'Operator Dinas Kesehatan',
+                'operator_sosial' => 'Operator Dinas Sosial',
+                'operator_pendidikan' => 'Operator Dinas Pendidikan',
+                'operator_bkpsdm' => 'Operator BKPSDM',
+                'operator_dinkes' => 'Operator Dinas Kesehatan',
                 'operator_parsepor' => 'Operator Dinas Pariwisata, Pemuda dan Olahraga',
                 'operator_kabupaten' => 'Operator Kabupaten',
                 'mahasiswa' => 'Mahasiswa',

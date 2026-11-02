@@ -12,6 +12,7 @@ use App\Models\JalurBeasiswa;
 use App\Models\KategoriBeasiswa;
 use App\Models\MahasiswaProfile;
 use App\Models\Pendaftaran;
+use App\Models\Pendidikan;
 use App\Models\Periode;
 use App\Models\Selection;
 use App\Models\User;
@@ -101,6 +102,7 @@ class OperatorJalurBeasiswaVisibilityTest extends TestCase
         ]));
 
         $response->assertSuccessful();
+        $response->assertSeeInOrder(['Kategori:', 'Jalur Akademik']);
         $response->assertSee('Reguler');
         $response->assertSee($appReguler->nomor_pengajuan);
     }
@@ -181,6 +183,50 @@ class OperatorJalurBeasiswaVisibilityTest extends TestCase
 
         $mapped = $export->map($rows->first());
         $this->assertSame('Reguler', $mapped[1]);
+    }
+
+    public function test_operator_selection_tidak_mampu_does_not_show_raport_criteria(): void
+    {
+        $operator = $this->kabupatenOperator();
+        $this->createApplicationWithJalur($operator, ApplicationType::TIDAK_MAMPU, $this->jalurReguler);
+
+        $response = $this->actingAs($operator)->get(route('operator.selection', [
+            'application_type' => ApplicationType::TIDAK_MAMPU->value,
+        ]));
+
+        $response->assertSuccessful();
+        $response->assertDontSee('Nilai raport');
+        $response->assertDontSee('Raport XII');
+    }
+
+    public function test_candidates_export_shows_ukt_instead_of_nilai_raport(): void
+    {
+        $operator = $this->kabupatenOperator();
+        $application = $this->createApplicationWithJalur(
+            $operator,
+            ApplicationType::AKADEMIK,
+            $this->jalurReguler,
+            ApplicationStatus::SELEKSI_KABUPATEN,
+        );
+
+        Pendidikan::query()->create([
+            'pendaftaran_id' => $application->pendaftaran_id,
+            'nim' => 'UKT-EXPORT-001',
+            'nominal_ukt' => 3500000,
+            'tahun_masuk' => 2023,
+            'akreditasi_perguruan_tinggi' => 'Baik Sekali',
+        ]);
+
+        $export = new CandidatesExport($operator->kabupaten_id, ApplicationType::AKADEMIK);
+        $headings = $export->headings();
+
+        $this->assertContains('UKT', $headings);
+        $this->assertNotContains('Nilai Raport XII', $headings);
+
+        $mapped = $export->map($export->collection()->first());
+        $uktIndex = array_search('UKT', $headings, true);
+
+        $this->assertSame(3500000.0, $mapped[$uktIndex]);
     }
 
     public function test_applications_recap_export_includes_kategori_mahasiswa(): void

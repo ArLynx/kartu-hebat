@@ -7,6 +7,7 @@ use App\Enums\ApplicationType;
 use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
+use App\Models\AgencyVerification;
 use App\Models\Application;
 use App\Models\Document;
 use App\Models\DocumentType;
@@ -79,13 +80,14 @@ class AgencyVerificationServiceTest extends TestCase
 
     public function test_multi_agency_consensus_transitions_to_seleksi_kabupaten(): void
     {
-        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        [$student, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::TIDAK_MAMPU);
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $sosial = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $pendidikan = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
-        // Nilai semua dokumen untuk ketiga dinas
-        foreach ([$dukcapil, $sosial, $pendidikan] as $op) {
+        // Nilai semua dokumen untuk keempat dinas
+        foreach ([$dukcapil, $sosial, $pendidikan, $bkpsdm] as $op) {
             foreach ($application->documents as $doc) {
                 $this->service->assessDocument(
                     $application,
@@ -106,20 +108,26 @@ class AgencyVerificationServiceTest extends TestCase
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $app2->status);
         $this->assertSame(2, $student->profile->fresh()->desil_sosial);
 
-        // 3. Pendidikan MS -> konsensus lengkap -> transisi ke SELEKSI_KABUPATEN
+        // 3. Pendidikan MS -> masih menunggu BKPSDM
         $app3 = $this->service->submitDecision($application, $pendidikan, VerificationDecision::MS);
-        $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $app3->status);
-        $this->assertNotNull($app3->selection);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $app3->status);
+
+        // 4. BKPSDM MS -> konsensus lengkap -> transisi ke SELEKSI_KABUPATEN
+        $app4 = $this->service->submitDecision($application, $bkpsdm, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $app4->status);
+        $this->assertNotNull($app4->selection);
+        $this->assertCount(4, $app4->agencyVerifications);
     }
 
     public function test_agency_verifications_with_tms_resolves_to_tms(): void
     {
-        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        [$student, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::TIDAK_MAMPU);
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
         $sosial = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $pendidikan = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
-        foreach ([$dukcapil, $sosial, $pendidikan] as $op) {
+        foreach ([$dukcapil, $sosial, $pendidikan, $bkpsdm] as $op) {
             foreach ($application->documents as $doc) {
                 $this->service->assessDocument(
                     $application,
@@ -136,24 +144,88 @@ class AgencyVerificationServiceTest extends TestCase
         // 2. Sosial MS
         $this->service->submitDecision($application, $sosial, VerificationDecision::MS, desil: 2);
 
-        // 3. Pendidikan TMS -> Konsensus lengkap dengan satu TMS -> transisi ke TMS
+        // 3. Pendidikan MS -> masih menunggu BKPSDM
+        $app = $this->service->submitDecision($application, $pendidikan, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $app->status);
+
+        // 4. BKPSDM TMS -> konsensus lengkap dengan satu TMS -> transisi ke TMS
         $app = $this->service->submitDecision(
             $application,
-            $pendidikan,
+            $bkpsdm,
             VerificationDecision::TMS,
-            'Akreditasi prodi tidak memenuhi syarat',
+            'Berkas tidak memenuhi syarat',
         );
 
         $this->assertSame(ApplicationStatus::TMS, $app->status);
-        $this->assertSame('Akreditasi prodi tidak memenuhi syarat', $app->catatan);
+        $this->assertSame('Berkas tidak memenuhi syarat', $app->catatan);
     }
 
-    private function applicationInAgencyQueue(): array
+    public function test_stale_social_verification_does_not_complete_academic_track(): void
+    {
+        [, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::AKADEMIK);
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $pendidikan = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
+        $sosial = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
+
+        // Data lama sebelum aturan baru: Sosial pernah memverifikasi jalur Akademik.
+        AgencyVerification::query()->create([
+            'application_id' => $application->id,
+            'verifier_id' => $sosial->id,
+            'agency' => 'sosial',
+            'decision' => VerificationDecision::MS,
+            'verified_at' => now(),
+        ]);
+
+        foreach ([$dukcapil, $pendidikan, $bkpsdm] as $operator) {
+            foreach ($application->documents as $document) {
+                $this->service->assessDocument(
+                    $application,
+                    $document,
+                    $operator,
+                    DocumentVerificationResult::MEMENUHI,
+                );
+            }
+        }
+
+        $application = $this->service->submitDecision($application, $dukcapil, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
+
+        $application = $this->service->submitDecision($application, $pendidikan, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
+
+        $application = $this->service->submitDecision($application, $bkpsdm, VerificationDecision::MS);
+        $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->status);
+    }
+
+    public function test_social_agency_only_verifies_unable_track(): void
+    {
+        [, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::AKADEMIK);
+        $sosial = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
+
+        $academic = new Application(['application_type' => ApplicationType::AKADEMIK]);
+        $unable = new Application(['application_type' => ApplicationType::TIDAK_MAMPU]);
+
+        $this->assertNotContains('sosial', AgencyVerificationService::requiredAgencies($academic));
+        $this->assertContains('sosial', AgencyVerificationService::requiredAgencies($unable));
+        $this->assertFalse($sosial->can('verify', $application));
+        $this->assertFalse(AgencyVerificationService::canVerifyStage($application, AgencyVerificationService::STAGE_SOSIAL));
+
+        $this->expectException(ValidationException::class);
+        $this->service->assessDocument(
+            $application,
+            $application->documents->first(),
+            $sosial,
+            DocumentVerificationResult::MEMENUHI,
+        );
+    }
+
+    private function applicationInAgencyQueue(ApplicationType $applicationType = ApplicationType::AKADEMIK): array
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
 
-        $application = $this->draftApplication($student);
+        $application = $this->draftApplication($student, $applicationType);
 
         foreach (DocumentType::query()->where('is_required', true)->get() as $type) {
             Document::query()->create([
@@ -172,13 +244,13 @@ class AgencyVerificationServiceTest extends TestCase
         return [$student, $village, $application->fresh(['documents'])];
     }
 
-    private function draftApplication(User $student): Application
+    private function draftApplication(User $student, ApplicationType $applicationType = ApplicationType::AKADEMIK): Application
     {
         return Application::query()->create([
             'nomor_pengajuan' => 'KHM-TEST-'.fake()->unique()->numerify('######'),
             'mahasiswa_id' => $student->id,
             'periode' => config('kartu_hebat.current_period'),
-            'application_type' => ApplicationType::AKADEMIK,
+            'application_type' => $applicationType,
             'status' => ApplicationStatus::DRAFT,
         ]);
     }

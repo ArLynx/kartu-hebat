@@ -36,6 +36,7 @@ class DemoDataSeeder extends Seeder
             [UserRole::OPERATOR_DUKCAPIL, 'Operator Dukcapil', 'dukcapil@kartuhebat.test', null, null],
             [UserRole::OPERATOR_SOSIAL, 'Operator Dinas Sosial', 'sosial@kartuhebat.test', null, null],
             [UserRole::OPERATOR_PENDIDIKAN, 'Operator Dinas Pendidikan', 'pendidikan@kartuhebat.test', null, null],
+            [UserRole::OPERATOR_BKPSDM, 'Operator BKPSDM', 'bkpsdm@kartuhebat.test', null, null],
             [UserRole::OPERATOR_DINKES, 'Operator Dinas Kesehatan', 'dinkes@kartuhebat.test', null, null],
             [UserRole::OPERATOR_PARSEPOR, 'Operator Dinas Parsepor', 'parsepor@kartuhebat.test', null, null],
             [UserRole::OPERATOR_KABUPATEN, 'Operator Kabupaten', 'kabupaten@kartuhebat.test', null, null],

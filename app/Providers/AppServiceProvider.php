@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Application;
 use App\Policies\ApplicationPolicy;
+use App\Services\MahasiswaPendaftaranService;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
@@ -33,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
             $activePendaftaran = null;
 
             if ($user && method_exists($user, 'isMahasiswa') && $user->isMahasiswa()) {
-                $activePendaftaran = app(\App\Services\MahasiswaPendaftaranService::class)->currentFor($user);
+                $activePendaftaran = app(MahasiswaPendaftaranService::class)->currentFor($user);
                 $activePendaftaran?->loadMissing('kategoriBeasiswa');
             }
 

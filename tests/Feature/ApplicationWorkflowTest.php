@@ -68,8 +68,8 @@ class ApplicationWorkflowTest extends TestCase
         }
 
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
         $this->operator(UserRole::OPERATOR_KABUPATEN, $village);
 
         $application = $workflow->submit($application, $student);
@@ -77,23 +77,22 @@ class ApplicationWorkflowTest extends TestCase
 
         foreach ($documents as $document) {
             $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
             $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
+            $documentVerificationService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS, score: 90);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        $application = $workflow->verify($application, $social, VerificationDecision::MS, score: 85, desil: 2);
+        $application = $workflow->verify($application, $education, VerificationDecision::MS, score: 88);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        $application = $workflow->verify($application, $education, VerificationDecision::MS, score: 88);
+        $application = $workflow->verify($application, $bkpsdm, VerificationDecision::MS, score: 87);
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->status);
         $this->assertNotNull($application->selection);
         $this->assertCount(2, $application->scores);
         $this->assertCount(3, $application->agencyVerifications);
         $this->assertSame('sesuai', $student->profile->fresh()->status_kependudukan);
-        $this->assertSame(2, $student->profile->fresh()->desil_sosial);
     }
 
     public function test_application_becomes_tms_when_any_agency_rejects(): void
@@ -125,24 +124,24 @@ class ApplicationWorkflowTest extends TestCase
         }
 
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
         $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
+        $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
         $application = $workflow->submit($application, $student);
 
         foreach ($application->documents as $document) {
             $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $social, DocumentVerificationResult::MEMENUHI);
             $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::TIDAK_MEMENUHI, 'Data tidak sesuai');
+            $documentVerificationService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
         }
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        $application = $workflow->verify($application, $social, VerificationDecision::MS);
+        $application = $workflow->verify($application, $education, VerificationDecision::TMS, 'Data pendidikan tidak sesuai');
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        $application = $workflow->verify($application, $education, VerificationDecision::TMS, 'Data pendidikan tidak sesuai');
+        $application = $workflow->verify($application, $bkpsdm, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::TMS, $application->status);
     }
 
