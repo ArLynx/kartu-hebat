@@ -64,7 +64,7 @@ VERIFIKASI_DINAS  (3 dinas paralel untuk semua jalur: Dukcapil, Pendidikan, BKPS
 Mahasiswa mengisi **wizard 7 langkah**, tersimpan di tabel `pendaftarans`:
 
 1. Data Pribadi
-2. Pendidikan (IPK, semester, tahun masuk, akreditasi PT, serta nilai raport semester genap kelas XII untuk jalur Tidak Mampu)
+2. Pendidikan (IPK, semester, tahun masuk, akreditasi PT)
 3. Prestasi (tingkat dan peringkat juara lomba, serta status kepengurusan inti ormawa universitas)
 4. Orang Tua
 5. Dokumen
@@ -149,9 +149,8 @@ Jika terjadi persaingan nilai antarkandidat, pemeringkatan kabupaten (`recalcula
 1. **Jalur Tidak Mampu**:
    1. Nilai desil 1 sampai dengan desil 5 pada DTSEN (ASC: desil lebih rendah lebih prioritas).
    2. Nilai IPK kumulatif (DESC).
-   3. Nilai raport kelas XII semester genap (DESC).
-   4. Tahun angkatan masuk perguruan tinggi yang lebih awal (ASC).
-   5. Akreditasi Perguruan Tinggi (DESC: Unggul/A > Baik Sekali/B > Baik/C > lainnya).
+   3. Tahun angkatan masuk perguruan tinggi yang lebih awal (ASC).
+   4. Akreditasi Perguruan Tinggi (DESC: Unggul/A > Baik Sekali/B > Baik/C > lainnya).
 
 2. **Jalur Akademik**:
    1. Nilai Indeks Prestasi Kumulatif (IPK) total/kumulatif (DESC).

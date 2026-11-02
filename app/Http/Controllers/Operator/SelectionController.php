@@ -86,9 +86,14 @@ class SelectionController extends Controller
                 ApplicationStatus::DITOLAK->value,
             ])
             ->leftJoin('pendaftarans', 'pendaftarans.id', '=', 'applications.pendaftaran_id')
-            ->selectRaw('applications.application_type, pendaftarans.jalur_beasiswa_id, count(*) as total')
+            ->leftJoin('pendidikans', 'pendidikans.pendaftaran_id', '=', 'pendaftarans.id')
+            ->selectRaw('applications.application_type, pendaftarans.jalur_beasiswa_id, count(*) as total, SUM(pendidikans.nominal_ukt) as total_ukt')
             ->groupBy('applications.application_type', 'pendaftarans.jalur_beasiswa_id')
             ->get();
+
+        $typeUktTotals = $rawCounts
+            ->groupBy('application_type')
+            ->map(fn ($rows): float => (float) $rows->sum('total_ukt'));
 
         $typeCounts = collect(ApplicationType::cases())->mapWithKeys(
             fn (ApplicationType $type): array => [
@@ -100,6 +105,14 @@ class SelectionController extends Controller
             ->where('application_type', $selectedType->value)
             ->filter(fn ($row) => $row->jalur_beasiswa_id !== null)
             ->pluck('total', 'jalur_beasiswa_id');
+
+        $jalurUktTotals = $rawCounts
+            ->where('application_type', $selectedType->value)
+            ->filter(fn ($row) => $row->jalur_beasiswa_id !== null)
+            ->pluck('total_ukt', 'jalur_beasiswa_id')
+            ->map(fn ($total): float => (float) $total);
+
+        $selectedJalur = $selectedJalurId ? $jalurBeasiswas->firstWhere('id', $selectedJalurId) : null;
 
         return view('operator.selection', [
             'applications' => $query
@@ -114,6 +127,12 @@ class SelectionController extends Controller
             'selectedJalurId' => $selectedJalurId,
             'typeCounts' => $typeCounts,
             'jalurCounts' => $jalurCounts,
+            'typeUktTotals' => $typeUktTotals,
+            'jalurUktTotals' => $jalurUktTotals,
+            'selectedJalur' => $selectedJalur,
+            'totalCurrentTypeUkt' => $selectedJalurId
+                ? (float) ($jalurUktTotals[$selectedJalurId] ?? 0)
+                : (float) ($typeUktTotals[$selectedType->value] ?? 0),
             'totalCurrentTypeCount' => (int) ($typeCounts[$selectedType->value] ?? 0),
             'quota' => $selectedType->quota(),
             'jalurBeasiswas' => $jalurBeasiswas,
@@ -137,10 +156,11 @@ class SelectionController extends Controller
             .($jalur ? '-'.strtolower($jalur->kode) : '')
             .'.xlsx';
 
-        return Excel::download(
-            $this->workflow->exportCandidates($request->user(), $selectedType, $selectedJalurId),
-            $filename,
-        );
+        $export = $selectedType
+            ? $this->workflow->exportCandidates($request->user(), $selectedType, $selectedJalurId)
+            : $this->workflow->exportCandidatesWorkbook($request->user());
+
+        return Excel::download($export, $filename);
     }
 
     public function import(Request $request): RedirectResponse

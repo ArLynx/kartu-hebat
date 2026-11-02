@@ -14,7 +14,10 @@
     </div>
     <div class="flex flex-wrap items-center gap-2" x-data="{ openImportModal: false, openPublishModal: false }">
         <a href="{{ route('operator.selection.export', array_filter(['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId])) }}" class="btn-secondary !py-2 bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100">
-            <x-icon name="download" class="h-4 w-4" /> Unduh Format Excel
+            <x-icon name="download" class="h-4 w-4" /> Unduh Excel Jalur Ini
+        </a>
+        <a href="{{ route('operator.selection.export') }}" class="btn-secondary !py-2 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100">
+            <x-icon name="download" class="h-4 w-4" /> Unduh Semua Jalur
         </a>
         <button type="button" @click="openImportModal = true" class="btn-secondary !py-2 bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100">
             <x-icon name="upload" class="h-4 w-4 mr-1 inline" /> 1. Impor ACC Excel
@@ -116,7 +119,40 @@
     </div>
 </div>
 
-<div class="mt-7 grid gap-3 sm:grid-cols-2">
+<div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Kategori:</span>
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ route('operator.selection', ['application_type' => $selectedType->value]) }}"
+           class="inline-flex flex-col items-start gap-0.5 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ empty($selectedJalurId) ? 'bg-navy-900 text-white shadow-sm ring-2 ring-navy-900/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+            <span class="inline-flex items-center gap-2">
+                <span>Semua</span>
+                <span class="rounded-full px-2 py-0.5 text-[11px] {{ empty($selectedJalurId) ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
+                    {{ number_format($totalCurrentTypeCount) }}
+                </span>
+            </span>
+            <span class="text-[10px] font-semibold {{ empty($selectedJalurId) ? 'text-white/80' : 'text-slate-500' }}">
+                UKT: Rp {{ number_format((float) ($typeUktTotals[$selectedType->value] ?? 0), 0, ',', '.') }}
+            </span>
+        </a>
+        @foreach($jalurBeasiswas as $jalur)
+            @php $isActive = (int) $selectedJalurId === (int) $jalur->id; @endphp
+            <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $jalur->id]) }}"
+               class="inline-flex flex-col items-start gap-0.5 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ $isActive ? ($jalur->kode === 'REGULER' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/20' : 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-600/20') : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                <span class="inline-flex items-center gap-2">
+                    <span>{{ $jalur->nama }}</span>
+                    <span class="rounded-full px-2 py-0.5 text-[11px] {{ $isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
+                        {{ number_format($jalurCounts[$jalur->id] ?? 0) }}
+                    </span>
+                </span>
+                <span class="text-[10px] font-semibold {{ $isActive ? 'text-white/80' : 'text-slate-500' }}">
+                    UKT: Rp {{ number_format((float) ($jalurUktTotals[$jalur->id] ?? 0), 0, ',', '.') }}
+                </span>
+            </a>
+        @endforeach
+    </div>
+</div>
+
+<div class="mt-5 grid gap-3 sm:grid-cols-2">
     @foreach($applicationTypes as $type)
         <a href="{{ route('operator.selection', ['application_type' => $type->value]) }}"
            class="rounded-xl border p-5 transition {{ $selectedType === $type ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-100' : 'border-slate-200 bg-white hover:border-brand-200' }}">
@@ -124,6 +160,9 @@
                 <div>
                     <p class="font-display text-lg font-bold text-navy-900">Jalur {{ $type->label() }}</p>
                     <p class="mt-1 text-sm text-slate-500">{{ $type->description() }}</p>
+                    <p class="mt-2 text-xs font-semibold text-emerald-700">
+                        Total UKT: Rp {{ number_format((float) ($typeUktTotals[$type->value] ?? 0), 0, ',', '.') }}
+                    </p>
                 </div>
                 <span class="inline-flex min-w-10 items-center justify-center rounded-full bg-navy-900 px-3 py-1 text-sm font-bold text-white">
                     {{ number_format($typeCounts[$type->value] ?? 0) }}
@@ -133,7 +172,7 @@
     @endforeach
 </div>
 
-<div class="mt-7 grid gap-5 sm:grid-cols-3">
+<div class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
     <div class="card p-5">
         <p class="text-sm font-semibold text-slate-500">Kuota {{ $selectedType->label() }}</p>
         <p class="metric-number mt-2">{{ number_format($quota) }}</p>
@@ -146,6 +185,10 @@
         <p class="text-sm font-semibold text-slate-500">Hasil Dipublikasikan</p>
         <p class="metric-number mt-2">{{ number_format($publishedCount) }}</p>
     </div>
+    <div class="card p-5">
+        <p class="text-sm font-semibold text-slate-500">Total UKT {{ $selectedJalur?->nama ?? $selectedType->label() }}</p>
+        <p class="mt-2 font-display text-2xl font-bold tracking-tight text-navy-900">Rp {{ number_format($totalCurrentTypeUkt, 0, ',', '.') }}</p>
+    </div>
 </div>
 
 <div class="mt-7 rounded-xl border border-blue-200 bg-blue-50 p-5">
@@ -154,7 +197,7 @@
         <div class="text-sm leading-6 text-blue-800">
             @if($selectedType === \App\Enums\ApplicationType::TIDAK_MAMPU)
                 <p class="font-bold">Dasar Urutan Seleksi Beasiswa Tidak Mampu (Peraturan Bupati):</p>
-                <p>1. Desil 1 s.d. 5 DTSEN (prioritas desil terendah) &bull; 2. Nilai IPK total/kumulatif &bull; 3. Nilai raport kelas XII semester genap &bull; 4. Tahun angkatan masuk PT lebih awal &bull; 5. Akreditasi Perguruan Tinggi.</p>
+                <p>1. Desil 1 s.d. 5 DTSEN (prioritas desil terendah) &bull; 2. Nilai IPK total/kumulatif &bull; 3. Tahun angkatan masuk PT lebih awal &bull; 4. Akreditasi Perguruan Tinggi.</p>
             @elseif($selectedType === \App\Enums\ApplicationType::AKADEMIK)
                 <p class="font-bold">Dasar Urutan Seleksi Beasiswa Prestasi Akademik (Peraturan Bupati):</p>
                 <p>1. Nilai IPK total/kumulatif &bull; 2. Tahun angkatan masuk PT lebih awal &bull; 3. Akreditasi Perguruan Tinggi.</p>
@@ -170,34 +213,13 @@
     </div>
 </div>
 
-<div class="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4">
-    <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 mr-1">Kategori:</span>
-        <a href="{{ route('operator.selection', ['application_type' => $selectedType->value]) }}"
-           class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ empty($selectedJalurId) ? 'bg-navy-900 text-white shadow-sm ring-2 ring-navy-900/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-            <span>Semua</span>
-            <span class="rounded-full px-2 py-0.5 text-[11px] {{ empty($selectedJalurId) ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
-                {{ number_format($totalCurrentTypeCount) }}
-            </span>
-        </a>
-        @foreach($jalurBeasiswas as $jalur)
-            @php $isActive = (int) $selectedJalurId === (int) $jalur->id; @endphp
-            <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $jalur->id]) }}"
-               class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ $isActive ? ($jalur->kode === 'REGULER' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/20' : 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-600/20') : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                <span>{{ $jalur->nama }}</span>
-                <span class="rounded-full px-2 py-0.5 text-[11px] {{ $isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
-                    {{ number_format($jalurCounts[$jalur->id] ?? 0) }}
-                </span>
-            </a>
-        @endforeach
-    </div>
-
-    <form method="GET" class="flex items-center gap-2">
+<div class="mt-7 flex justify-end border-b border-slate-200 pb-4">
+    <form method="GET" class="flex w-full items-center gap-2 sm:w-auto">
         <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
         @if($selectedJalurId)
             <input type="hidden" name="jalur_beasiswa_id" value="{{ $selectedJalurId }}">
         @endif
-        <div class="relative">
+        <div class="relative w-full sm:w-64">
             <x-icon name="search" class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <input name="search" value="{{ request('search') }}" class="form-input !py-1.5 !pl-9 text-sm" placeholder="Cari kandidat...">
         </div>
@@ -253,7 +275,7 @@
                             @if($selectedType === \App\Enums\ApplicationType::TIDAK_MAMPU)
                                 <p class="font-semibold text-slate-900">Desil {{ $verifiedDesil }} · IPK {{ $ipkVal }}</p>
                                 <p class="mt-1 text-xs text-slate-500">
-                                    Raport XII: <span class="font-medium text-slate-700">{{ $pendidikan?->nilai_raport ? number_format((float) $pendidikan->nilai_raport, 2) : '-' }}</span> · Angkatan {{ $tahunMasukVal }} · Akr. {{ $akreditasiVal }}
+                                    Angkatan {{ $tahunMasukVal }} · Akr. {{ $akreditasiVal }}
                                 </p>
                             @elseif($selectedType === \App\Enums\ApplicationType::AKADEMIK)
                                 <p class="font-semibold text-slate-900">IPK {{ $ipkVal }}</p>

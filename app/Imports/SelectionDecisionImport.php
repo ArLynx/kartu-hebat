@@ -17,7 +17,7 @@ class SelectionDecisionImport implements ToCollection, WithHeadingRow
 
     public function collection(Collection $rows): void
     {
-        $this->rows = $rows;
+        $this->rows = $this->rows->concat($rows->values())->values();
     }
 
     public function getRows(): Collection

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Exports\CandidatesExport;
+use App\Exports\CandidatesWorkbookExport;
 use App\Imports\SelectionDecisionImport;
 use App\Models\Announcement;
 use App\Models\Application;
@@ -31,6 +32,11 @@ class SelectionWorkflowService
         ?int $jalurBeasiswaId = null,
     ): CandidatesExport {
         return new CandidatesExport((int) $operator->kabupaten_id, $type, $jalurBeasiswaId);
+    }
+
+    public function exportCandidatesWorkbook(User $operator): CandidatesWorkbookExport
+    {
+        return new CandidatesWorkbookExport((int) $operator->kabupaten_id);
     }
 
     public function importDecisionsFromExcel(
