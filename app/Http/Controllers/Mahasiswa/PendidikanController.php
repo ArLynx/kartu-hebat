@@ -61,7 +61,11 @@ class PendidikanController extends Controller
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('pendidikans', 'nim')->ignore($pendidikanId),
+                Rule::unique('pendidikans', 'nim')->where(function ($query) use ($pendaftaran) {
+                    $query->whereNotIn('pendaftaran_id', function ($sub) use ($pendaftaran) {
+                        $sub->select('id')->from('pendaftarans')->where('user_id', $pendaftaran->user_id);
+                    });
+                }),
             ],
 
             'universitas' => [
@@ -163,7 +167,7 @@ class PendidikanController extends Controller
 
             'nim.max' => 'NIM maksimal 50 karakter.',
 
-            'nim.unique' => 'NIM tersebut sudah digunakan pada data pendidikan lain.',
+            'nim.unique' => 'NIM ini sudah terdaftar pada akun mahasiswa lain. Pastikan penulisan NIM sudah benar atau gunakan akun Anda yang sebelumnya.',
 
             'universitas.required' => 'Nama perguruan tinggi wajib diisi.',
 

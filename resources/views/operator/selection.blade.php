@@ -13,18 +13,25 @@
         </p>
     </div>
     <div class="flex flex-wrap items-center gap-2" x-data="{ openImportModal: false, openPublishModal: false }">
-        <a href="{{ route('operator.selection.export', array_filter(['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId])) }}" class="btn-secondary !py-2 bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100">
+        <a href="{{ route('operator.selection.export', array_filter(['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId, 'periode' => $selectedPeriode])) }}" class="btn-secondary !py-2 bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100">
             <x-icon name="download" class="h-4 w-4" /> Unduh Excel Jalur Ini
         </a>
-        <a href="{{ route('operator.selection.export') }}" class="btn-secondary !py-2 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100">
+        <a href="{{ route('operator.selection.export', ['periode' => $selectedPeriode]) }}" class="btn-secondary !py-2 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100">
             <x-icon name="download" class="h-4 w-4" /> Unduh Semua Jalur
         </a>
-        <button type="button" @click="openImportModal = true" class="btn-secondary !py-2 bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100">
-            <x-icon name="upload" class="h-4 w-4 mr-1 inline" /> 1. Impor ACC Excel
-        </button>
-        <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
-            <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> 2. Publikasikan Hasil (Upload SK)
-        </button>
+        @if($isCurrentPeriod)
+            <button type="button" @click="openImportModal = true" class="btn-secondary !py-2 bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100">
+                <x-icon name="upload" class="h-4 w-4 mr-1 inline" /> 1. Impor ACC Excel
+            </button>
+            <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
+                <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> 2. Publikasikan Hasil (Upload SK)
+            </button>
+        @else
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800">
+                <x-icon name="lock" class="h-4 w-4 text-amber-600" />
+                Mode Arsip (Read-Only)
+            </span>
+        @endif
 
         <!-- Step 1: Import Modal -->
         <div x-show="openImportModal"
@@ -119,10 +126,53 @@
     </div>
 </div>
 
+{{-- PILIHAN TAHUN / PERIODE BEASISWA (DI PALING ATAS SEBELUM KATEGORI & JENIS BEASISWA) --}}
+<div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+            <x-icon name="calendar" class="h-5 w-5" />
+        </div>
+        <div>
+            <h2 class="text-sm font-bold text-navy-950">Tahun / Periode Beasiswa</h2>
+            <p class="text-xs text-slate-500">Pilih tahun periode untuk melihat penetapan penerima dan alokasi kuota.</p>
+        </div>
+    </div>
+    @if(isset($availablePeriodes) && $availablePeriodes->count() > 0)
+        <form method="GET" action="{{ route('operator.selection') }}" class="flex items-center gap-2">
+            <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
+            @if($selectedJalurId)
+                <input type="hidden" name="jalur_beasiswa_id" value="{{ $selectedJalurId }}">
+            @endif
+            @if(request('status_filter'))
+                <input type="hidden" name="status_filter" value="{{ request('status_filter') }}">
+            @endif
+            <select name="periode" class="form-input text-sm font-semibold !py-2 sm:min-w-[260px]" onchange="this.form.submit()">
+                @foreach($availablePeriodes as $p)
+                    <option value="{{ $p }}" @selected($selectedPeriode === $p)>
+                        Periode {{ $p }} @if($p === config('kartu_hebat.current_period')) (Aktif) @endif
+                    </option>
+                @endforeach
+            </select>
+        </form>
+    @endif
+</div>
+
+@if(! $isCurrentPeriod)
+    <div class="mt-6 flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900 shadow-sm">
+        <x-icon name="info" class="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+        <div class="leading-relaxed">
+            <p class="font-bold">Mode Arsip: Periode {{ $selectedPeriode }}</p>
+            <p class="mt-0.5 text-xs text-sky-700">
+                Data penetapan penerima pada periode lampau bersifat permanen (read-only) untuk keperluan riwayat dan pelaporan SK penetapan. Keputusan kandidat pada periode ini telah dikunci.
+            </p>
+        </div>
+    </div>
+@endif
+
 <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Kategori:</span>
     <div class="flex flex-wrap items-center gap-2">
-        <a href="{{ route('operator.selection', ['application_type' => $selectedType->value]) }}"
+        <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'periode' => $selectedPeriode]) }}"
            class="inline-flex flex-col items-start gap-0.5 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ empty($selectedJalurId) ? 'bg-navy-900 text-white shadow-sm ring-2 ring-navy-900/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
             <span class="inline-flex items-center gap-2">
                 <span>Semua</span>
@@ -136,7 +186,7 @@
         </a>
         @foreach($jalurBeasiswas as $jalur)
             @php $isActive = (int) $selectedJalurId === (int) $jalur->id; @endphp
-            <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $jalur->id]) }}"
+            <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $jalur->id, 'periode' => $selectedPeriode]) }}"
                class="inline-flex flex-col items-start gap-0.5 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ $isActive ? ($jalur->kode === 'REGULER' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/20' : 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-600/20') : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
                 <span class="inline-flex items-center gap-2">
                     <span>{{ $jalur->nama }}</span>
@@ -154,7 +204,7 @@
 
 <div class="mt-5 grid gap-3 sm:grid-cols-2">
     @foreach($applicationTypes as $type)
-        <a href="{{ route('operator.selection', ['application_type' => $type->value]) }}"
+        <a href="{{ route('operator.selection', ['application_type' => $type->value, 'periode' => $selectedPeriode]) }}"
            class="rounded-xl border p-5 transition {{ $selectedType === $type ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-100' : 'border-slate-200 bg-white hover:border-brand-200' }}">
             <div class="flex items-center justify-between gap-4">
                 <div>
@@ -213,17 +263,45 @@
     </div>
 </div>
 
-<div class="mt-7 flex justify-end border-b border-slate-200 pb-4">
-    <form method="GET" class="flex w-full items-center gap-2 sm:w-auto">
+<div class="mt-7 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+    <div class="flex flex-wrap items-center gap-2">
+        <form method="GET" action="{{ route('operator.selection') }}" class="flex items-center gap-2">
+            <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
+            <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
+            @if($selectedJalurId)
+                <input type="hidden" name="jalur_beasiswa_id" value="{{ $selectedJalurId }}">
+            @endif
+            @if(request('search'))
+                <input type="hidden" name="search" value="{{ request('search') }}">
+            @endif
+            <label for="status_filter" class="text-xs font-bold text-slate-600">Status Kandidat:</label>
+            <select id="status_filter" name="status_filter" class="form-input !py-1.5 text-xs font-semibold" onchange="this.form.submit()">
+                <option value="" @selected(empty($statusFilter))>Semua Status</option>
+                <option value="kandidat" @selected($statusFilter === 'kandidat')>Siap Seleksi (Kandidat)</option>
+                <option value="diterima" @selected($statusFilter === 'diterima')>Diterima (Lulus)</option>
+                <option value="ditolak" @selected($statusFilter === 'ditolak')>Ditolak</option>
+            </select>
+        </form>
+    </div>
+    <form method="GET" action="{{ route('operator.selection') }}" class="flex w-full items-center gap-2 sm:w-auto">
+        <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
         <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
         @if($selectedJalurId)
             <input type="hidden" name="jalur_beasiswa_id" value="{{ $selectedJalurId }}">
+        @endif
+        @if($statusFilter)
+            <input type="hidden" name="status_filter" value="{{ $statusFilter }}">
         @endif
         <div class="relative w-full sm:w-64">
             <x-icon name="search" class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <input name="search" value="{{ request('search') }}" class="form-input !py-1.5 !pl-9 text-sm" placeholder="Cari kandidat...">
         </div>
         <button class="btn-secondary !py-1.5 !px-3 text-sm">Cari</button>
+        @if(request()->hasAny(['search', 'status_filter']))
+            <a href="{{ route('operator.selection', array_filter(['periode' => $selectedPeriode, 'application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId])) }}" class="btn-secondary !py-1.5 !px-3 text-sm" title="Reset filter pencarian">
+                ✕
+            </a>
+        @endif
     </form>
 </div>
 
@@ -317,20 +395,34 @@
                             @endif
                         </td>
                         <td>
-                            @if($application->selection?->published_at)
+                            @if(! $isCurrentPeriod)
+                                <div class="min-w-[220px]">
+                                    <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                                        <x-icon name="lock" class="h-3.5 w-3.5 text-slate-400" />
+                                        Arsip Terkunci
+                                    </span>
+                                </div>
+                            @elseif($application->selection?->published_at)
                                 <div class="min-w-[310px] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                                     Keputusan telah dikunci setelah publikasi.
                                 </div>
                             @else
-                                <form method="POST" action="{{ route('operator.selection.store', $application) }}" class="flex min-w-[310px] items-center gap-2">
+                                <form method="POST" action="{{ route('operator.selection.store', $application) }}" class="flex items-center gap-2">
                                     @csrf
-                                    <select name="decision" class="form-input !py-2" required>
-                                        <option value="">Pilih keputusan</option>
-                                        <option value="DITERIMA" @selected($application->selection?->manual_decision === 'DITERIMA')>Diterima</option>
-                                        <option value="DITOLAK" @selected($application->selection?->manual_decision === 'DITOLAK')>Ditolak</option>
+                                    @php
+                                        $currentDecision = $application->selection?->manual_decision;
+                                    @endphp
+                                    <select name="decision" 
+                                            class="form-input !w-32 !py-2 text-xs font-semibold rounded-lg transition-colors
+                                                   {{ $currentDecision === 'DITERIMA' ? '!border-emerald-500 !bg-emerald-50 !text-emerald-800' : ($currentDecision === 'DITOLAK' ? '!border-rose-500 !bg-rose-50 !text-rose-800' : '!border-slate-300 text-slate-700') }}"
+                                            onchange="this.className = 'form-input !w-32 !py-2 text-xs font-semibold rounded-lg transition-colors ' + (this.value === 'DITERIMA' ? '!border-emerald-500 !bg-emerald-50 !text-emerald-800' : (this.value === 'DITOLAK' ? '!border-rose-500 !bg-rose-50 !text-rose-800' : '!border-slate-300 text-slate-700'))"
+                                            required>
+                                        <option value="">Pilih</option>
+                                        <option value="DITERIMA" @selected($currentDecision === 'DITERIMA')>Diterima</option>
+                                        <option value="DITOLAK" @selected($currentDecision === 'DITOLAK')>Ditolak</option>
                                     </select>
-                                    <input name="notes" class="form-input !py-2" placeholder="Catatan" value="{{ $application->selection?->notes }}">
-                                    <button class="btn-primary !px-3 !py-2" title="Simpan keputusan">
+                                    <input name="notes" class="form-input !w-32 !py-2 text-xs" placeholder="Catatan" value="{{ $application->selection?->notes }}">
+                                    <button class="btn-primary !px-3 !py-2 shrink-0" title="Simpan keputusan">
                                         <x-icon name="check" class="h-4 w-4" />
                                     </button>
                                 </form>

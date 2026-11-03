@@ -190,7 +190,10 @@ class DokumenController extends Controller
         return $disk->download(
             $dokumen->file_path,
             $this->downloadName($dokumen),
-            $this->privateHeaders($mimeType),
+            [
+                'Content-Type' => $mimeType,
+                'Cache-Control' => 'private, no-cache',
+            ],
         );
     }
 
@@ -208,12 +211,15 @@ class DokumenController extends Controller
      */
     private function authorizedDisk(Request $request, Dokumen $dokumen): array
     {
-        $pendaftaran = $this->flow->currentFor($request->user());
-        abort_unless($pendaftaran, 404);
-        $this->assertOwned($dokumen, $pendaftaran->id);
+        $dokumen->loadMissing('pendaftaran');
+        abort_unless(
+            $dokumen->pendaftaran && (int) $dokumen->pendaftaran->user_id === (int) $request->user()->id,
+            403,
+            'Anda tidak memiliki akses ke dokumen ini.'
+        );
 
         $disk = Storage::disk(config('kartu_hebat.document_disk'));
-        abort_unless($disk->exists($dokumen->file_path), 404);
+        abort_unless($disk->exists($dokumen->file_path), 404, 'Berkas dokumen tidak ditemukan di server.');
 
         $mimeType = $dokumen->mime_type ?: ($disk->mimeType($dokumen->file_path) ?: 'application/octet-stream');
 
@@ -238,11 +244,13 @@ class DokumenController extends Controller
 
     private function downloadName(Dokumen $dokumen): string
     {
-        if ($dokumen->nama_file_asli) {
-            return basename($dokumen->nama_file_asli);
-        }
+        $dokumen->loadMissing(['jenisDokumen', 'pendaftaran']);
+        $jenisName = $dokumen->jenisDokumen?->nama ?: 'Dokumen';
+        $nomor = $dokumen->pendaftaran?->nomor_pendaftaran ?: 'KH';
+        $ext = pathinfo($dokumen->nama_file_asli ?: $dokumen->file_path, PATHINFO_EXTENSION) ?: 'pdf';
+        $cleanTitle = Str::slug($jenisName, '-');
 
-        return basename($dokumen->file_path);
+        return "{$cleanTitle}-{$nomor}.{$ext}";
     }
 
     private function privateHeaders(string $mimeType): array

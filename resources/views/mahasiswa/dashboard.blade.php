@@ -20,6 +20,77 @@
         @endif
     </div>
 
+    {{-- ALERT STATUS KEWAJIBAN LPJ / BLOKIR NIK --}}
+    @if ($activeBlacklist || session('error_blacklist') || session('error_lpj'))
+        <div class="mt-6 rounded-2xl border-2 border-rose-300 bg-rose-50 p-5 shadow-sm">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-start gap-3.5">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-200 text-rose-900">
+                        <x-icon name="exclamation-triangle" class="h-6 w-6" />
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="rounded bg-rose-200 px-2.5 py-0.5 text-[11px] font-extrabold text-rose-900 uppercase tracking-wide">
+                                🚫 Akun Terkunci
+                            </span>
+                            <h3 class="text-base font-bold text-rose-950">
+                                Pendaftaran Periode Selanjutnya Ditangguhkan (Kewajiban Laporan Pertanggungjawaban (LPJ) Belum Selesai)
+                            </h3>
+                        </div>
+                        <p class="mt-2 text-xs text-rose-900 leading-relaxed font-medium">
+                            <strong>Perhatian:</strong> Anda <strong>TIDAK DAPAT melakukan pendaftaran beasiswa pada periode baru / tahun selanjutnya</strong> karena kewajiban Laporan Pertanggungjawaban (LPJ) periode sebelumnya belum selesai atau ditolak oleh Admin.
+                        </p>
+                        @if($activeBlacklist?->alasan || session('error_blacklist') || session('error_lpj'))
+                            <div class="mt-2.5 rounded-lg bg-white/90 border border-rose-200 p-2.5 text-xs text-rose-950">
+                                <span class="font-bold text-rose-900">Catatan Admin:</span>
+                                <span class="italic text-slate-700">{{ session('error_lpj') ?? (session('error_blacklist') ?? $activeBlacklist->alasan) }}</span>
+                            </div>
+                        @endif
+                        <p class="mt-2 text-xs text-rose-900">
+                            Silakan perbaiki dan kumpulkan bukti pembayaran UKT yang sah di menu LPJ Beasiswa agar hak pendaftaran Anda dipulihkan oleh Admin Kabupaten.
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ route('mahasiswa.lpj.index') }}" class="btn-primary shrink-0 text-xs bg-rose-600 hover:bg-rose-700 border-none whitespace-nowrap">
+                    Ke Menu LPJ Beasiswa →
+                </a>
+            </div>
+        </div>
+    @endif
+
+    {{-- BANNER JIKA ADA PERIODE BARU DIBUKA --}}
+    @if ($activePeriode && $pendaftaran && $pendaftaran->periode_id !== $activePeriode->id)
+        <div class="mt-6 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-sm">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-brand-800">
+                        Pendaftaran Periode {{ $activePeriode->tahun }} Dibuka
+                    </span>
+                    <h3 class="mt-2 text-lg font-extrabold text-navy-950">
+                        Daftar Beasiswa Periode {{ $activePeriode->tahun }} ({{ $activePeriode->nama ?: 'Beasiswa ' . $activePeriode->tahun }})
+                    </h3>
+                    <p class="mt-1 text-xs text-slate-600">
+                        Jadwal: {{ $activePeriode->tanggal_mulai?->format('d M Y') }} s/d {{ $activePeriode->tanggal_selesai?->format('d M Y') }}. Data profil Anda dari periode sebelumnya akan otomatis disalin ke draf baru.
+                    </p>
+                </div>
+                <div class="flex flex-col items-start sm:items-end">
+                    @if ($activeBlacklist)
+                        <button type="button" disabled class="btn-secondary !bg-slate-200 !text-slate-600 !border-slate-300 opacity-80 cursor-not-allowed text-xs font-bold" title="Selesaikan kewajiban LPJ terlebih dahulu">
+                            🔒 Pendaftaran Terkunci (Selesaikan LPJ)
+                        </button>
+                        <p class="mt-1.5 text-[11px] text-rose-600 font-semibold max-w-xs text-left sm:text-right">
+                            Selesaikan kewajiban LPJ periode sebelumnya untuk membuka pendaftaran periode ini.
+                        </p>
+                    @else
+                        <a href="{{ route('mahasiswa.pendaftaran.create') }}" class="btn-primary text-xs">
+                            Daftar Periode {{ $activePeriode->tahun }} →
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if (!$pendaftaran)
         <section class="card mt-7 p-7 sm:p-10">
             <div class="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
@@ -225,6 +296,294 @@
                 </a>
                 <a href="{{ route('profile.show') }}" class="btn-secondary">Profil & Keamanan Akun</a>
             </div>
+        </section>
+    @endif
+
+    {{-- RIWAYAT PENDAFTARAN & LPJ PERIODE SEBELUMNYA --}}
+    @if(isset($riwayatPendaftarans) && $riwayatPendaftarans->count() > 0)
+        <section class="card mt-8 p-6 sm:p-8" x-data="{ activeModalPendaftaranId: null }">
+            <div class="border-b border-slate-100 pb-4">
+                <h3 class="text-lg font-bold text-navy-950">Riwayat Pendaftaran & Berkas LPJ Beasiswa</h3>
+                <p class="mt-0.5 text-xs text-slate-500">Daftar periode beasiswa yang pernah Anda ikuti beserta status LPJ.</p>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Periode</th>
+                            <th>No. Pendaftaran</th>
+                            <th>Jalur & Kategori</th>
+                            <th>Status Pendaftaran</th>
+                            <th>Status LPJ</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($riwayatPendaftarans as $riwayat)
+                            @php
+                                $rLpj = $riwayat->laporanPertanggungjawaban;
+                                $isApproved = $riwayat->status === 'approved' || ($riwayat->application && $riwayat->application->status === \App\Enums\ApplicationStatus::DITERIMA);
+                            @endphp
+                            <tr>
+                                <td class="font-bold text-slate-800">
+                                    {{ $riwayat->periode?->tahun ?? '-' }}
+                                    <span class="block text-[11px] font-normal text-slate-500">{{ $riwayat->periode?->nama }}</span>
+                                </td>
+                                <td class="font-mono text-xs">{{ $riwayat->nomor_pendaftaran }}</td>
+                                <td>
+                                    <p class="text-xs font-semibold text-slate-800">{{ $riwayat->jalurBeasiswa?->nama ?? '-' }}</p>
+                                    <p class="text-[11px] text-slate-500">{{ $riwayat->kategoriBeasiswa?->nama ?? '-' }}</p>
+                                </td>
+                                <td>
+                                    @if($isApproved)
+                                        <span class="status-chip status-success text-xs">Lulus / Diterima</span>
+                                    @elseif($riwayat->status === 'submitted')
+                                        <span class="status-chip status-info text-xs">Sedang Diproses</span>
+                                    @else
+                                        <span class="status-chip status-neutral text-xs">{{ ucfirst($riwayat->status) }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(! $isApproved)
+                                        <span class="text-xs text-slate-400">-</span>
+                                    @elseif(! $rLpj || $rLpj->status === 'belum_upload')
+                                        <span class="status-chip status-warning text-xs">Belum Upload</span>
+                                    @elseif($rLpj->status === 'menunggu_verifikasi')
+                                        <span class="status-chip status-purple text-xs">Menunggu Verifikasi</span>
+                                    @elseif($rLpj->status === 'disetujui')
+                                        <span class="status-chip status-success text-xs">LPJ Disetujui</span>
+                                    @elseif($rLpj->status === 'ditolak')
+                                        <span class="status-chip status-danger text-xs">Perlu Perbaikan</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        @php
+                                            $hasAnyDocs = ($riwayat->dokumens && $riwayat->dokumens->isNotEmpty())
+                                                || ($riwayat->formulirPendaftaran && ($riwayat->formulirPendaftaran->surat_permohonan || $riwayat->formulirPendaftaran->pakta_integritas))
+                                                || ($rLpj && $rLpj->file_path);
+                                        @endphp
+                                        @if($hasAnyDocs)
+                                            <button type="button" @click="activeModalPendaftaranId = {{ $riwayat->id }}" class="btn-secondary !py-1 !px-2.5 text-xs text-brand-800 border-brand-300 hover:bg-brand-50" title="Lihat Dokumen Arsip Persyaratan & Formulir">
+                                                <x-icon name="folder" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Dokumen
+                                            </button>
+                                        @endif
+                                        @if($rLpj && $rLpj->file_path)
+                                            <a href="{{ route('mahasiswa.lpj.file', ['pendaftaran_id' => $riwayat->id, 'download' => 1]) }}" class="btn-secondary !py-1 !px-2.5 text-xs" title="Unduh Berkas LPJ">
+                                                <x-icon name="document" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Berkas LPJ
+                                            </a>
+                                        @endif
+                                        @if($riwayat->status === 'submitted' || $isApproved)
+                                            <a href="{{ route('mahasiswa.bukti-pendaftaran.pdf', ['pendaftaran_id' => $riwayat->id]) }}" class="btn-secondary !py-1 !px-2.5 text-xs" title="Cetak Bukti Pendaftaran">
+                                                <x-icon name="download" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Bukti
+                                            </a>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- MODAL LIHAT DOKUMEN ARSIP PENDAFTARAN --}}
+            @foreach($riwayatPendaftarans as $riwayat)
+                @php
+                    $rLpj = $riwayat->laporanPertanggungjawaban;
+                    $isApproved = $riwayat->status === 'approved' || ($riwayat->application && $riwayat->application->status === \App\Enums\ApplicationStatus::DITERIMA);
+                    $hasAnyDocs = ($riwayat->dokumens && $riwayat->dokumens->isNotEmpty())
+                        || ($riwayat->formulirPendaftaran && ($riwayat->formulirPendaftaran->surat_permohonan || $riwayat->formulirPendaftaran->pakta_integritas))
+                        || ($rLpj && $rLpj->file_path);
+                @endphp
+                @if($hasAnyDocs)
+                    <div x-show="activeModalPendaftaranId === {{ $riwayat->id }}"
+                         x-cloak
+                         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
+                         @keydown.escape.window="activeModalPendaftaranId = null">
+                        <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl transition-all"
+                             @click.outside="activeModalPendaftaranId = null">
+                            <div class="flex items-start justify-between border-b border-slate-100 pb-4">
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">
+                                        Dokumen Arsip — Periode {{ $riwayat->periode?->nama ?? $riwayat->periode?->tahun }}
+                                    </h3>
+                                    <p class="mt-0.5 text-xs text-slate-500">
+                                        No. Pendaftaran: <span class="font-mono font-semibold text-slate-700">{{ $riwayat->nomor_pendaftaran }}</span>
+                                        &bull; {{ $riwayat->kategoriBeasiswa?->nama }} ({{ $riwayat->jalurBeasiswa?->nama }})
+                                    </p>
+                                </div>
+                                <button type="button" @click="activeModalPendaftaranId = null" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                                    <x-icon name="x" class="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <div class="mt-4 max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+                                {{-- 1. DOKUMEN PERSYARATAN --}}
+                                @if($riwayat->dokumens)
+                                    @foreach($riwayat->dokumens as $dokumen)
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 transition hover:bg-white hover:shadow-sm">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-bold text-sm text-slate-800">{{ $dokumen->jenisDokumen?->nama ?? 'Dokumen' }}</span>
+                                                    <span class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
+                                                        {{ $dokumen->status ?: 'Tersimpan' }}
+                                                    </span>
+                                                </div>
+                                                <p class="truncate text-xs text-slate-600 mt-1 font-mono">
+                                                    {{ $dokumen->nama_file_asli ?: basename($dokumen->file_path) }}
+                                                </p>
+                                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                                    {{ $dokumen->ukuran_file ? number_format($dokumen->ukuran_file / 1024, 1, ',', '.').' KB' : 'File tersimpan' }}
+                                                    @if($dokumen->verified_at)
+                                                        &bull; Diverifikasi {{ $dokumen->verified_at->translatedFormat('d M Y') }}
+                                                    @endif
+                                                </p>
+                                            </div>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                @if(in_array($dokumen->mime_type, ['application/pdf', 'image/jpeg', 'image/png'], true))
+                                                    <a href="{{ route('mahasiswa.dokumen.preview', $dokumen) }}" target="_blank" rel="noopener" class="btn-secondary !py-1.5 !px-3 text-xs bg-white hover:bg-slate-50">
+                                                        <x-icon name="eye" class="h-3.5 w-3.5 mr-1 inline" />
+                                                        Lihat
+                                                    </a>
+                                                @endif
+                                                <a href="{{ route('mahasiswa.dokumen.download', $dokumen) }}" download="{{ $dokumen->nama_file_asli ?: 'dokumen.pdf' }}" class="btn-primary !py-1.5 !px-3 text-xs bg-brand-700 hover:bg-brand-800">
+                                                    <x-icon name="download" class="h-3.5 w-3.5 mr-1 inline" />
+                                                    Unduh
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endif
+
+                                {{-- 2. SURAT PERMOHONAN RESMI --}}
+                                @if($riwayat->formulirPendaftaran && $riwayat->formulirPendaftaran->surat_permohonan)
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3.5 transition hover:bg-white hover:shadow-sm">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-sm text-slate-800">Surat Permohonan Beasiswa</span>
+                                                <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 uppercase">
+                                                    Formulir Resmi
+                                                </span>
+                                            </div>
+                                            <p class="truncate text-xs text-slate-600 mt-1 font-mono">
+                                                Surat-Permohonan-{{ $riwayat->nomor_pendaftaran }}.pdf
+                                            </p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                                Dokumen bertandatangan pemohon
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <a href="{{ route('mahasiswa.formulir.lihat', ['jenis' => 'surat', 'pendaftaran_id' => $riwayat->id]) }}" target="_blank" rel="noopener" class="btn-secondary !py-1.5 !px-3 text-xs bg-white hover:bg-slate-50">
+                                                <x-icon name="eye" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Lihat
+                                            </a>
+                                            <a href="{{ route('mahasiswa.formulir.download', ['jenis' => 'surat', 'pendaftaran_id' => $riwayat->id]) }}" download="Surat-Permohonan-{{ $riwayat->nomor_pendaftaran }}.pdf" class="btn-primary !py-1.5 !px-3 text-xs bg-brand-700 hover:bg-brand-800">
+                                                <x-icon name="download" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Unduh
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- 3. PAKTA INTEGRITAS RESMI --}}
+                                @if($riwayat->formulirPendaftaran && $riwayat->formulirPendaftaran->pakta_integritas)
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3.5 transition hover:bg-white hover:shadow-sm">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-sm text-slate-800">Pakta Integritas Bermeterai</span>
+                                                <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 uppercase">
+                                                    Formulir Resmi
+                                                </span>
+                                            </div>
+                                            <p class="truncate text-xs text-slate-600 mt-1 font-mono">
+                                                Pakta-Integritas-{{ $riwayat->nomor_pendaftaran }}.pdf
+                                            </p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                                Dokumen bertandatangan pemohon & orang tua/wali
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <a href="{{ route('mahasiswa.formulir.lihat', ['jenis' => 'pakta', 'pendaftaran_id' => $riwayat->id]) }}" target="_blank" rel="noopener" class="btn-secondary !py-1.5 !px-3 text-xs bg-white hover:bg-slate-50">
+                                                <x-icon name="eye" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Lihat
+                                            </a>
+                                            <a href="{{ route('mahasiswa.formulir.download', ['jenis' => 'pakta', 'pendaftaran_id' => $riwayat->id]) }}" download="Pakta-Integritas-{{ $riwayat->nomor_pendaftaran }}.pdf" class="btn-primary !py-1.5 !px-3 text-xs bg-brand-700 hover:bg-brand-800">
+                                                <x-icon name="download" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Unduh
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- 4. BERKAS LPJ (JIKA ADA) --}}
+                                @if($rLpj && $rLpj->file_path)
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-purple-200 bg-purple-50/50 p-3.5 transition hover:bg-white hover:shadow-sm">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-sm text-slate-800">Laporan Pertanggungjawaban (LPJ)</span>
+                                                <span class="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800 uppercase">
+                                                    {{ $rLpj->status === 'disetujui' ? 'LPJ Disetujui' : 'Berkas LPJ' }}
+                                                </span>
+                                            </div>
+                                            <p class="truncate text-xs text-slate-600 mt-1 font-mono">
+                                                Berkas-LPJ-{{ $riwayat->nomor_pendaftaran }}.pdf
+                                            </p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                                Laporan penggunaan dana beasiswa mahasiswa
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <a href="{{ route('mahasiswa.lpj.file', ['pendaftaran_id' => $riwayat->id]) }}" target="_blank" rel="noopener" class="btn-secondary !py-1.5 !px-3 text-xs bg-white hover:bg-slate-50">
+                                                <x-icon name="eye" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Lihat
+                                            </a>
+                                            <a href="{{ route('mahasiswa.lpj.file', ['pendaftaran_id' => $riwayat->id, 'download' => 1]) }}" download="Berkas-LPJ-{{ $riwayat->nomor_pendaftaran }}.pdf" class="btn-primary !py-1.5 !px-3 text-xs bg-brand-700 hover:bg-brand-800">
+                                                <x-icon name="download" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Unduh
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- 5. BUKTI PENDAFTARAN RESMI --}}
+                                @if($riwayat->status === 'submitted' || $isApproved)
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5 transition hover:bg-white hover:shadow-sm">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-sm text-slate-800">Tanda Bukti Pendaftaran</span>
+                                                <span class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
+                                                    Resmi Ber-QR
+                                                </span>
+                                            </div>
+                                            <p class="truncate text-xs text-slate-600 mt-1 font-mono">
+                                                bukti-pendaftaran-{{ $riwayat->nomor_pendaftaran }}.pdf
+                                            </p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                                Bukti tanda terima pendaftaran Kartu Hebat
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <a href="{{ route('mahasiswa.bukti-pendaftaran.pdf', ['pendaftaran_id' => $riwayat->id]) }}" download="bukti-pendaftaran-{{ $riwayat->nomor_pendaftaran }}.pdf" class="btn-primary !py-1.5 !px-3 text-xs bg-brand-700 hover:bg-brand-800">
+                                                <x-icon name="download" class="h-3.5 w-3.5 mr-1 inline" />
+                                                Unduh
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="mt-5 flex justify-end border-t border-slate-100 pt-3">
+                                <button type="button" @click="activeModalPendaftaranId = null" class="btn-secondary !py-2 !px-4 text-xs">
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
         </section>
     @endif
 @endsection

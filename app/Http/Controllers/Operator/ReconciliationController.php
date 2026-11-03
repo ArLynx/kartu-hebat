@@ -6,6 +6,7 @@ use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\Periode;
 use App\Services\AgencyVerificationService;
 use Illuminate\Http\Request;
 
@@ -13,10 +14,28 @@ class ReconciliationController extends Controller
 {
     public function index(Request $request)
     {
+        $masterPeriodes = Periode::query()
+            ->orderByDesc('tahun')
+            ->orderByDesc('id')
+            ->get();
+
+        $availablePeriodes = $masterPeriodes->toBase()->map(function ($p) {
+            return $p->nama ?: (string) $p->tahun;
+        })->merge(
+            Application::query()->visibleTo($request->user())->distinct()->pluck('periode')
+        )->filter()->unique()->values();
+
+        $activeMasterPeriode = $masterPeriodes->firstWhere('status', 'aktif');
+        $defaultPeriode = $activeMasterPeriode
+            ? ($activeMasterPeriode->nama ?: (string) $activeMasterPeriode->tahun)
+            : ($availablePeriodes->first() ?? config('kartu_hebat.current_period'));
+
+        $selectedPeriode = $request->string('periode')->trim()->toString() ?: $defaultPeriode;
+
         $selectedType = ApplicationType::tryFrom($request->string('application_type')->toString());
         $baseQuery = Application::query()
             ->visibleTo($request->user())
-            ->where('periode', config('kartu_hebat.current_period'))
+            ->where('periode', $selectedPeriode)
             ->when($selectedType, fn ($query) => $query->where('application_type', $selectedType->value));
 
         $applications = (clone $baseQuery)
@@ -54,6 +73,8 @@ class ReconciliationController extends Controller
             'summary' => $summary,
             'applicationTypes' => ApplicationType::cases(),
             'agencies' => array_keys(config('kartu_hebat.agencies')),
+            'availablePeriodes' => $availablePeriodes,
+            'selectedPeriode' => $selectedPeriode,
         ]);
     }
 

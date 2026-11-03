@@ -13,6 +13,8 @@ class Periode extends Model
         'nama',
         'tanggal_mulai',
         'tanggal_selesai',
+        'tanggal_mulai_lpj',
+        'tanggal_selesai_lpj',
         'status',
     ];
 
@@ -21,7 +23,27 @@ class Periode extends Model
         return [
             'tanggal_mulai' => 'date',
             'tanggal_selesai' => 'date',
+            'tanggal_mulai_lpj' => 'date',
+            'tanggal_selesai_lpj' => 'date',
         ];
+    }
+
+    public function isLpjOpen(): bool
+    {
+        if (! $this->tanggal_mulai_lpj || ! $this->tanggal_selesai_lpj) {
+            return false;
+        }
+
+        return today()->betweenIncluded($this->tanggal_mulai_lpj, $this->tanggal_selesai_lpj);
+    }
+
+    public function isLpjPastDeadline(): bool
+    {
+        if (! $this->tanggal_selesai_lpj) {
+            return false;
+        }
+
+        return today()->greaterThan($this->tanggal_selesai_lpj);
     }
 
     public function scopeAktif(Builder $query): Builder

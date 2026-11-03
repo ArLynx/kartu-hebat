@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\Blacklist;
 use App\Models\DataPribadi;
 use App\Models\Village;
 use App\Services\MahasiswaPendaftaranService;
@@ -73,7 +74,20 @@ class DataPribadiController extends Controller
             'nik' => [
                 'required',
                 'digits:16',
-                Rule::unique('data_pribadis', 'nik')->ignore($dataPribadiId),
+                Rule::unique('data_pribadis', 'nik')->where(function ($query) use ($pendaftaran) {
+                    $query->whereNotIn('pendaftaran_id', function ($sub) use ($pendaftaran) {
+                        $sub->select('id')->from('pendaftarans')->where('user_id', $pendaftaran->user_id);
+                    });
+                }),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $blacklist = Blacklist::query()
+                        ->where('nik', (string) $value)
+                        ->where('aktif', true)
+                        ->first();
+                    if ($blacklist) {
+                        $fail('NIK ini belum menyelesaikan kewajiban Laporan Pertanggungjawaban (LPJ) beasiswa periode sebelumnya. Silakan selesaikan kewajiban Anda terlebih dahulu di menu LPJ.');
+                    }
+                },
             ],
 
             'nomor_kk' => [
@@ -148,9 +162,9 @@ class DataPribadiController extends Controller
         ], [
             'nik.required' => 'NIK wajib diisi.',
 
-            'nik.digits' => 'NIK harus terdiri dari 16 digit.',
+            'nik.digits' => 'NIK harus terdiri dari 16 digit angka.',
 
-            'nik.unique' => 'NIK tersebut sudah digunakan pada pendaftaran lain.',
+            'nik.unique' => 'NIK ini sudah terdaftar pada akun mahasiswa lain. Jika ini adalah NIK Anda, silakan masuk menggunakan akun yang sesuai atau hubungi admin.',
 
             'nomor_kk.required' => 'Nomor Kartu Keluarga (KK) wajib diisi.',
 

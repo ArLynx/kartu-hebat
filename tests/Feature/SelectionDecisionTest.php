@@ -66,6 +66,18 @@ class SelectionDecisionTest extends TestCase
         $this->assertSame('DITERIMA', $accepted->fresh()->selection->manual_decision);
     }
 
+    public function test_modifying_past_period_selection_is_blocked_with_error_flash(): void
+    {
+        $operator = $this->kabupatenOperator();
+        $pastApplication = $this->candidateInSelection();
+        $pastApplication->update(['periode' => '2025/2026 Ganjil']);
+
+        $this->actingAs($operator)
+            ->post(route('operator.selection.store', $pastApplication), ['decision' => 'DITOLAK'])
+            ->assertRedirect()
+            ->assertSessionHas('error', 'Penetapan penerima untuk periode lampau telah dikunci dan tidak dapat diubah.');
+    }
+
     private function kabupatenOperator(): User
     {
         $village = Village::query()->with('kecamatan')->firstOrFail();
