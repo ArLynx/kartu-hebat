@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\Pendaftaran;
 use App\Services\MahasiswaPendaftaranService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -266,7 +267,10 @@ class ReviewController extends Controller
         Request $request,
         string $jenis
     ) {
-        $pendaftaran = $this->flow->currentFor($request->user());
+        $pendaftaranId = $request->integer('pendaftaran_id');
+        $pendaftaran = $pendaftaranId
+            ? Pendaftaran::query()->where('user_id', $request->user()->id)->where('id', $pendaftaranId)->first()
+            : $this->flow->currentFor($request->user());
 
         abort_unless($pendaftaran, 404);
 
@@ -357,7 +361,10 @@ class ReviewController extends Controller
         Request $request,
         string $jenis
     ) {
-        $pendaftaran = $this->flow->currentFor($request->user());
+        $pendaftaranId = $request->integer('pendaftaran_id');
+        $pendaftaran = $pendaftaranId
+            ? Pendaftaran::query()->where('user_id', $request->user()->id)->where('id', $pendaftaranId)->first()
+            : $this->flow->currentFor($request->user());
 
         abort_unless($pendaftaran, 404);
 
@@ -376,12 +383,12 @@ class ReviewController extends Controller
         if ($jenis === 'surat') {
 
             $file = $formulir->surat_permohonan;
-            $namaFile = 'Surat-Permohonan.pdf';
+            $namaFile = 'Surat-Permohonan-'.$pendaftaran->nomor_pendaftaran.'.pdf';
 
         } elseif ($jenis === 'pakta') {
 
             $file = $formulir->pakta_integritas;
-            $namaFile = 'Pakta-Integritas.pdf';
+            $namaFile = 'Pakta-Integritas-'.$pendaftaran->nomor_pendaftaran.'.pdf';
 
         } else {
 
@@ -430,9 +437,7 @@ class ReviewController extends Controller
             $namaFile,
             [
                 'Content-Type' => 'application/pdf',
-                'Cache-Control' => 'private, no-store, max-age=0',
-                'Pragma' => 'no-cache',
-                'X-Content-Type-Options' => 'nosniff',
+                'Cache-Control' => 'private, no-cache',
             ]
         );
     }

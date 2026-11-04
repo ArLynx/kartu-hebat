@@ -21,6 +21,7 @@ use App\Http\Controllers\Operator\ApplicationController as OperatorApplicationCo
 use App\Http\Controllers\Operator\ApplicationFormulirController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\DocumentVerificationController;
+use App\Http\Controllers\Operator\LpjController as OperatorLpjController;
 use App\Http\Controllers\Operator\ReconciliationController;
 use App\Http\Controllers\Operator\ReportController;
 use App\Http\Controllers\Operator\SelectionController;
@@ -130,6 +131,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                 Route::get('/review/formulir/{jenis}/lihat', [ReviewController::class, 'lihatFormulir'])->name('formulir.lihat');
 
                 Route::get('/lpj', [LpjController::class, 'index'])->name('lpj.index');
+                Route::post('/lpj', [LpjController::class, 'store'])->name('lpj.store');
+                Route::get('/lpj/file', [LpjController::class, 'file'])->name('lpj.file');
             });
 
         // Alias kompatibilitas untuk tautan lama. Semuanya diarahkan ke modul beasiswa.
@@ -205,6 +208,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                     Route::post('/seleksi/import', [SelectionController::class, 'import'])->name('selection.import');
                     Route::post('/seleksi/{application}', [SelectionController::class, 'store'])->name('selection.store');
                     Route::post('/seleksi-publikasi', [SelectionController::class, 'publish'])->name('selection.publish');
+                    Route::get('/lpj', [OperatorLpjController::class, 'index'])->name('lpj.index');
+                    Route::get('/lpj/{pendaftaran}/file', [OperatorLpjController::class, 'file'])->name('lpj.file');
+                    Route::post('/lpj/{pendaftaran}/blacklist', [OperatorLpjController::class, 'toggleBlacklist'])->name('lpj.blacklist');
+                    Route::post('/lpj/{pendaftaran}/verify', [OperatorLpjController::class, 'verify'])->name('lpj.verify');
                     Route::get('/laporan/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
                     Route::get('/laporan/penerima/pdf', [ReportController::class, 'recipientsPdf'])->name('reports.recipients-pdf');
                     Route::get('/laporan/excel', [ReportController::class, 'excel'])->name('reports.excel');

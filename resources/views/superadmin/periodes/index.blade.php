@@ -23,6 +23,7 @@
                 <tr>
                     <th>Tahun / Periode</th>
                     <th>Jadwal Pendaftaran</th>
+                    <th>Jadwal LPJ</th>
                     <th>Kategori Terkait</th>
                     <th>Total Pendaftar</th>
                     <th>Status</th>
@@ -49,6 +50,28 @@
                                 @else
                                     <p class="mt-1 text-xs text-emerald-600">Pendaftaran sedang berlangsung</p>
                                 @endif
+                            @endif
+                        </td>
+                        <td>
+                            @if($periode->tanggal_mulai_lpj && $periode->tanggal_selesai_lpj)
+                                <div class="flex items-center gap-1.5 text-sm text-slate-700">
+                                    <x-icon name="calendar" class="h-4 w-4 text-slate-400" />
+                                    <span>{{ $periode->tanggal_mulai_lpj->format('d M Y') }} — {{ $periode->tanggal_selesai_lpj->format('d M Y') }}</span>
+                                </div>
+                                @if($periode->isLpjOpen())
+                                    <p class="mt-1 text-xs font-semibold text-emerald-600">● LPJ Sedang Dibuka</p>
+                                @elseif($periode->isLpjPastDeadline())
+                                    <p class="mt-1 text-xs font-semibold text-rose-600">● LPJ Telah Berakhir</p>
+                                @else
+                                    <p class="mt-1 text-xs font-medium text-amber-600">● Menunggu Jadwal LPJ</p>
+                                @endif
+                            @else
+                                <span class="text-xs italic text-slate-400">Belum diatur</span>
+                                <div class="mt-1">
+                                    <a href="{{ route('superadmin.periodes.edit', $periode) }}" class="text-xs font-semibold text-brand-700 hover:underline">
+                                        + Atur Jadwal LPJ
+                                    </a>
+                                </div>
                             @endif
                         </td>
                         <td>
@@ -83,7 +106,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="py-12 text-center text-slate-500">
+                        <td colspan="7" class="py-12 text-center text-slate-500">
                             Belum ada data periode beasiswa. Klik tombol <strong>Tambah Periode</strong> untuk membuatnya.
                         </td>
                     </tr>

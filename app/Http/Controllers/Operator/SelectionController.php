@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SelectionRequest;
 use App\Models\Application;
 use App\Models\JalurBeasiswa;
+use App\Models\Periode;
 use App\Models\Selection;
 use App\Services\SelectionWorkflowService;
 use Illuminate\Http\RedirectResponse;
@@ -25,16 +26,40 @@ class SelectionController extends Controller
 
     public function index(Request $request): View
     {
+        $masterPeriodes = Periode::query()
+            ->orderByDesc('tahun')
+            ->orderByDesc('id')
+            ->get();
+
+        $availablePeriodes = $masterPeriodes->toBase()->map(function ($p) {
+            return $p->nama ?: (string) $p->tahun;
+        })->merge(
+            Application::query()->visibleTo($request->user())->distinct()->pluck('periode')
+        )->filter()->unique()->values();
+
+        $activeMasterPeriode = $masterPeriodes->firstWhere('status', 'aktif');
+        $activePeriodName = $activeMasterPeriode
+            ? ($activeMasterPeriode->nama ?: (string) $activeMasterPeriode->tahun)
+            : (string) config('kartu_hebat.current_period');
+
+        $defaultPeriode = $activeMasterPeriode
+            ? $activePeriodName
+            : ($availablePeriodes->first() ?? config('kartu_hebat.current_period'));
+
+        $selectedPeriode = $request->string('periode')->trim()->toString() ?: $defaultPeriode;
+        $isCurrentPeriod = ($selectedPeriode === $activePeriodName);
+
         $selectedType = ApplicationType::tryFrom($request->string('application_type')->toString())
             ?? ApplicationType::AKADEMIK;
 
         $selectedJalurId = $request->filled('jalur_beasiswa_id') ? $request->integer('jalur_beasiswa_id') : null;
+        $statusFilter = $request->string('status_filter')->trim()->toString();
 
         $jalurBeasiswas = JalurBeasiswa::query()->where('aktif', true)->orderBy('urutan')->get();
 
         $query = Application::query()
             ->visibleTo($request->user())
-            ->where('applications.periode', config('kartu_hebat.current_period'))
+            ->where('applications.periode', $selectedPeriode)
             ->where('applications.application_type', $selectedType->value)
             ->with([
                 'mahasiswa.profile.village.kecamatan',
@@ -49,6 +74,14 @@ class SelectionController extends Controller
                 ApplicationStatus::DITERIMA->value,
                 ApplicationStatus::DITOLAK->value,
             ]);
+
+        if ($statusFilter === 'diterima') {
+            $query->where('applications.status', ApplicationStatus::DITERIMA->value);
+        } elseif ($statusFilter === 'ditolak') {
+            $query->where('applications.status', ApplicationStatus::DITOLAK->value);
+        } elseif ($statusFilter === 'kandidat') {
+            $query->where('applications.status', ApplicationStatus::SELEKSI_KABUPATEN->value);
+        }
 
         if ($selectedJalurId) {
             $query->whereHas('pendaftaran', function ($pendaftaranQuery) use ($selectedJalurId): void {
@@ -66,10 +99,10 @@ class SelectionController extends Controller
         }
 
         $countySelections = Selection::query()
-            ->whereHas('application', function ($appQuery) use ($request, $selectedType, $selectedJalurId): void {
+            ->whereHas('application', function ($appQuery) use ($request, $selectedType, $selectedJalurId, $selectedPeriode): void {
                 $appQuery
                     ->visibleTo($request->user())
-                    ->where('periode', config('kartu_hebat.current_period'))
+                    ->where('periode', $selectedPeriode)
                     ->where('application_type', $selectedType->value);
 
                 if ($selectedJalurId) {
@@ -79,7 +112,7 @@ class SelectionController extends Controller
 
         $rawCounts = Application::query()
             ->visibleTo($request->user())
-            ->where('applications.periode', config('kartu_hebat.current_period'))
+            ->where('applications.periode', $selectedPeriode)
             ->whereIn('applications.status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,
@@ -137,11 +170,18 @@ class SelectionController extends Controller
             'quota' => $selectedType->quota(),
             'jalurBeasiswas' => $jalurBeasiswas,
             'acceptedCount' => (clone $countySelections)
-                ->where('manual_decision', ApplicationStatus::DITERIMA->value)
+                ->where(function ($q) {
+                    $q->where('manual_decision', ApplicationStatus::DITERIMA->value)
+                        ->orWhereHas('application', fn ($aq) => $aq->where('status', ApplicationStatus::DITERIMA));
+                })
                 ->count(),
             'publishedCount' => (clone $countySelections)
                 ->whereNotNull('published_at')
                 ->count(),
+            'availablePeriodes' => $availablePeriodes,
+            'selectedPeriode' => $selectedPeriode,
+            'statusFilter' => $statusFilter,
+            'isCurrentPeriod' => $isCurrentPeriod,
         ]);
     }
 
@@ -183,6 +223,10 @@ class SelectionController extends Controller
 
     public function store(SelectionRequest $request, Application $application): RedirectResponse
     {
+        if ($application->periode !== config('kartu_hebat.current_period')) {
+            return back()->with('error', 'Penetapan penerima untuk periode lampau telah dikunci dan tidak dapat diubah.');
+        }
+
         $this->authorize('select', $application);
         $data = $request->validated();
         $target = ApplicationStatus::from($data['decision']);

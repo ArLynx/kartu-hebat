@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Blacklist;
 use App\Models\JalurBeasiswa;
 use App\Models\KategoriBeasiswa;
 use App\Models\Pendaftaran;
@@ -46,6 +48,12 @@ class PendaftaranController extends Controller
                 );
         }
 
+        if ($lpjWarning = $this->checkLpjObligation($request->user(), $periode)) {
+            return redirect()
+                ->route('mahasiswa.dashboard')
+                ->with('error_lpj', $lpjWarning);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Kategori Beasiswa
@@ -73,6 +81,13 @@ class PendaftaranController extends Controller
             ->where('aktif', true)
             ->orderBy('urutan')
             ->get();
+
+        if ($kategoriBeasiswas->isEmpty()) {
+            $kategoriBeasiswas = KategoriBeasiswa::query()
+                ->where('aktif', true)
+                ->orderBy('urutan')
+                ->get();
+        }
 
         return view('mahasiswa.pendaftaran.create', [
             'periode' => $periode,
@@ -123,9 +138,7 @@ class PendaftaranController extends Controller
             'kategori_beasiswa_id' => [
                 'required',
                 Rule::exists('kategori_beasiswas', 'id')->where(
-                    fn ($query) => $query
-                        ->where('periode_id', $periode->getKey())
-                        ->where('aktif', true)
+                    fn ($query) => $query->where('aktif', true)
                 ),
             ],
 
@@ -143,6 +156,11 @@ class PendaftaranController extends Controller
         ]);
 
         $userId = $request->user()->getKey();
+        if ($lpjWarning = $this->checkLpjObligation($request->user(), $periode)) {
+            return redirect()
+                ->route('mahasiswa.dashboard')
+                ->with('error_lpj', $lpjWarning);
+        }
 
         $pendaftaran = DB::transaction(
             function () use (
@@ -171,6 +189,31 @@ class PendaftaranController extends Controller
 
                         'status' => 'draft',
                     ]);
+
+                    // Salin data profil lama jika mahasiswa pernah mendaftar pada periode sebelumnya
+                    $previousPendaftaran = Pendaftaran::query()
+                        ->where('user_id', $userId)
+                        ->where('id', '!=', $pendaftaran->id)
+                        ->latest('id')
+                        ->first();
+
+                    if ($previousPendaftaran) {
+                        if (! $pendaftaran->dataPribadi()->exists() && $previousPendaftaran->dataPribadi) {
+                            $data = $previousPendaftaran->dataPribadi->replicate()->toArray();
+                            unset($data['id'], $data['pendaftaran_id'], $data['created_at'], $data['updated_at']);
+                            $pendaftaran->dataPribadi()->create($data);
+                        }
+                        if (! $pendaftaran->orangTua()->exists() && $previousPendaftaran->orangTua) {
+                            $data = $previousPendaftaran->orangTua->replicate()->toArray();
+                            unset($data['id'], $data['pendaftaran_id'], $data['created_at'], $data['updated_at']);
+                            $pendaftaran->orangTua()->create($data);
+                        }
+                        if (! $pendaftaran->pendidikan()->exists() && $previousPendaftaran->pendidikan) {
+                            $data = $previousPendaftaran->pendidikan->replicate()->toArray();
+                            unset($data['id'], $data['pendaftaran_id'], $data['created_at'], $data['updated_at']);
+                            $pendaftaran->pendidikan()->create($data);
+                        }
+                    }
                 }
 
                 if (! $pendaftaran->nomor_pendaftaran) {
@@ -208,5 +251,57 @@ class PendaftaranController extends Controller
             ->aktif()
             ->orderByDesc('tanggal_mulai')
             ->first();
+    }
+
+    private function checkLpjObligation($user, $currentPeriode): ?string
+    {
+        $userNik = $user->profile?->nik
+            ?? Pendaftaran::where('user_id', $user->id)->with('dataPribadi')->get()->pluck('dataPribadi.nik')->filter()->first();
+
+        if ($userNik) {
+            $activeBlacklist = Blacklist::query()->where('nik', $userNik)->where('aktif', true)->first();
+            if ($activeBlacklist) {
+                return 'Mohon maaf, Anda belum dapat melakukan pendaftaran beasiswa pada periode baru. Silakan lengkapi dan unggah berkas Laporan Pertanggungjawaban (LPJ) / bukti pembayaran UKT Anda pada periode sebelumnya melalui menu LPJ Beasiswa terlebih dahulu untuk diverifikasi oleh Admin.';
+            }
+        }
+
+        // Cek otomatis jika pernah diterima pada periode sebelumnya dan LPJ belum disetujui
+        $previousApproved = Pendaftaran::query()
+            ->where('user_id', $user->id)
+            ->where('periode_id', '!=', $currentPeriode->id)
+            ->where(function ($q) {
+                $q->where('status', 'approved')
+                    ->orWhereHas('application', fn ($aq) => $aq->where('status', ApplicationStatus::DITERIMA));
+            })
+            ->with(['periode', 'laporanPertanggungjawaban', 'dataPribadi'])
+            ->latest('id')
+            ->first();
+
+        if ($previousApproved) {
+            $lpj = $previousApproved->laporanPertanggungjawaban;
+            $isLpjApproved = $lpj && $lpj->status === 'disetujui';
+
+            if (! $isLpjApproved) {
+                $nik = $previousApproved->dataPribadi?->nik ?? $userNik;
+                if ($nik) {
+                    Blacklist::query()->firstOrCreate(
+                        [
+                            'nik' => $nik,
+                            'tahun_berlaku' => $previousApproved->periode?->tahun ?? (int) now()->year,
+                        ],
+                        [
+                            'pendaftaran_id' => $previousApproved->id,
+                            'alasan' => 'Menunggu penyelesaian berkas LPJ periode sebelumnya.',
+                            'aktif' => true,
+                            'created_by' => null,
+                        ]
+                    );
+                }
+
+                return 'Mohon maaf, Anda belum dapat melakukan pendaftaran beasiswa pada periode baru. Silakan lengkapi dan unggah berkas Laporan Pertanggungjawaban (LPJ) / bukti pembayaran UKT Anda pada periode sebelumnya melalui menu LPJ Beasiswa terlebih dahulu untuk diverifikasi oleh Admin.';
+            }
+        }
+
+        return null;
     }
 }

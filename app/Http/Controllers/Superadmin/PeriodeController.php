@@ -77,6 +77,8 @@ class PeriodeController extends Controller
             'nama' => ['nullable', 'string', 'max:255'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'tanggal_mulai_lpj' => ['nullable', 'date'],
+            'tanggal_selesai_lpj' => ['nullable', 'date', 'after_or_equal:tanggal_mulai_lpj'],
             'status' => ['required', 'string', Rule::in(['draft', 'aktif', 'ditutup'])],
         ], [
             'tahun.required' => 'Tahun periode wajib diisi.',
@@ -84,6 +86,7 @@ class PeriodeController extends Controller
             'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
             'tanggal_selesai.required' => 'Tanggal selesai wajib diisi.',
             'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
+            'tanggal_selesai_lpj.after_or_equal' => 'Tanggal batas akhir LPJ harus sama atau setelah tanggal mulai LPJ.',
             'status.required' => 'Status periode wajib dipilih.',
             'status.in' => 'Status periode yang dipilih tidak valid.',
         ]);

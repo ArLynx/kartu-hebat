@@ -260,7 +260,7 @@
     $namaAyah = $orangTua?->nama_ayah ?? '-';
     $namaIbu = $orangTua?->nama_ibu ?? '-';
 
-    $tempatSurat = $dataPribadi?->kabupaten ? ucwords(strtolower($dataPribadi->kabupaten)) : 'Puruk Cahu';
+    $tempatSurat = 'Puruk Cahu';
     $tanggalSurat = now()->translatedFormat('d F Y');
 @endphp
 

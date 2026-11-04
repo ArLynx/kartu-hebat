@@ -134,6 +134,7 @@
                         Dinas</x-sidebar-link>
                     <x-sidebar-link :href="route('operator.selection')" :active="request()->routeIs('operator.selection*')" icon="users">Penetapan
                         Penerima</x-sidebar-link>
+                    <x-sidebar-link :href="route('operator.lpj.index')" :active="request()->routeIs('operator.lpj.*')" icon="folder">Monitoring LPJ & Blokir</x-sidebar-link>
                     <a href="{{ route('operator.reports.excel') }}" class="sidebar-link">
                         <x-icon name="download" class="h-5 w-5" />
                         <span>Rekap Seleksi</span>

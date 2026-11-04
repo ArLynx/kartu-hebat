@@ -10,8 +10,15 @@
         <h1 class="mt-2 text-3xl font-extrabold">Rekonsiliasi Hasil Verifikasi</h1>
         <p class="mt-2 text-sm text-slate-600">Konsolidasi keputusan lintas dinas per jalur. Dinas Sosial hanya terlibat pada jalur Tidak Mampu, Dinas Kesehatan hanya pada jalur Disabilitas, dan Parsepor hanya pada jalur Prestasi.</p>
     </div>
-    <form method="GET" class="flex gap-2">
-        <select name="application_type" class="form-input">
+    <form method="GET" class="flex flex-wrap gap-2">
+        @if(isset($availablePeriodes) && $availablePeriodes->count() > 0)
+            <select name="periode" class="form-input" onchange="this.form.submit()">
+                @foreach($availablePeriodes as $p)
+                    <option value="{{ $p }}" @selected($selectedPeriode === $p)>Periode {{ $p }}</option>
+                @endforeach
+            </select>
+        @endif
+        <select name="application_type" class="form-input" onchange="this.form.submit()">
             <option value="">Semua jalur</option>
             @foreach($applicationTypes as $type)
                 <option value="{{ $type->value }}" @selected(request('application_type') === $type->value)>{{ $type->label() }}</option>

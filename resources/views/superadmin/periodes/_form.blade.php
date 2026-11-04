@@ -29,6 +29,23 @@
         @error('tanggal_selesai')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
     </div>
 
+    <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+        <h4 class="text-sm font-bold text-slate-800">Jadwal Pengumpulan LPJ (Laporan Pertanggungjawaban)</h4>
+        <p class="text-xs text-slate-500 mt-0.5">Dapat ditentukan sekarang atau diatur nanti setelah penetapan beasiswa selesai.</p>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="tanggal_mulai_lpj" class="form-label text-xs">Tanggal Mulai LPJ</label>
+                <input id="tanggal_mulai_lpj" name="tanggal_mulai_lpj" type="date" class="form-input" value="{{ old('tanggal_mulai_lpj', isset($periode->tanggal_mulai_lpj) ? $periode->tanggal_mulai_lpj->format('Y-m-d') : '') }}">
+                @error('tanggal_mulai_lpj')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="tanggal_selesai_lpj" class="form-label text-xs">Batas Akhir Pengumpulan LPJ</label>
+                <input id="tanggal_selesai_lpj" name="tanggal_selesai_lpj" type="date" class="form-input" value="{{ old('tanggal_selesai_lpj', isset($periode->tanggal_selesai_lpj) ? $periode->tanggal_selesai_lpj->format('Y-m-d') : '') }}">
+                @error('tanggal_selesai_lpj')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+            </div>
+        </div>
+    </div>
+
     <div class="lg:col-span-2">
         <label for="status" class="form-label">Status Periode <span class="text-red-500">*</span></label>
         <select id="status" name="status" class="form-input" required>

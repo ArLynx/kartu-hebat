@@ -48,6 +48,7 @@ class CompleteStudentSeeder extends Seeder
             $this->unableStudent(),
             $this->disabilityStudent(),
             $this->nonAcademicStudent(),
+            $this->acceptedRecipientStudent(),
         ];
 
         foreach ($students as $student) {
@@ -94,6 +95,10 @@ class CompleteStudentSeeder extends Seeder
             return;
         }
 
+        $pendaftaranStatus = $payload['pendaftaran_status'] ?? 'draft';
+        $applicationStatus = $payload['application_status'] ?? ApplicationStatus::DRAFT;
+        $isSubmitted = $pendaftaranStatus !== 'draft';
+
         $pendaftaran = Pendaftaran::query()->updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -102,8 +107,8 @@ class CompleteStudentSeeder extends Seeder
             [
                 'kategori_beasiswa_id' => $kategori->id,
                 'nomor_pendaftaran' => $payload['nomor_pendaftaran'],
-                'status' => 'draft',
-                'submitted_at' => null,
+                'status' => $pendaftaranStatus,
+                'submitted_at' => $isSubmitted ? now() : null,
                 'review_dikonfirmasi_at' => now(),
                 'prestasi_dikonfirmasi_at' => $payload['application_type'] === ApplicationType::NON_AKADEMIK
                     ? now()
@@ -143,9 +148,9 @@ class CompleteStudentSeeder extends Seeder
                 'nomor_pengajuan' => $payload['nomor_pendaftaran'],
                 'periode' => $periode->nama,
                 'application_type' => $payload['application_type'],
-                'status' => ApplicationStatus::DRAFT,
-                'submitted_at' => null,
-                'locked_at' => null,
+                'status' => $applicationStatus,
+                'submitted_at' => $isSubmitted ? now() : null,
+                'locked_at' => $applicationStatus === ApplicationStatus::DITERIMA ? now() : null,
             ],
         );
 
@@ -608,6 +613,87 @@ class CompleteStudentSeeder extends Seeder
                 ],
             ],
             'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'UKT', 'TRANSKRIP', 'KHS', 'SERTIFIKAT-PRESTASI'],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function acceptedRecipientStudent(): array
+    {
+        return [
+            'email' => 'penerima.beasiswa@kartuhebat.test',
+            'name' => 'Rizky Pratama',
+            'nomor_pendaftaran' => 'KH-2026-LULUS-001',
+            'application_type' => ApplicationType::AKADEMIK,
+            'pendaftaran_status' => 'approved',
+            'application_status' => ApplicationStatus::DITERIMA,
+            'profile' => [
+                'nik' => '6212052345670005',
+                'nim' => '2100011223',
+                'phone' => '081250001005',
+                'universitas' => 'Universitas Palangka Raya',
+                'program_studi' => 'Teknik Sipil',
+                'semester' => 6,
+                'ipk' => 3.85,
+                'disability_type' => null,
+                'disability_grade' => null,
+                'disability_document_number' => null,
+                'alamat' => 'Jl. Jenderal Sudirman No. 10, Puruk Cahu',
+                'village_id' => Village::query()->where('name', 'Beriwit')->value('id'),
+                'status_kependudukan' => 'aktif',
+                'penghasilan_keluarga' => 3800000,
+                'jumlah_tanggungan' => 3,
+                'desil_sosial' => null,
+                'prestasi' => null,
+            ],
+            'data_pribadi' => [
+                'nik' => '6212052345670005',
+                'nomor_kk' => '6212052345679005',
+                'nomor_rekening' => '5678901234',
+                'nama_lengkap' => 'Rizky Pratama',
+                'tempat_lahir' => 'Puruk Cahu',
+                'tanggal_lahir' => '2003-05-12',
+                'jenis_kelamin' => 'L',
+                'agama' => 'Islam',
+                'alamat' => 'Jl. Jenderal Sudirman No. 10, Puruk Cahu',
+                'provinsi' => 'Kalimantan Tengah',
+                'kabupaten' => 'Murung Raya',
+                'kecamatan' => 'Murung',
+                'desa' => 'Beriwit',
+                'kode_pos' => '73911',
+                'no_hp' => '081250001005',
+            ],
+            'pendidikan' => [
+                'nim' => '2100011223',
+                'universitas' => 'Universitas Palangka Raya',
+                'status_perguruan_tinggi' => 'negeri',
+                'fakultas' => 'Fakultas Teknik',
+                'jurusan' => 'Teknik Sipil',
+                'program_studi' => 'Teknik Sipil',
+                'jenjang' => 'S1',
+                'semester' => 6,
+                'ipk' => 3.85,
+                'nominal_ukt' => 3500000,
+                'tahun_masuk' => 2021,
+                'akreditasi_perguruan_tinggi' => 'Baik Sekali',
+                'alamat_perguruan_tinggi' => 'Jl. Yos Sudarso, Palangka Raya, Kalimantan Tengah',
+            ],
+            'orang_tua' => [
+                'nama_ayah' => 'Hendra Pratama',
+                'status_ayah' => 'hidup',
+                'nik_ayah' => '6212050101700009',
+                'pekerjaan_ayah' => 'Wirausaha',
+                'jabatan_ayah' => null,
+                'nama_ibu' => 'Siti Rahmah',
+                'status_ibu' => 'hidup',
+                'nik_ibu' => '6212054101720010',
+                'pekerjaan_ibu' => 'Ibu Rumah Tangga',
+                'jabatan_ibu' => null,
+                'memiliki_wali' => false,
+            ],
+            'prestasis' => [],
+            'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'UKT', 'TRANSKRIP', 'KHS'],
         ];
     }
 }

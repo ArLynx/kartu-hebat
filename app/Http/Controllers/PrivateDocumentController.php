@@ -37,9 +37,7 @@ class PrivateDocumentController extends Controller
             $document->original_name,
             [
                 'Content-Type' => $document->mime_type,
-                'Cache-Control' => 'private, no-store, max-age=0',
-                'Pragma' => 'no-cache',
-                'X-Content-Type-Options' => 'nosniff',
+                'Cache-Control' => 'private, no-cache',
             ],
         );
     }

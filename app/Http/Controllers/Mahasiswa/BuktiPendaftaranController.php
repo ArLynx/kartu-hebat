@@ -18,8 +18,10 @@ class BuktiPendaftaranController extends Controller
      */
     public function index(Request $request): View|RedirectResponse
     {
+        $pendaftaranId = $request->integer('pendaftaran_id');
         $pendaftaran = Pendaftaran::query()
             ->where('user_id', $request->user()->getKey())
+            ->when($pendaftaranId, fn ($q) => $q->where('id', $pendaftaranId))
             ->with([
                 'user',
                 'periode',
@@ -72,8 +74,10 @@ class BuktiPendaftaranController extends Controller
      */
     public function pdf(Request $request)
     {
+        $pendaftaranId = $request->integer('pendaftaran_id');
         $pendaftaran = Pendaftaran::query()
             ->where('user_id', $request->user()->getKey())
+            ->when($pendaftaranId, fn ($q) => $q->where('id', $pendaftaranId))
             ->with([
                 'user',
                 'periode',

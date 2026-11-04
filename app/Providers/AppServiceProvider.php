@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Models\Application;
+use App\Models\Periode;
 use App\Policies\ApplicationPolicy;
 use App\Services\MahasiswaPendaftaranService;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +30,22 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('id');
         Paginator::useTailwind();
         Gate::policy(Application::class, ApplicationPolicy::class);
+
+        try {
+            if (Schema::hasTable('periodes')) {
+                $activePeriod = Periode::query()
+                    ->where('status', 'aktif')
+                    ->latest('id')
+                    ->first();
+
+                if ($activePeriod) {
+                    $activePeriodName = $activePeriod->nama ?: (string) $activePeriod->tahun;
+                    config(['kartu_hebat.current_period' => $activePeriodName]);
+                }
+            }
+        } catch (\Throwable) {
+            // Abaikan jika migrasi database belum selesai
+        }
 
         View::composer('layouts.portal', function ($view): void {
             $user = auth()->user();

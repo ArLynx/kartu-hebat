@@ -295,6 +295,26 @@ class SuperadminMasterDataTest extends TestCase
         $this->assertDatabaseMissing('periodes', ['id' => $periode->id]);
     }
 
+    public function test_superadmin_can_set_and_update_lpj_schedule_on_periode(): void
+    {
+        $superadmin = $this->superadmin();
+
+        $response = $this->actingAs($superadmin)->post(route('superadmin.periodes.store'), [
+            'tahun' => 2026,
+            'nama' => 'Beasiswa Hebat 2026 LPJ Test',
+            'tanggal_mulai' => '2026-02-01',
+            'tanggal_selesai' => '2026-04-30',
+            'tanggal_mulai_lpj' => '2026-05-01',
+            'tanggal_selesai_lpj' => '2026-06-30',
+            'status' => 'aktif',
+        ]);
+
+        $response->assertRedirect(route('superadmin.periodes.index'));
+        $periode = Periode::query()->where('nama', 'Beasiswa Hebat 2026 LPJ Test')->firstOrFail();
+        $this->assertSame('2026-05-01', $periode->tanggal_mulai_lpj?->format('Y-m-d'));
+        $this->assertSame('2026-06-30', $periode->tanggal_selesai_lpj?->format('Y-m-d'));
+    }
+
     private function superadmin(): User
     {
         return User::factory()->create([
