@@ -13,7 +13,10 @@
         @apply bg-slate-50 font-sans text-slate-900 antialiased;
     }
 
-    h1, h2, h3, h4 {
+    h1,
+    h2,
+    h3,
+    h4 {
         @apply font-display text-navy-900;
     }
 
@@ -135,5 +138,27 @@
 @media print {
     .no-print {
         display: none !important;
+    }
+}
+
+/* Optimasi elemen yang dianimasikan */
+[data-hero-visual],
+[data-parallax],
+[data-reveal],
+[data-stagger-card] {
+    backface-visibility: hidden;
+}
+
+/* Hormati preferensi pengurangan gerakan */
+@media (prefers-reduced-motion: reduce) {
+
+    [data-hero-visual],
+    [data-parallax],
+    [data-reveal],
+    [data-stagger-card] {
+        transform: none !important;
+        filter: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 }
