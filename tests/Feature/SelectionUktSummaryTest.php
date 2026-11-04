@@ -155,8 +155,8 @@ class SelectionUktSummaryTest extends TestCase
         $periode = Periode::query()->firstOrCreate(
             ['tahun' => (int) config('kartu_hebat.current_period')],
             [
-                'nama' => 'Periode '.config('kartu_hebat.current_period'),
-                'is_active' => true,
+                'nama' => config('kartu_hebat.current_period'),
+                'status' => 'aktif',
                 'tanggal_mulai' => now()->subDay(),
                 'tanggal_selesai' => now()->addDays(30),
             ],
@@ -186,7 +186,7 @@ class SelectionUktSummaryTest extends TestCase
             'mahasiswa_id' => $student->id,
             'pendaftaran_id' => $pendaftaran->id,
             'nomor_pengajuan' => 'KHM-UKT-'.str_pad((string) $student->id, 6, '0', STR_PAD_LEFT),
-            'periode' => config('kartu_hebat.current_period'),
+            'periode' => $periode->nama,
             'status' => ApplicationStatus::SELEKSI_KABUPATEN,
             'application_type' => $type,
             'submitted_at' => now(),
