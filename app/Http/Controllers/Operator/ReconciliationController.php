@@ -26,8 +26,12 @@ class ReconciliationController extends Controller
         )->filter()->unique()->values();
 
         $activeMasterPeriode = $masterPeriodes->firstWhere('status', 'aktif');
-        $defaultPeriode = $activeMasterPeriode
+        $activePeriodName = $activeMasterPeriode
             ? ($activeMasterPeriode->nama ?: (string) $activeMasterPeriode->tahun)
+            : (string) config('kartu_hebat.current_period');
+
+        $defaultPeriode = $availablePeriodes->contains($activePeriodName)
+            ? $activePeriodName
             : ($availablePeriodes->first() ?? config('kartu_hebat.current_period'));
 
         $selectedPeriode = $request->string('periode')->trim()->toString() ?: $defaultPeriode;

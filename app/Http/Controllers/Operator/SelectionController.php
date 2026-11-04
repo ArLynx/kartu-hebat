@@ -42,7 +42,7 @@ class SelectionController extends Controller
             ? ($activeMasterPeriode->nama ?: (string) $activeMasterPeriode->tahun)
             : (string) config('kartu_hebat.current_period');
 
-        $defaultPeriode = $activeMasterPeriode
+        $defaultPeriode = $availablePeriodes->contains($activePeriodName)
             ? $activePeriodName
             : ($availablePeriodes->first() ?? config('kartu_hebat.current_period'));
 
