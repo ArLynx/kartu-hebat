@@ -288,8 +288,8 @@ class OperatorJalurBeasiswaVisibilityTest extends TestCase
         $periode = Periode::query()->firstOrCreate(
             ['tahun' => (int) config('kartu_hebat.current_period')],
             [
-                'nama' => 'Periode 2026',
-                'is_active' => true,
+                'nama' => config('kartu_hebat.current_period'),
+                'status' => 'aktif',
                 'tanggal_mulai' => now()->subDay(),
                 'tanggal_selesai' => now()->addDays(30),
             ],
@@ -313,7 +313,7 @@ class OperatorJalurBeasiswaVisibilityTest extends TestCase
             'mahasiswa_id' => $student->id,
             'pendaftaran_id' => $pendaftaran->id,
             'nomor_pengajuan' => 'KHM-2026-'.str_pad((string) $student->id, 6, '0', STR_PAD_LEFT),
-            'periode' => config('kartu_hebat.current_period'),
+            'periode' => $periode->nama,
             'status' => $status,
             'application_type' => $type,
             'submitted_at' => now(),
