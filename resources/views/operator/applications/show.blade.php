@@ -15,6 +15,33 @@
 
 <div class="mt-7 grid gap-6 xl:grid-cols-[1fr_360px]">
     <div class="space-y-6">
+        <div
+            class="flex flex-col gap-6"
+            x-data="{
+                previewOpen: false,
+                previewUrl: '',
+                previewDownloadUrl: '',
+                previewName: '',
+                previewMime: '',
+                openPreview(url, downloadUrl, name, mime) {
+                    this.previewUrl = url;
+                    this.previewDownloadUrl = downloadUrl;
+                    this.previewName = name;
+                    this.previewMime = mime;
+                    this.previewOpen = true;
+                    document.body.classList.add('overflow-hidden');
+                },
+                closePreview() {
+                    this.previewOpen = false;
+                    this.previewUrl = '';
+                    this.previewDownloadUrl = '';
+                    this.previewName = '';
+                    this.previewMime = '';
+                    document.body.classList.remove('overflow-hidden');
+                },
+            }"
+            @keydown.escape.window="closePreview()"
+        >
         <section class="card p-6">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
                 <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xl font-extrabold text-brand-700">
@@ -79,34 +106,58 @@
                     <dd class="mt-1 text-sm leading-6 text-slate-900">{{ $application->mahasiswa->profile?->alamat }}, {{ $application->mahasiswa->profile?->village?->display_name }}, Kecamatan {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</dd>
                 </div>
             </dl>
+
+            @php
+                $formulir = $application->pendaftaran?->formulirPendaftaran;
+                $formulirFiles = [
+                    ['label' => 'Surat Permohonan', 'jenis' => 'surat', 'path' => $formulir?->surat_permohonan],
+                    ['label' => 'Pakta Integritas', 'jenis' => 'pakta', 'path' => $formulir?->pakta_integritas],
+                ];
+            @endphp
+
+            <div class="mt-6 border-t border-slate-200 pt-6">
+                <div class="flex flex-col gap-1">
+                    <h3 class="text-sm font-bold text-slate-900">Formulir Unggahan Mahasiswa</h3>
+                    <p class="text-xs text-slate-500">Surat Permohonan dan Pakta Integritas yang diunggah pada tahap Review.</p>
+                </div>
+
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    @foreach($formulirFiles as $file)
+                        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-900">{{ $file['label'] }}</p>
+                                <p class="mt-0.5 text-xs {{ $file['path'] ? 'font-medium text-emerald-700' : 'text-slate-500' }}">
+                                    {{ $file['path'] ? 'Sudah diunggah (PDF)' : 'Belum diunggah' }}
+                                </p>
+                            </div>
+
+                            @if($file['path'])
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        class="btn-secondary !px-3 !py-2"
+                                        @click="openPreview(
+                                            {{ Js::from(route('operator.applications.formulir.lihat', [$application, $file['jenis']])) }},
+                                            {{ Js::from(route('operator.applications.formulir.download', [$application, $file['jenis']])) }},
+                                            {{ Js::from($file['label']) }},
+                                            'application/pdf'
+                                        )"
+                                    >
+                                        <x-icon name="eye" class="h-4 w-4" />
+                                        Lihat
+                                    </button>
+                                    <a href="{{ route('operator.applications.formulir.download', [$application, $file['jenis']]) }}" class="btn-secondary !px-3 !py-2">
+                                        <x-icon name="download" class="h-4 w-4" />
+                                        Unduh
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
         </section>
 
-        <div
-            x-data="{
-                previewOpen: false,
-                previewUrl: '',
-                previewDownloadUrl: '',
-                previewName: '',
-                previewMime: '',
-                openPreview(url, downloadUrl, name, mime) {
-                    this.previewUrl = url;
-                    this.previewDownloadUrl = downloadUrl;
-                    this.previewName = name;
-                    this.previewMime = mime;
-                    this.previewOpen = true;
-                    document.body.classList.add('overflow-hidden');
-                },
-                closePreview() {
-                    this.previewOpen = false;
-                    this.previewUrl = '';
-                    this.previewDownloadUrl = '';
-                    this.previewName = '';
-                    this.previewMime = '';
-                    document.body.classList.remove('overflow-hidden');
-                },
-            }"
-            @keydown.escape.window="closePreview()"
-        >
             <section class="card overflow-hidden">
                 <div class="border-b border-slate-200 px-6 py-5">
                     <h2 class="text-xl font-bold">Dokumen Persyaratan</h2>

@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Mahasiswa\BuktiPendaftaranController;
 use App\Http\Controllers\Mahasiswa\DashboardController as MahasiswaDashboardController;
@@ -15,6 +18,7 @@ use App\Http\Controllers\Mahasiswa\ReviewController;
 use App\Http\Controllers\Mahasiswa\SubmitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Operator\ApplicationController as OperatorApplicationController;
+use App\Http\Controllers\Operator\ApplicationFormulirController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\DocumentVerificationController;
 use App\Http\Controllers\Operator\ReconciliationController;
@@ -32,9 +36,6 @@ use App\Http\Controllers\Superadmin\LogActivityController;
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
 use App\Http\Controllers\Superadmin\PeriodeController as SuperadminPeriodeController;
 use App\Http\Controllers\TwoFactorSetupController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingController::class)->name('home');
@@ -181,6 +182,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                 Route::get('/dashboard', [OperatorDashboardController::class, 'index'])->name('dashboard');
                 Route::get('/pengajuan', [OperatorApplicationController::class, 'index'])->name('applications.index');
                 Route::get('/pengajuan/{application}', [OperatorApplicationController::class, 'show'])->name('applications.show');
+                Route::get('/pengajuan/{application}/formulir/{jenis}/lihat', [ApplicationFormulirController::class, 'preview'])
+                    ->name('applications.formulir.lihat')
+                    ->whereIn('jenis', ['surat', 'pakta']);
+                Route::get('/pengajuan/{application}/formulir/{jenis}/unduh', [ApplicationFormulirController::class, 'download'])
+                    ->name('applications.formulir.download')
+                    ->whereIn('jenis', ['surat', 'pakta']);
                 Route::post('/pengajuan/{application}/verifikasi', [VerificationController::class, 'store'])->name('applications.verify');
                 Route::post('/pengajuan/{application}/dokumen/{document}/penilaian', [DocumentVerificationController::class, 'store'])
                     ->name('applications.documents.verify');

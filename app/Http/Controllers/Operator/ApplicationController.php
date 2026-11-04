@@ -109,6 +109,7 @@ class ApplicationController extends Controller
             'selection',
             'pendaftaran.prestasis',
             'pendaftaran.jalurBeasiswa',
+            'pendaftaran.formulirPendaftaran',
         ]);
 
         $verifications = $application->documentVerifications;
