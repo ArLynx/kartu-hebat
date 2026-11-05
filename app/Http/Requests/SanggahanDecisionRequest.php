@@ -10,7 +10,7 @@ class SanggahanDecisionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isOperator() ?? false;
+        return $this->user()?->hasRole('operator_kabupaten') ?? false;
     }
 
     /**

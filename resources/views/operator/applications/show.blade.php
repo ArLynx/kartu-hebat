@@ -12,9 +12,11 @@
         @if($application->hasGrantedSanggahan())
             <div class="mt-3 flex flex-wrap items-center gap-2">
                 <span class="status-chip status-success">Hasil Sanggahan</span>
-                <a href="{{ route('operator.sanggahan.show', $application->sanggahan) }}" class="text-sm font-semibold text-brand-600">
-                    Lihat detail sanggahan →
-                </a>
+                @if(auth()->user()->hasRole('operator_kabupaten'))
+                    <a href="{{ route('operator.sanggahan.show', $application->sanggahan) }}" class="text-sm font-semibold text-brand-600">
+                        Lihat detail sanggahan →
+                    </a>
+                @endif
             </div>
         @endif
     </div>

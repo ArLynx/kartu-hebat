@@ -4,11 +4,6 @@
 @section('header', 'Penetapan Calon Penerima')
 
 @section('content')
-@php
-    $hasReopenedSanggahan = $applications->getCollection()->contains(
-        fn ($application) => $application->hasGrantedSanggahan(),
-    );
-@endphp
 <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
     <div>
         <p class="section-kicker">Seleksi per jalur</p>

@@ -117,6 +117,35 @@ class Application extends Model
     }
 
     /**
+     * Application dibuka kembali untuk dinas hanya bila sanggahannya
+     * dikabulkan dan periode application masih aktif.
+     */
+    public function isReopenedForVerification(): bool
+    {
+        return $this->hasGrantedSanggahan()
+            && $this->resolvedPeriode()?->status === 'aktif';
+    }
+
+    /**
+     * Antrean verifikasi: application pada periode aktif aplikasi, ditambah
+     * application periode lain yang dibuka kembali lewat sanggahan.
+     */
+    public function scopeWhereOpenForVerification(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where('applications.periode', config('kartu_hebat.current_period'))
+                ->orWhere(function (Builder $query): void {
+                    $query
+                        ->whereHas('sanggahan', fn (Builder $sanggahan) => $sanggahan
+                            ->where('status', SanggahanStatus::DIKABULKAN->value))
+                        ->whereHas('pendaftaran.periode', fn (Builder $periode) => $periode
+                            ->where('status', 'aktif'));
+                });
+        });
+    }
+
+    /**
      * Gerbang verifikasi dinas: tanggal pendaftaran periode masih berjalan,
      * atau application dibuka kembali lewat sanggahan yang dikabulkan selama
      * periodenya masih aktif.
@@ -137,15 +166,14 @@ class Application extends Model
             $isRegistrationOpen = $periode->tanggal_mulai?->lte($today)
                 && $periode->tanggal_selesai?->gte($today);
 
-            return $isRegistrationOpen || $this->hasGrantedSanggahan();
+            return $isRegistrationOpen || $this->isReopenedForVerification();
         }
 
         if ($this->periode === config('kartu_hebat.current_period')) {
             return true;
         }
 
-        return $this->hasGrantedSanggahan()
-            && $this->resolvedPeriode()?->status === 'aktif';
+        return $this->isReopenedForVerification();
     }
 
     /**

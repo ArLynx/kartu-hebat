@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Operator;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\SanggahanStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SelectionRequest;
 use App\Models\Application;
@@ -148,6 +149,11 @@ class SelectionController extends Controller
 
         $selectedJalur = $selectedJalurId ? $jalurBeasiswas->firstWhere('id', $selectedJalurId) : null;
 
+        $hasReopenedSanggahan = (clone $query)
+            ->whereHas('sanggahan', fn ($sanggahan) => $sanggahan
+                ->where('status', SanggahanStatus::DIKABULKAN->value))
+            ->exists();
+
         return view('operator.selection', [
             'applications' => $query
                 ->leftJoin('selections', 'selections.application_id', '=', 'applications.id')
@@ -183,6 +189,7 @@ class SelectionController extends Controller
             'selectedPeriode' => $selectedPeriode,
             'statusFilter' => $statusFilter,
             'isCurrentPeriod' => $isCurrentPeriod,
+            'hasReopenedSanggahan' => $hasReopenedSanggahan,
         ]);
     }
 

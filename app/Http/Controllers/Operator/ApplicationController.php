@@ -19,7 +19,7 @@ class ApplicationController extends Controller
         $user = $request->user();
         $query = Application::query()
             ->visibleTo($user)
-            ->where('periode', config('kartu_hebat.current_period'))
+            ->whereOpenForVerification()
             ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
             ->whereNot('status', ApplicationStatus::DRAFT->value);
 
@@ -57,7 +57,7 @@ class ApplicationController extends Controller
 
         $baseCountQuery = Application::query()
             ->visibleTo($user)
-            ->where('applications.periode', config('kartu_hebat.current_period'))
+            ->whereOpenForVerification()
             ->whereNot('applications.status', ApplicationStatus::DRAFT->value);
 
         if ($track = $user->role->verifiedTrack()) {

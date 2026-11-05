@@ -190,29 +190,31 @@
                         Keputusan sanggahan bersifat final dan tidak dapat diubah.
                     </p>
                 @else
-                    <form method="POST" action="{{ route('operator.sanggahan.decide', $sanggahan) }}" class="mt-5 space-y-4">
+                    <form
+                        method="POST"
+                        action="{{ route('operator.sanggahan.decide', $sanggahan) }}"
+                        class="mt-5 space-y-4"
+                        x-data
+                        @submit="if (! confirm('Keputusan sanggahan bersifat final dan tidak dapat diubah. Lanjutkan?')) { $event.preventDefault() }"
+                    >
                         @csrf
 
                         <div class="space-y-3">
-                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50">
-                                <input type="radio" name="decision" value="{{ \App\Enums\SanggahanStatus::DIKABULKAN->value }}" class="mt-1 text-emerald-600 focus:ring-emerald-500" required @checked(old('decision') === \App\Enums\SanggahanStatus::DIKABULKAN->value)>
-                                <span>
-                                    <span class="block text-sm font-semibold text-slate-900">Kabulkan Sanggahan</span>
-                                    <span class="mt-1 block text-xs leading-5 text-slate-500">
-                                        Keputusan TMS dinas terkait dianulir dan pengajuan dikembalikan untuk verifikasi ulang.
-                                    </span>
-                                </span>
-                            </label>
+                            <x-sanggahan.decision-option
+                                :value="\App\Enums\SanggahanStatus::DIKABULKAN->value"
+                                label="Kabulkan Sanggahan"
+                                description="Keputusan TMS dinas terkait dianulir dan pengajuan dikembalikan untuk verifikasi ulang."
+                                tone="success"
+                                :checked="old('decision') === \App\Enums\SanggahanStatus::DIKABULKAN->value"
+                            />
 
-                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50">
-                                <input type="radio" name="decision" value="{{ \App\Enums\SanggahanStatus::DITOLAK->value }}" class="mt-1 text-rose-600 focus:ring-rose-500" required @checked(old('decision') === \App\Enums\SanggahanStatus::DITOLAK->value)>
-                                <span>
-                                    <span class="block text-sm font-semibold text-slate-900">Tolak Sanggahan</span>
-                                    <span class="mt-1 block text-xs leading-5 text-slate-500">
-                                        Keputusan TMS dipertahankan dan bersifat final.
-                                    </span>
-                                </span>
-                            </label>
+                            <x-sanggahan.decision-option
+                                :value="\App\Enums\SanggahanStatus::DITOLAK->value"
+                                label="Tolak Sanggahan"
+                                description="Keputusan TMS dipertahankan dan bersifat final."
+                                tone="danger"
+                                :checked="old('decision') === \App\Enums\SanggahanStatus::DITOLAK->value"
+                            />
                         </div>
 
                         <div>
@@ -227,7 +229,7 @@
                             <p class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</p>
                         @enderror
 
-                        <button type="submit" class="btn-primary w-full justify-center" onclick="return confirm('Keputusan sanggahan bersifat final dan tidak dapat diubah. Lanjutkan?')">
+                        <button type="submit" class="btn-primary w-full justify-center">
                             Simpan Keputusan
                         </button>
                     </form>

@@ -568,6 +568,35 @@ class OperatorSanggahanDecisionTest extends TestCase
             ->assertDontSee('Hasil Sanggahan');
     }
 
+    public function test_reopened_application_appears_in_the_agency_queue_from_a_historical_period(): void
+    {
+        $periode = $this->periode([
+            'tahun' => 2025,
+            'nama' => 'Periode Beasiswa 2025',
+            'tanggal_mulai' => '2025-01-01',
+            'tanggal_selesai' => '2025-10-31',
+            'tanggal_mulai_sanggah' => '2025-11-10',
+            'tanggal_selesai_sanggah' => '2025-11-12',
+        ]);
+
+        $student = $this->student();
+        $application = $this->tmsApplication($student, $periode);
+        $this->sanggahanFor($application, SanggahanStatus::DIKABULKAN, attributes: [
+            'catatan_keputusan' => 'Sanggahan dikabulkan.',
+            'decided_at' => now(),
+        ]);
+        $application->update(['status' => ApplicationStatus::VERIFIKASI_DINAS]);
+
+        $control = $this->tmsApplication($this->student('Mahasiswa Tanpa Sanggahan'), $periode);
+        $control->update(['status' => ApplicationStatus::VERIFIKASI_DINAS]);
+
+        $this->actingAs($this->agencyOperator(UserRole::OPERATOR_DUKCAPIL))
+            ->get(route('operator.applications.index'))
+            ->assertOk()
+            ->assertSee($application->nomor_pengajuan)
+            ->assertDontSee($control->nomor_pengajuan);
+    }
+
     public function test_pending_sanggahan_detail_offers_kabul_and_tolak_form(): void
     {
         $operator = $this->kabupatenOperator($this->mainKabupaten());

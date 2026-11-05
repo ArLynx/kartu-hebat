@@ -232,7 +232,7 @@ class AgencyVerificationService
         ?float $score = null,
         ?int $desil = null,
     ): Application {
-        if (! $this->isActiveApplicationPeriod($application)) {
+        if (! $application->isVerificationWindowOpen()) {
             throw ValidationException::withMessages([
                 'decision' => 'Pengajuan periode historis tidak dapat diverifikasi ulang.',
             ]);
@@ -271,7 +271,11 @@ class AgencyVerificationService
                 ]);
 
                 if ($target === ApplicationStatus::SELEKSI_KABUPATEN) {
-                    $this->scoring->recalculateRanking($operator->kabupaten_id, applicationType: $application->application_type);
+                    $this->scoring->recalculateRanking(
+                        $operator->kabupaten_id,
+                        $application->periode,
+                        applicationType: $application->application_type,
+                    );
                 }
 
                 $this->log(
@@ -379,16 +383,6 @@ class AgencyVerificationService
                 'document_verification' => 'Penilaian dokumen hanya dapat diubah saat aplikasi berada pada tahap penilaian ini.',
             ]);
         }
-    }
-
-    /**
-     * Periode verifikasi dianggap berjalan bila tanggal pendaftaran masih
-     * berlangsung, atau bila application dibuka kembali lewat sanggahan yang
-     * dikabulkan selama periodenya masih aktif.
-     */
-    private function isActiveApplicationPeriod(Application $application): bool
-    {
-        return $application->isVerificationWindowOpen();
     }
 
     private function notifyStudent(Application $application, string $title, string $message): void

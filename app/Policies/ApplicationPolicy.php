@@ -58,10 +58,8 @@ class ApplicationPolicy
         }
 
         $isCurrentPeriod = $application->periode === config('kartu_hebat.current_period');
-        $isReopenedBySanggahan = $application->hasGrantedSanggahan()
-            && $application->resolvedPeriode()?->status === 'aktif';
 
-        if (! $isCurrentPeriod && ! $isReopenedBySanggahan) {
+        if (! $isCurrentPeriod && ! $application->isReopenedForVerification()) {
             return false;
         }
 
