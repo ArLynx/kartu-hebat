@@ -107,6 +107,7 @@ class ApplicationController extends Controller
             'verificationLogs.actor',
             'scores.criterion',
             'selection',
+            'sanggahan',
             'pendaftaran.prestasis',
             'pendaftaran.jalurBeasiswa',
             'pendaftaran.formulirPendaftaran',

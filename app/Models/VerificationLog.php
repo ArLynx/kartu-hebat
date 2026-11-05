@@ -32,6 +32,8 @@ class VerificationLog extends Model
         return match ($this->action) {
             'submitted' => 'Pengajuan dikirim',
             'sanggahan_submitted' => 'Sanggahan diajukan',
+            'sanggahan_granted' => 'Sanggahan dikabulkan',
+            'sanggahan_rejected' => 'Sanggahan ditolak',
             'verification_MS' => 'Keputusan MS',
             'verification_TMS' => 'Keputusan TMS',
             'agency_verification_MS' => 'Penilaian dinas MS',

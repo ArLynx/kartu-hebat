@@ -64,6 +64,7 @@ class SelectionController extends Controller
             ->with([
                 'mahasiswa.profile.village.kecamatan',
                 'selection',
+                'sanggahan',
                 'scores.criterion',
                 'pendaftaran.jalurBeasiswa',
                 'pendaftaran.pendidikan',
@@ -223,7 +224,9 @@ class SelectionController extends Controller
 
     public function store(SelectionRequest $request, Application $application): RedirectResponse
     {
-        if ($application->periode !== config('kartu_hebat.current_period')) {
+        $isReopenedBySanggahan = $application->loadMissing('sanggahan')->hasGrantedSanggahan();
+
+        if ($application->periode !== config('kartu_hebat.current_period') && ! $isReopenedBySanggahan) {
             return back()->with('error', 'Penetapan penerima untuk periode lampau telah dikunci dan tidak dapat diubah.');
         }
 

@@ -190,9 +190,47 @@
                         Keputusan sanggahan bersifat final dan tidak dapat diubah.
                     </p>
                 @else
-                    <p class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
-                        Sanggahan masih menunggu keputusan. Formulir keputusan akan tersedia pada tahap berikutnya.
-                    </p>
+                    <form method="POST" action="{{ route('operator.sanggahan.decide', $sanggahan) }}" class="mt-5 space-y-4">
+                        @csrf
+
+                        <div class="space-y-3">
+                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50">
+                                <input type="radio" name="decision" value="{{ \App\Enums\SanggahanStatus::DIKABULKAN->value }}" class="mt-1 text-emerald-600 focus:ring-emerald-500" required @checked(old('decision') === \App\Enums\SanggahanStatus::DIKABULKAN->value)>
+                                <span>
+                                    <span class="block text-sm font-semibold text-slate-900">Kabulkan Sanggahan</span>
+                                    <span class="mt-1 block text-xs leading-5 text-slate-500">
+                                        Keputusan TMS dinas terkait dianulir dan pengajuan dikembalikan untuk verifikasi ulang.
+                                    </span>
+                                </span>
+                            </label>
+
+                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50">
+                                <input type="radio" name="decision" value="{{ \App\Enums\SanggahanStatus::DITOLAK->value }}" class="mt-1 text-rose-600 focus:ring-rose-500" required @checked(old('decision') === \App\Enums\SanggahanStatus::DITOLAK->value)>
+                                <span>
+                                    <span class="block text-sm font-semibold text-slate-900">Tolak Sanggahan</span>
+                                    <span class="mt-1 block text-xs leading-5 text-slate-500">
+                                        Keputusan TMS dipertahankan dan bersifat final.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <label for="catatan_keputusan" class="form-label">Catatan Keputusan</label>
+                            <textarea id="catatan_keputusan" name="catatan_keputusan" rows="5" class="form-input" required maxlength="2000" placeholder="Wajib diisi untuk keputusan kabul maupun tolak.">{{ old('catatan_keputusan') }}</textarea>
+                            @error('catatan_keputusan')
+                                <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        @error('decision')
+                            <p class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</p>
+                        @enderror
+
+                        <button type="submit" class="btn-primary w-full justify-center" onclick="return confirm('Keputusan sanggahan bersifat final dan tidak dapat diubah. Lanjutkan?')">
+                            Simpan Keputusan
+                        </button>
+                    </form>
                 @endif
             </section>
 

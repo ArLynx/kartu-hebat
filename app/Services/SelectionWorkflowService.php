@@ -394,6 +394,7 @@ class SelectionWorkflowService
 
             $this->scoring->recalculateRanking(
                 $operator->kabupaten_id,
+                $application->periode,
                 applicationType: $application->application_type,
             );
 
@@ -406,7 +407,7 @@ class SelectionWorkflowService
         $acceptedCount = Selection::query()
             ->whereHas('application', fn ($query) => $query
                 ->visibleTo($operator)
-                ->where('periode', config('kartu_hebat.current_period'))
+                ->where('periode', $application->periode)
                 ->where('application_type', $application->application_type->value))
             ->where('manual_decision', ApplicationStatus::DITERIMA->value)
             ->when($existingSelection, fn ($query) => $query->where('id', '!=', $existingSelection->id))

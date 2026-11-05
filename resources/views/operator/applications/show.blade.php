@@ -9,6 +9,14 @@
         <a href="{{ route('operator.applications.index') }}" class="text-sm font-semibold text-brand-600">← Kembali ke antrean</a>
         <h1 class="mt-3 text-3xl font-extrabold">Verifikasi Dokumen Mahasiswa</h1>
         <p class="mt-2 text-sm text-slate-600">{{ $application->nomor_pengajuan }} · Jalur {{ $application->application_type?->label() ?? 'belum dipilih' }} @if($application->pendaftaran?->jalurBeasiswa) · {{ $application->pendaftaran->jalurBeasiswa->nama }} @endif</p>
+        @if($application->hasGrantedSanggahan())
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="status-chip status-success">Hasil Sanggahan</span>
+                <a href="{{ route('operator.sanggahan.show', $application->sanggahan) }}" class="text-sm font-semibold text-brand-600">
+                    Lihat detail sanggahan →
+                </a>
+            </div>
+        @endif
     </div>
     <x-status-badge :status="$application->status" />
 </div>

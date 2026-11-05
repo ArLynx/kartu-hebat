@@ -53,10 +53,15 @@ class ApplicationPolicy
 
     public function verify(User $user, Application $application): bool
     {
-        if (
-            ! $this->view($user, $application)
-            || $application->periode !== config('kartu_hebat.current_period')
-        ) {
+        if (! $this->view($user, $application)) {
+            return false;
+        }
+
+        $isCurrentPeriod = $application->periode === config('kartu_hebat.current_period');
+        $isReopenedBySanggahan = $application->hasGrantedSanggahan()
+            && $application->resolvedPeriode()?->status === 'aktif';
+
+        if (! $isCurrentPeriod && ! $isReopenedBySanggahan) {
             return false;
         }
 
@@ -79,7 +84,8 @@ class ApplicationPolicy
     {
         return $this->view($user, $application)
             && $user->role === UserRole::OPERATOR_KABUPATEN
-            && $application->periode === config('kartu_hebat.current_period')
+            && ($application->periode === config('kartu_hebat.current_period')
+                || $application->hasGrantedSanggahan())
             && in_array($application->status, [
                 ApplicationStatus::SELEKSI_KABUPATEN,
                 ApplicationStatus::DITERIMA,
@@ -90,5 +96,11 @@ class ApplicationPolicy
     public function submitSanggahan(User $user, Application $application): bool
     {
         return $this->sanggahanService->ineligibilityReason($application, $user) === null;
+    }
+
+    public function decideSanggahan(User $user, Application $application): bool
+    {
+        return $this->view($user, $application)
+            && $user->role === UserRole::OPERATOR_KABUPATEN;
     }
 }

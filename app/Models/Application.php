@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\SanggahanStatus;
 use App\Enums\UserRole;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
@@ -105,6 +106,46 @@ class Application extends Model
     public function sanggahan(): HasOne
     {
         return $this->hasOne(Sanggahan::class);
+    }
+
+    /**
+     * Apakah application ini pernah mendapat sanggahan yang dikabulkan.
+     */
+    public function hasGrantedSanggahan(): bool
+    {
+        return $this->sanggahan?->status === SanggahanStatus::DIKABULKAN;
+    }
+
+    /**
+     * Gerbang verifikasi dinas: tanggal pendaftaran periode masih berjalan,
+     * atau application dibuka kembali lewat sanggahan yang dikabulkan selama
+     * periodenya masih aktif.
+     */
+    public function isVerificationWindowOpen(): bool
+    {
+        $this->loadMissing(['pendaftaran.periode', 'sanggahan']);
+
+        if ($this->pendaftaran_id) {
+            $periode = $this->pendaftaran?->periode;
+
+            if (! $periode || $periode->status !== 'aktif') {
+                return false;
+            }
+
+            $today = today();
+
+            $isRegistrationOpen = $periode->tanggal_mulai?->lte($today)
+                && $periode->tanggal_selesai?->gte($today);
+
+            return $isRegistrationOpen || $this->hasGrantedSanggahan();
+        }
+
+        if ($this->periode === config('kartu_hebat.current_period')) {
+            return true;
+        }
+
+        return $this->hasGrantedSanggahan()
+            && $this->resolvedPeriode()?->status === 'aktif';
     }
 
     /**

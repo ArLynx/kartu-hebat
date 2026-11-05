@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Operator;
 use App\Enums\DocumentVerificationResult;
 use App\Enums\SanggahanStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SanggahanDecisionRequest;
 use App\Models\Periode;
 use App\Models\Sanggahan;
 use App\Services\AgencyVerificationService;
+use App\Services\SanggahanService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -103,5 +106,26 @@ class SanggahanController extends Controller
             'rejectedDocuments' => $rejectedDocuments,
             'documentVerificationRound' => $currentRound,
         ]);
+    }
+
+    public function decide(
+        SanggahanDecisionRequest $request,
+        Sanggahan $sanggahan,
+        SanggahanService $sanggahanService,
+    ): RedirectResponse {
+        $sanggahan->loadMissing('application');
+
+        $this->authorize('decideSanggahan', $sanggahan->application);
+
+        $sanggahanService->decide(
+            $sanggahan,
+            $request->user(),
+            SanggahanStatus::from($request->validated('decision')),
+            $request->validated('catatan_keputusan'),
+        );
+
+        return redirect()
+            ->route('operator.sanggahan.show', $sanggahan)
+            ->with('success', 'Keputusan sanggahan berhasil disimpan dan bersifat final.');
     }
 }

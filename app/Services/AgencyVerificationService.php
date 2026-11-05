@@ -381,20 +381,14 @@ class AgencyVerificationService
         }
     }
 
+    /**
+     * Periode verifikasi dianggap berjalan bila tanggal pendaftaran masih
+     * berlangsung, atau bila application dibuka kembali lewat sanggahan yang
+     * dikabulkan selama periodenya masih aktif.
+     */
     private function isActiveApplicationPeriod(Application $application): bool
     {
-        if ($application->pendaftaran_id) {
-            $application->loadMissing('pendaftaran.periode');
-
-            $period = $application->pendaftaran?->periode;
-            $today = today();
-
-            return $period?->status === 'aktif'
-                && $period->tanggal_mulai?->lte($today)
-                && $period->tanggal_selesai?->gte($today);
-        }
-
-        return $application->periode === config('kartu_hebat.current_period');
+        return $application->isVerificationWindowOpen();
     }
 
     private function notifyStudent(Application $application, string $title, string $message): void
