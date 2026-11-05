@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MasaSanggahStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +16,8 @@ class Periode extends Model
         'tanggal_selesai',
         'tanggal_mulai_lpj',
         'tanggal_selesai_lpj',
+        'tanggal_mulai_sanggah',
+        'tanggal_selesai_sanggah',
         'status',
     ];
 
@@ -25,7 +28,24 @@ class Periode extends Model
             'tanggal_selesai' => 'date',
             'tanggal_mulai_lpj' => 'date',
             'tanggal_selesai_lpj' => 'date',
+            'tanggal_mulai_sanggah' => 'date',
+            'tanggal_selesai_sanggah' => 'date',
         ];
+    }
+
+    public function masaSanggahStatus(): MasaSanggahStatus
+    {
+        if (! $this->tanggal_mulai_sanggah || ! $this->tanggal_selesai_sanggah) {
+            return MasaSanggahStatus::BELUM_DIJADWALKAN;
+        }
+
+        if (today()->betweenIncluded($this->tanggal_mulai_sanggah, $this->tanggal_selesai_sanggah)) {
+            return MasaSanggahStatus::SEDANG_BERLANGSUNG;
+        }
+
+        return today()->lt($this->tanggal_mulai_sanggah)
+            ? MasaSanggahStatus::BELUM_DIMULAI
+            : MasaSanggahStatus::TELAH_BERAKHIR;
     }
 
     public function isLpjOpen(): bool

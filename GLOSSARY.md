@@ -19,6 +19,14 @@ _Avoid_: Tipe pengajuan, track
 **Keputusan Verifikasi (MS/TMS)**:
 Hasil tunggal seorang operator dinas terhadap sebuah application — MS (Memenuhi Syarat) meneruskan, TMS (Tidak Memenuhi Syarat) final menolak. Tidak ada keputusan BTL. Seluruh dokumen wajib dinilai pada checklist berkas sebelum keputusan dapat dikirimkan.
 
+**Masa Sanggah**:
+Jendela waktu milik sebuah periode untuk mengajukan sanggahan atas keputusan TMS. Satu periode memiliki paling banyak satu jendela, yang boleh belum dijadwalkan.
+_Avoid_: Masa banding, periode sanggah
+
+**Sanggahan**:
+Keberatan tertulis mahasiswa atas keputusan TMS pada satu application miliknya, diajukan paling banyak satu kali.
+_Avoid_: Banding, protes, keberatan
+
 **Verifikasi Lintas Dinas**:
 Tahap verifikasi di mana dinas berwenang memverifikasi berkas dan menetapkan keputusan secara paralel: tiga dinas wajib umum (Dukcapil, Pendidikan, BKPSDM), ditambah Dinas Sosial untuk jalur Tidak Mampu, Dinas Kesehatan (Dinkes) untuk jalur Disabilitas, dan Parsepor untuk jalur Non-Akademik/Prestasi. Dikelola oleh modul mendalam `AgencyVerificationService` yang mengonsolidasikan autosave penilaian checklist dokumen, penegakan kewajiban penilaian berkas sebelum submit keputusan, pelacakan putaran revisi (`round`), mutasi data profil terverifikasi (desil sosial dan status kependudukan), hingga konsensus lintas dinas. Semua dinas wajib harus memutuskan MS agar aplikasi berlanjut ke Seleksi Kabupaten; jika ada satu dinas memutuskan TMS, aplikasi langsung menjadi TMS.
 
