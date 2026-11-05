@@ -315,6 +315,86 @@ class SuperadminMasterDataTest extends TestCase
         $this->assertSame('2026-06-30', $periode->tanggal_selesai_lpj?->format('Y-m-d'));
     }
 
+    public function test_superadmin_can_filter_kategori_beasiswa(): void
+    {
+        $superadmin = $this->superadmin();
+
+        $p2026 = Periode::create([
+            'tahun' => 2026,
+            'nama' => 'Periode 2026',
+            'tanggal_mulai' => '2026-01-01',
+            'tanggal_selesai' => '2026-06-30',
+            'status' => 'ditutup',
+        ]);
+
+        $p2027 = Periode::create([
+            'tahun' => 2027,
+            'nama' => 'Periode 2027',
+            'tanggal_mulai' => '2027-01-01',
+            'tanggal_selesai' => '2027-06-30',
+            'status' => 'aktif',
+        ]);
+
+        KategoriBeasiswa::create([
+            'periode_id' => $p2026->id,
+            'kode' => 'KAT-2026-AKAD',
+            'application_type' => ApplicationType::AKADEMIK,
+            'nama' => 'Akademik 2026 Lama',
+            'kuota' => 100,
+            'aktif' => false,
+            'urutan' => 1,
+        ]);
+
+        KategoriBeasiswa::create([
+            'periode_id' => $p2027->id,
+            'kode' => 'KAT-2027-AKAD',
+            'application_type' => ApplicationType::AKADEMIK,
+            'nama' => 'Akademik 2027 Baru',
+            'kuota' => 200,
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+
+        // Default tanpa query: otomatis tampil periode aktif (2027)
+        $response = $this->actingAs($superadmin)->get(route('superadmin.kategori-beasiswa.index'));
+        $response->assertOk();
+        $response->assertSee('Akademik 2027 Baru');
+        $response->assertDontSee('Akademik 2026 Lama');
+
+        // Filter by periode_id = all: menampilkan semua periode
+        $response = $this->actingAs($superadmin)->get(route('superadmin.kategori-beasiswa.index', [
+            'periode_id' => 'all',
+        ]));
+        $response->assertOk();
+        $response->assertSee('Akademik 2027 Baru');
+        $response->assertSee('Akademik 2026 Lama');
+
+        // Filter by periode 2026
+        $response = $this->actingAs($superadmin)->get(route('superadmin.kategori-beasiswa.index', [
+            'periode_id' => $p2026->id,
+        ]));
+        $response->assertOk();
+        $response->assertSee('Akademik 2026 Lama');
+        $response->assertDontSee('Akademik 2027 Baru');
+
+        // Filter by status active
+        $response = $this->actingAs($superadmin)->get(route('superadmin.kategori-beasiswa.index', [
+            'status' => 'active',
+        ]));
+        $response->assertOk();
+        $response->assertSee('Akademik 2027 Baru');
+        $response->assertDontSee('Akademik 2026 Lama');
+
+        // Filter by search
+        $response = $this->actingAs($superadmin)->get(route('superadmin.kategori-beasiswa.index', [
+            'periode_id' => 'all',
+            'search' => 'KAT-2026',
+        ]));
+        $response->assertOk();
+        $response->assertSee('Akademik 2026 Lama');
+        $response->assertDontSee('Akademik 2027 Baru');
+    }
+
     private function superadmin(): User
     {
         return User::factory()->create([

@@ -503,18 +503,18 @@
             <div data-stagger="announcements" class="mx-auto mt-12 max-w-4xl space-y-4">
 
                 @forelse($announcements as $announcement)
-                    <article data-stagger-card
-                        class="group flex items-center gap-5 rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_15px_35px_rgba(37,99,235,0.06)] sm:p-6">
+                    <a href="{{ route('public.announcements.show', $announcement->slug) }}" data-stagger-card
+                        class="group flex items-center gap-5 rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_15px_35px_rgba(37,99,235,0.06)] sm:p-6 block">
 
                         <div
                             class="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-blue-100 bg-blue-50/70 transition-colors duration-300 group-hover:bg-blue-100">
 
                             <span class="font-display text-lg font-extrabold text-blue-800">
-                                {{ $announcement->published_at->format('d') }}
+                                {{ $announcement->published_at ? $announcement->published_at->format('d') : '-' }}
                             </span>
 
                             <span class="text-[9px] font-bold uppercase tracking-wider text-blue-500">
-                                {{ $announcement->published_at->translatedFormat('M') }}
+                                {{ $announcement->published_at ? $announcement->published_at->translatedFormat('M') : '' }}
                             </span>
 
                         </div>
@@ -552,7 +552,7 @@
 
                         </div>
 
-                    </article>
+                    </a>
 
                 @empty
 
@@ -566,15 +566,26 @@
 
 
             {{-- BUTTON --}}
-            <div data-reveal class="mt-10 text-center">
+            <div data-reveal class="mt-10 flex flex-wrap items-center justify-center gap-3">
+
+                <a href="{{ route('public.announcements.index') }}"
+                    class="group inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-6 py-3.5 text-sm font-bold text-blue-700 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-blue-600 hover:text-white hover:shadow-md">
+
+                    Lihat Semua Pengumuman
+
+                    <span class="transition-transform duration-300 group-hover:translate-x-1">
+                        &rarr;
+                    </span>
+
+                </a>
 
                 <a href="{{ route('public.results') }}"
                     class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:shadow-md">
 
-                    Cek pengumuman hasil seleksi
+                    Cek Pengumuman Hasil Seleksi
 
                     <span class="transition-transform duration-300 group-hover:translate-y-1">
-                        ↓
+                        &darr;
                     </span>
 
                 </a>
