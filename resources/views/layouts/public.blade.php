@@ -81,13 +81,13 @@
 
                 </a>
 
-                <a href="{{ route('public.results') }}"
-                    class="group relative py-3 transition-colors duration-300 hover:text-blue-700">
+                <a href="{{ route('public.announcements.index') }}"
+                    class="group relative py-3 transition-colors duration-300 hover:text-blue-700 {{ request()->routeIs('public.announcements.*') ? 'text-blue-700 font-bold' : '' }}">
 
                     Pengumuman
 
                     <span
-                        class="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 rounded-full bg-blue-600 transition-transform duration-300 group-hover:scale-x-100">
+                        class="absolute inset-x-0 bottom-0 h-[2px] origin-center rounded-full bg-blue-600 transition-transform duration-300 {{ request()->routeIs('public.announcements.*') ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100' }}">
                     </span>
 
                 </a>
@@ -95,8 +95,19 @@
             </nav>
 
 
-            {{-- AUTHENTICATION BUTTONS --}}
-            <div class="relative z-10 flex items-center gap-2.5">
+            {{-- ACTION & AUTHENTICATION BUTTONS --}}
+            <div class="relative z-10 flex items-center gap-2">
+
+                {{-- TOMBOL CEPAT CEK HASIL SELEKSI --}}
+                <a href="{{ route('public.results') }}"
+                    title="Periksa Pengumuman Hasil Seleksi & Nomor Tiket"
+                    class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-200/80 bg-blue-50/70 px-3.5 py-2.5 text-xs font-bold tracking-wide text-blue-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-600 hover:text-white hover:shadow-[0_4px_12px_rgba(37,99,235,0.2)] {{ request()->routeIs('public.results') ? 'border-blue-600 bg-blue-600 !text-white shadow-sm' : '' }}">
+
+                    <x-icon name="search" class="h-3.5 w-3.5" />
+
+                    <span>Cek Hasil</span>
+
+                </a>
 
                 @auth
 
@@ -212,6 +223,17 @@
                 </div>
 
                 <div class="mt-6 space-y-4 text-sm font-medium text-slate-500">
+
+                    <a href="{{ route('public.announcements.index') }}"
+                        class="group flex w-fit items-center gap-2 transition-colors duration-300 hover:text-blue-700">
+
+                        <span
+                            class="h-1 w-1 rounded-full bg-slate-300 transition-all duration-300 group-hover:w-2 group-hover:bg-blue-600">
+                        </span>
+
+                        Pengumuman & Informasi
+
+                    </a>
 
                     <a href="{{ route('public.results') }}"
                         class="group flex w-fit items-center gap-2 transition-colors duration-300 hover:text-blue-700">

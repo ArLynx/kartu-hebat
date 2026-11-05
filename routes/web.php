@@ -24,8 +24,10 @@ use App\Http\Controllers\Operator\SelectionController;
 use App\Http\Controllers\Operator\VerificationController;
 use App\Http\Controllers\PrivateDocumentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Public\AnnouncementController as PublicAnnouncementController;
 use App\Http\Controllers\Public\LandingController;
 use App\Http\Controllers\Public\ResultController;
+use App\Http\Controllers\Superadmin\AnnouncementController as SuperadminAnnouncementController;
 use App\Http\Controllers\Superadmin\DashboardController as SuperadminDashboardController;
 use App\Http\Controllers\Superadmin\DocumentTypeController as SuperadminDocumentTypeController;
 use App\Http\Controllers\Superadmin\KategoriBeasiswaController as SuperadminKategoriBeasiswaController;
@@ -56,6 +58,10 @@ Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
 Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
     ->middleware(['auth:'.config('fortify.guard'), 'throttle:6,1'])
     ->name('verification.send');
+Route::get('/pengumuman', [PublicAnnouncementController::class, 'index'])->name('public.announcements.index');
+Route::get('/pengumuman/{slug}', [PublicAnnouncementController::class, 'show'])->name('public.announcements.show');
+Route::get('/pengumuman/{slug}/unduh', [PublicAnnouncementController::class, 'download'])->name('public.announcements.download');
+
 Route::get('/pengumuman-hasil', [ResultController::class, 'index'])
     ->middleware('throttle:20,1')
     ->name('public.results');
@@ -170,6 +176,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                     ->parameters(['operators' => 'operator']);
 
                 Route::post('operators/{operator}/reset-password', [SuperadminOperatorController::class, 'resetPassword'])->name('operators.reset-password');
+
+                Route::patch('announcements/{announcement}/toggle', [SuperadminAnnouncementController::class, 'toggle'])->name('announcements.toggle');
+                Route::get('announcements/{announcement}/file', [SuperadminAnnouncementController::class, 'file'])->name('announcements.file');
+
+                Route::resource('announcements', SuperadminAnnouncementController::class)
+                    ->except('show')
+                    ->parameters(['announcements' => 'announcement']);
 
                 Route::get('/log-aktivitas', [LogActivityController::class, 'index'])->name('log-aktivitas.index');
             });

@@ -16,17 +16,67 @@ use Illuminate\View\View;
 
 class KategoriBeasiswaController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('superadmin.kategori-beasiswa.index', [
-            'categories' => KategoriBeasiswa::query()
-                ->with(['periode', 'jenisDokumens'])
-                ->withCount('pendaftarans')
-                ->orderByDesc('aktif')
-                ->orderBy('urutan')
-                ->orderBy('nama')
-                ->paginate(15),
-        ]);
+        $periods = Periode::query()
+            ->orderByDesc('tahun')
+            ->orderByDesc('tanggal_mulai')
+            ->get();
+
+        $activePeriod = $periods->firstWhere('status', 'aktif');
+
+        $query = KategoriBeasiswa::query()
+            ->with(['periode', 'jenisDokumens'])
+            ->withCount('pendaftarans');
+
+        if ($request->filled('search')) {
+            $search = '%'.$request->string('search')->trim().'%';
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', $search)
+                    ->orWhere('kode', 'like', $search)
+                    ->orWhere('deskripsi', 'like', $search);
+            });
+        }
+
+        // Tentukan filter periode terpilih:
+        // 1. Jika di URL terdapat 'periode_id':
+        //    - 'all': tampilkan seluruh periode
+        //    - angka: filter berdasarkan ID periode tersebut
+        // 2. Jika di URL belum ada 'periode_id' (pertama kali buka menu):
+        //    - default otomatis ke periode aktif
+        $selectedPeriodeId = 'all';
+        if ($request->has('periode_id')) {
+            $val = $request->input('periode_id');
+            if ($val !== 'all' && $val !== '' && $val !== null) {
+                $selectedPeriodeId = (int) $val;
+                $query->where('periode_id', $selectedPeriodeId);
+            }
+        } elseif ($activePeriod) {
+            $selectedPeriodeId = (int) $activePeriod->id;
+            $query->where('periode_id', $selectedPeriodeId);
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->string('status')->toString();
+            if ($status === 'active') {
+                $query->where('aktif', true);
+            } elseif ($status === 'inactive') {
+                $query->where('aktif', false);
+            }
+        }
+
+        if ($request->filled('application_type')) {
+            $query->where('application_type', $request->string('application_type'));
+        }
+
+        $categories = $query
+            ->orderByDesc('aktif')
+            ->orderBy('urutan')
+            ->orderBy('nama')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('superadmin.kategori-beasiswa.index', compact('categories', 'periods', 'activePeriod', 'selectedPeriodeId'));
     }
 
     public function create(): View

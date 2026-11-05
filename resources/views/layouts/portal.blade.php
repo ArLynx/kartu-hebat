@@ -116,6 +116,11 @@
                     Operator
                 </x-sidebar-link>
 
+                {{-- Pengumuman Portal Publik --}}
+                <x-sidebar-link :href="route('superadmin.announcements.index')" :active="request()->routeIs('superadmin.announcements.*')" icon="announcement">
+                    Pengumuman
+                </x-sidebar-link>
+
                 {{-- Log Aktivitas --}}
                 <x-sidebar-link :href="route('superadmin.log-aktivitas.index')" :active="request()->routeIs('superadmin.log-aktivitas.*')" icon="activity">
                     Log Aktivitas
