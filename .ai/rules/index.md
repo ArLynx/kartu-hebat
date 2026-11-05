@@ -14,7 +14,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/Operator/** | .ai/rules/operator.md |
 | app/Http/Requests/** | .ai/rules/requests.md |
 | routes/web.php | .ai/rules/routes.md |
-| app/Services/** | .ai/rules/services.md |
+| app/Services/**, app/Services/SanggahanService.php | .ai/rules/services.md |
 | tests/** | .ai/rules/tests.md |
 | app/Traits/** | .ai/rules/traits.md |
 | resources/views/**/*.blade.php | .ai/rules/views.md |

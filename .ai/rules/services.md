@@ -1,6 +1,7 @@
 ---
 paths:
   - 'app/Services/**'
+  - app/Services/SanggahanService.php
 ---
 
 # Services
@@ -16,3 +17,6 @@ Submit mahasiswa langsung ke VERIFIKASI_DINAS. Tiga dinas inti (Dukcapil/Pendidi
 
 ## Jumlah dinas wajib per jalur via requiredAgencies()
 Jangan hardcode jumlah dinas (mis. `count(config('kartu_hebat.agencies'))`) saat memutuskan aplikasi lengkap/verifikasi. Sosial hanya jalur TIDAK_MAMPU; Dinkes hanya DISABILITAS; Parsepor hanya NON_AKADEMIK. Jumlah dinas wajib ditentukan per aplikasi oleh `AgencyVerificationService::requiredAgencies()` (3 utk AKADEMIK, 4 utk TIDAK_MAMPU/Disabilitas/Prestasi).
+
+## Sanggahan hanya membuka kembali dinas yang memutuskan TMS
+Pengabulan sanggahan menghapus hanya agency_verifications berstatus TMS pada dinas wajib, beserta document_verifications dinas itu pada putaran berjalan. Dinas MS tidak boleh disentuh. Gerbang verifikasi ulang dan penetapan penerima memakai Application::isReopenedForVerification() / isVerificationWindowOpen(), jangan menduplikasi kondisi sanggahan DIKABULKAN + periode aktif di tempat lain.
