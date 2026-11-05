@@ -142,6 +142,7 @@
                 @if ($user->hasRole('operator_kabupaten'))
                     <x-sidebar-link :href="route('operator.reconciliation')" :active="request()->routeIs('operator.reconciliation')" icon="shield">Rekonsiliasi
                         Dinas</x-sidebar-link>
+                    <x-sidebar-link :href="route('operator.sanggahan.index')" :active="request()->routeIs('operator.sanggahan.*')" icon="warning">Sanggahan</x-sidebar-link>
                     <x-sidebar-link :href="route('operator.selection')" :active="request()->routeIs('operator.selection*')" icon="users">Penetapan
                         Penerima</x-sidebar-link>
                     <x-sidebar-link :href="route('operator.lpj.index')" :active="request()->routeIs('operator.lpj.*')" icon="folder">Monitoring LPJ & Blokir</x-sidebar-link>

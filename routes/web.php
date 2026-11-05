@@ -25,6 +25,7 @@ use App\Http\Controllers\Operator\DocumentVerificationController;
 use App\Http\Controllers\Operator\LpjController as OperatorLpjController;
 use App\Http\Controllers\Operator\ReconciliationController;
 use App\Http\Controllers\Operator\ReportController;
+use App\Http\Controllers\Operator\SanggahanController as OperatorSanggahanController;
 use App\Http\Controllers\Operator\SelectionController;
 use App\Http\Controllers\Operator\VerificationController;
 use App\Http\Controllers\PrivateDocumentController;
@@ -220,6 +221,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
 
                 Route::middleware('role:operator_kabupaten')->group(function (): void {
                     Route::get('/rekonsiliasi', [ReconciliationController::class, 'index'])->name('reconciliation');
+                    Route::get('/sanggahan', [OperatorSanggahanController::class, 'index'])->name('sanggahan.index');
+                    Route::get('/sanggahan/{sanggahan}', [OperatorSanggahanController::class, 'show'])->name('sanggahan.show');
                     Route::get('/seleksi', [SelectionController::class, 'index'])->name('selection');
                     Route::get('/seleksi/export', [SelectionController::class, 'export'])->name('selection.export');
                     Route::post('/seleksi/import', [SelectionController::class, 'import'])->name('selection.import');

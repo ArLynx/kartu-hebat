@@ -26,6 +26,15 @@ enum SanggahanStatus: string
         };
     }
 
+    public function description(): string
+    {
+        return match ($this) {
+            self::DIAJUKAN => 'Menunggu keputusan operator.',
+            self::DIKABULKAN => 'Sanggahan diterima, dinas menilai ulang.',
+            self::DITOLAK => 'Keputusan TMS dipertahankan.',
+        };
+    }
+
     public function isDecided(): bool
     {
         return $this !== self::DIAJUKAN;
