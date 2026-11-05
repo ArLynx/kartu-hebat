@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\ApplicationStatus;
 use App\Enums\MasaSanggahStatus;
+use App\Enums\SanggahanStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -48,6 +50,27 @@ class Periode extends Model
             : MasaSanggahStatus::TELAH_BERAKHIR;
     }
 
+    public function isMasaSanggahOpen(): bool
+    {
+        return $this->masaSanggahStatus() === MasaSanggahStatus::SEDANG_BERLANGSUNG;
+    }
+
+    public function hasUnresolvedSanggahans(): bool
+    {
+        return $this->sanggahans()
+            ->where(function (Builder $query): void {
+                $query
+                    ->where('status', SanggahanStatus::DIAJUKAN->value)
+                    ->orWhere(function (Builder $query): void {
+                        $query
+                            ->where('status', SanggahanStatus::DIKABULKAN->value)
+                            ->whereHas('application', fn (Builder $application) => $application
+                                ->whereNotIn('status', ApplicationStatus::finalValues()));
+                    });
+            })
+            ->exists();
+    }
+
     public function isLpjOpen(): bool
     {
         if (! $this->tanggal_mulai_lpj || ! $this->tanggal_selesai_lpj) {
@@ -82,5 +105,10 @@ class Periode extends Model
     public function pendaftarans(): HasMany
     {
         return $this->hasMany(Pendaftaran::class);
+    }
+
+    public function sanggahans(): HasMany
+    {
+        return $this->hasMany(Sanggahan::class);
     }
 }

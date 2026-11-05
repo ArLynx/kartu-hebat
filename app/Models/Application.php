@@ -102,6 +102,29 @@ class Application extends Model
         return $this->hasOne(Selection::class);
     }
 
+    public function sanggahan(): HasOne
+    {
+        return $this->hasOne(Sanggahan::class);
+    }
+
+    /**
+     * Periode yang menjadi konteks application. Application lama hanya
+     * menyimpan nama periode sebagai string, sehingga dicocokkan lewat nama.
+     */
+    public function resolvedPeriode(): ?Periode
+    {
+        if ($this->pendaftaran_id) {
+            $this->loadMissing('pendaftaran.periode');
+
+            return $this->pendaftaran?->periode;
+        }
+
+        return Periode::query()
+            ->where('nama', $this->periode)
+            ->latest('id')
+            ->first();
+    }
+
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         return match ($user->role) {

@@ -53,4 +53,15 @@ enum ApplicationStatus: string
     {
         return in_array($this, [self::DITERIMA, self::DITOLAK, self::TMS], true);
     }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function finalValues(): array
+    {
+        return array_values(array_map(
+            fn (self $status) => $status->value,
+            array_filter(self::cases(), fn (self $status) => $status->isFinal()),
+        ));
+    }
 }

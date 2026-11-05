@@ -7,9 +7,12 @@ use App\Enums\UserRole;
 use App\Models\Application;
 use App\Models\User;
 use App\Services\AgencyVerificationService;
+use App\Services\SanggahanService;
 
 class ApplicationPolicy
 {
+    public function __construct(private readonly SanggahanService $sanggahanService) {}
+
     public function view(User $user, Application $application): bool
     {
         $application->loadMissing('mahasiswa.profile.village');
@@ -82,5 +85,10 @@ class ApplicationPolicy
                 ApplicationStatus::DITERIMA,
                 ApplicationStatus::DITOLAK,
             ], true);
+    }
+
+    public function submitSanggahan(User $user, Application $application): bool
+    {
+        return $this->sanggahanService->ineligibilityReason($application, $user) === null;
     }
 }

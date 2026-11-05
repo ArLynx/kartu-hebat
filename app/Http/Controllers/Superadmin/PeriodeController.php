@@ -47,6 +47,12 @@ class PeriodeController extends Controller
     {
         $validated = $this->validatePeriode($request);
 
+        if ($validated['status'] === 'ditutup' && $periode->status !== 'ditutup' && $periode->hasUnresolvedSanggahans()) {
+            return back()
+                ->withErrors(['status' => 'Periode tidak dapat ditutup karena masih ada sanggahan yang belum selesai diproses.'])
+                ->withInput();
+        }
+
         $periode->update($validated);
 
         return redirect()
@@ -56,6 +62,13 @@ class PeriodeController extends Controller
 
     public function destroy(Periode $periode): RedirectResponse
     {
+        if ($periode->sanggahans()->exists()) {
+            return back()->with(
+                'error',
+                'Periode tidak dapat dihapus karena memiliki riwayat sanggahan yang harus dipertahankan.',
+            );
+        }
+
         if ($periode->kategoriBeasiswas()->exists() || $periode->pendaftarans()->exists()) {
             return back()->with(
                 'error',

@@ -15,6 +15,7 @@ use App\Http\Controllers\Mahasiswa\PendaftaranController;
 use App\Http\Controllers\Mahasiswa\PendidikanController;
 use App\Http\Controllers\Mahasiswa\PrestasiController;
 use App\Http\Controllers\Mahasiswa\ReviewController;
+use App\Http\Controllers\Mahasiswa\SanggahanController as MahasiswaSanggahanController;
 use App\Http\Controllers\Mahasiswa\SubmitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Operator\ApplicationController as OperatorApplicationController;
@@ -139,6 +140,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                 Route::get('/lpj', [LpjController::class, 'index'])->name('lpj.index');
                 Route::post('/lpj', [LpjController::class, 'store'])->name('lpj.store');
                 Route::get('/lpj/file', [LpjController::class, 'file'])->name('lpj.file');
+
+                Route::get('/sanggahan', [MahasiswaSanggahanController::class, 'index'])->name('sanggahan.index');
+                Route::post('/sanggahan', [MahasiswaSanggahanController::class, 'store'])->name('sanggahan.store');
             });
 
         // Alias kompatibilitas untuk tautan lama. Semuanya diarahkan ke modul beasiswa.

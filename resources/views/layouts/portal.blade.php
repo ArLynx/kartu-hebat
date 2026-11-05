@@ -95,6 +95,11 @@
                 <x-sidebar-link :href="route('public.results')" :active="request()->routeIs('public.results')" icon="announcement">
                     Pengumuman
                 </x-sidebar-link>
+
+                {{-- Sanggahan --}}
+                <x-sidebar-link :href="route('mahasiswa.sanggahan.index')" :active="request()->routeIs('mahasiswa.sanggahan.*')" icon="shield">
+                    Sanggahan
+                </x-sidebar-link>
             @elseif($user->isSuperadmin())
                 <x-sidebar-link :href="route('superadmin.dashboard')" :active="request()->routeIs('superadmin.dashboard')" icon="home">
                     Dashboard
