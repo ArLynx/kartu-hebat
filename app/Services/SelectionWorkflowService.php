@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\SanggahanStatus;
 use App\Exports\CandidatesExport;
 use App\Exports\CandidatesWorkbookExport;
 use App\Imports\SelectionDecisionImport;
@@ -187,12 +188,19 @@ class SelectionWorkflowService
         $applications = Application::query()
             ->visibleTo($operator)
             ->where('periode', $period)
+            ->when(
+                $period !== config('kartu_hebat.current_period'),
+                fn ($query) => $query->whereHas(
+                    'sanggahan',
+                    fn ($sanggahan) => $sanggahan->where('status', SanggahanStatus::DIKABULKAN->value),
+                ),
+            )
             ->whereIn('status', [
                 ApplicationStatus::SELEKSI_KABUPATEN->value,
                 ApplicationStatus::DITERIMA->value,
                 ApplicationStatus::DITOLAK->value,
             ])
-            ->with(['mahasiswa.profile', 'selection'])
+            ->with(['mahasiswa.profile', 'selection', 'sanggahan'])
             ->get();
 
         if ($applications->isEmpty()) {
@@ -212,10 +220,15 @@ class SelectionWorkflowService
             $quota = $track->quota();
 
             foreach ($trackApps as $index => $app) {
-                $manualDecision = $app->selection?->manual_decision;
-                if ($manualDecision) {
-                    $decision = ApplicationStatus::tryFrom($manualDecision) ?? ApplicationStatus::DITOLAK;
-                } else {
+                $decision = $app->selection?->manualDecisionStatus();
+
+                if ($decision === null && filled($app->selection?->manual_decision)) {
+                    throw ValidationException::withMessages([
+                        'publication' => 'Keputusan internal kandidat '.$app->nomor_pengajuan.' tidak dikenali: '.$app->selection->manual_decision.'.',
+                    ]);
+                }
+
+                if ($decision === null) {
                     $rank = $app->selection?->rank ?? ($index + 1);
                     $decision = ($rank <= $quota) ? ApplicationStatus::DITERIMA : ApplicationStatus::DITOLAK;
                 }
@@ -228,7 +241,22 @@ class SelectionWorkflowService
             }
         }
 
-        return $this->executePublication($operator, $decisions, $skPdfFile, $announcementTitle, $period);
+        $isCorrection = Announcement::query()
+            ->where('slug', 'hasil-seleksi-'.Str::slug($period))
+            ->exists();
+
+        $unpublished = collect($decisions)
+            ->filter(fn (array $item): bool => $item['application']->selection?->published_at === null)
+            ->all();
+
+        return $this->executePublication(
+            $operator,
+            $unpublished,
+            $skPdfFile,
+            $announcementTitle,
+            $period,
+            $isCorrection,
+        );
     }
 
     // Alias kompatibilitas
@@ -263,8 +291,13 @@ class SelectionWorkflowService
         UploadedFile $skPdfFile,
         ?string $announcementTitle,
         string $period,
+        bool $isCorrection = false,
     ): int {
-        return DB::transaction(function () use ($operator, $decisions, $skPdfFile, $announcementTitle, $period): int {
+        if ($decisions === []) {
+            return 0;
+        }
+
+        return DB::transaction(function () use ($operator, $decisions, $skPdfFile, $announcementTitle, $period, $isCorrection): int {
             $publishedAt = now();
             $skPath = $skPdfFile->storePubliclyAs(
                 'announcements',
@@ -319,16 +352,24 @@ class SelectionWorkflowService
                 ));
             }
 
-            $slug = 'hasil-seleksi-'.Str::slug($period);
-            $title = $announcementTitle ?: 'Pengumuman Hasil Seleksi Kartu Hebat Mahasiswa Periode '.$period;
-
-            Announcement::query()->updateOrCreate(
-                ['slug' => $slug],
-                [
-                    'title' => $title,
-                    'type' => 'hasil',
+            $announcement = $isCorrection
+                ? [
+                    'slug' => 'hasil-seleksi-'.Str::slug($period).'-perbaikan-'.$publishedAt->format('YmdHis').'-'.Str::lower(Str::random(6)),
+                    'title' => $announcementTitle ?: 'Penetapan Perbaikan Hasil Seleksi Kartu Hebat Mahasiswa Periode '.$period,
+                    'excerpt' => 'Penetapan perbaikan hasil seleksi Kartu Hebat Mahasiswa periode '.$period.' telah dipublikasikan.',
+                    'body' => 'Pengumuman perbaikan dan Surat Keputusan (SK) penetapan penerima beasiswa dapat diunduh pada tautan berkas terlampir.',
+                ]
+                : [
+                    'slug' => 'hasil-seleksi-'.Str::slug($period),
+                    'title' => $announcementTitle ?: 'Pengumuman Hasil Seleksi Kartu Hebat Mahasiswa Periode '.$period,
                     'excerpt' => 'Hasil resmi seleksi Kartu Hebat Mahasiswa periode '.$period.' telah dipublikasikan.',
                     'body' => 'Pengumuman resmi dan Surat Keputusan (SK) penetapan penerima beasiswa dapat diunduh pada tautan berkas terlampir.',
+                ];
+
+            Announcement::query()->updateOrCreate(
+                ['slug' => $announcement['slug']],
+                $announcement + [
+                    'type' => 'hasil',
                     'attachment_path' => $skPath,
                     'is_active' => true,
                     'published_at' => $publishedAt,
@@ -394,6 +435,7 @@ class SelectionWorkflowService
 
             $this->scoring->recalculateRanking(
                 $operator->kabupaten_id,
+                $application->periode,
                 applicationType: $application->application_type,
             );
 
@@ -406,10 +448,10 @@ class SelectionWorkflowService
         $acceptedCount = Selection::query()
             ->whereHas('application', fn ($query) => $query
                 ->visibleTo($operator)
-                ->where('periode', config('kartu_hebat.current_period'))
+                ->where('periode', $application->periode)
                 ->where('application_type', $application->application_type->value))
-            ->where('manual_decision', ApplicationStatus::DITERIMA->value)
             ->when($existingSelection, fn ($query) => $query->where('id', '!=', $existingSelection->id))
+            ->whereManualDecision(ApplicationStatus::DITERIMA)
             ->lockForUpdate()
             ->count();
 

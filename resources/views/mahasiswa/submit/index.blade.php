@@ -13,6 +13,13 @@
             'currentStep' => 7,
         ])
 
+        @if ($pendaftaran->application?->status === \App\Enums\ApplicationStatus::TMS)
+            <x-sanggahan.submit-card
+                :application="$pendaftaran->application"
+                :can-submit="$canSubmitSanggahan"
+                :reason="$sanggahanReason"
+            />
+        @endif
 
         {{-- =========================================================
              SUDAH SUBMIT

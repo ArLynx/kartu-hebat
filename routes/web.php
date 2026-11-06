@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Mahasiswa\BuktiPendaftaranController;
 use App\Http\Controllers\Mahasiswa\DashboardController as MahasiswaDashboardController;
@@ -12,14 +15,18 @@ use App\Http\Controllers\Mahasiswa\PendaftaranController;
 use App\Http\Controllers\Mahasiswa\PendidikanController;
 use App\Http\Controllers\Mahasiswa\PrestasiController;
 use App\Http\Controllers\Mahasiswa\ReviewController;
+use App\Http\Controllers\Mahasiswa\SanggahanController as MahasiswaSanggahanController;
 use App\Http\Controllers\Mahasiswa\SubmitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Operator\ApplicationController as OperatorApplicationController;
+use App\Http\Controllers\Operator\ApplicationFormulirController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\DocumentVerificationController;
 use App\Http\Controllers\Operator\LpjController as OperatorLpjController;
 use App\Http\Controllers\Operator\ReconciliationController;
 use App\Http\Controllers\Operator\ReportController;
+use App\Http\Controllers\Operator\SanggahanController as OperatorSanggahanController;
+use App\Http\Controllers\Operator\SanggahanQueueController as OperatorSanggahanQueueController;
 use App\Http\Controllers\Operator\SelectionController;
 use App\Http\Controllers\Operator\VerificationController;
 use App\Http\Controllers\PrivateDocumentController;
@@ -35,9 +42,6 @@ use App\Http\Controllers\Superadmin\LogActivityController;
 use App\Http\Controllers\Superadmin\OperatorController as SuperadminOperatorController;
 use App\Http\Controllers\Superadmin\PeriodeController as SuperadminPeriodeController;
 use App\Http\Controllers\TwoFactorSetupController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingController::class)->name('home');
@@ -138,6 +142,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                 Route::get('/lpj', [LpjController::class, 'index'])->name('lpj.index');
                 Route::post('/lpj', [LpjController::class, 'store'])->name('lpj.store');
                 Route::get('/lpj/file', [LpjController::class, 'file'])->name('lpj.file');
+
+                Route::get('/sanggahan', [MahasiswaSanggahanController::class, 'index'])->name('sanggahan.index');
+                Route::post('/sanggahan', [MahasiswaSanggahanController::class, 'store'])->name('sanggahan.store');
             });
 
         // Alias kompatibilitas untuk tautan lama. Semuanya diarahkan ke modul beasiswa.
@@ -197,6 +204,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                 Route::get('/dashboard', [OperatorDashboardController::class, 'index'])->name('dashboard');
                 Route::get('/pengajuan', [OperatorApplicationController::class, 'index'])->name('applications.index');
                 Route::get('/pengajuan/{application}', [OperatorApplicationController::class, 'show'])->name('applications.show');
+                Route::get('/pengajuan/{application}/formulir/{jenis}/lihat', [ApplicationFormulirController::class, 'preview'])
+                    ->name('applications.formulir.lihat')
+                    ->whereIn('jenis', ['surat', 'pakta']);
+                Route::get('/pengajuan/{application}/formulir/{jenis}/unduh', [ApplicationFormulirController::class, 'download'])
+                    ->name('applications.formulir.download')
+                    ->whereIn('jenis', ['surat', 'pakta']);
                 Route::post('/pengajuan/{application}/verifikasi', [VerificationController::class, 'store'])->name('applications.verify');
                 Route::post('/pengajuan/{application}/dokumen/{document}/penilaian', [DocumentVerificationController::class, 'store'])
                     ->name('applications.documents.verify');
@@ -207,8 +220,17 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                     Route::get('/laporan/rekap-excel', [ReportController::class, 'recap'])->name('reports.recap');
                 });
 
+                Route::middleware([
+                    'role:operator_dukcapil,operator_sosial,operator_pendidikan,operator_bkpsdm,operator_dinkes,operator_parsepor',
+                ])->group(function (): void {
+                    Route::get('/antrean-sanggahan', [OperatorSanggahanQueueController::class, 'index'])->name('sanggahan-queue.index');
+                });
+
                 Route::middleware('role:operator_kabupaten')->group(function (): void {
                     Route::get('/rekonsiliasi', [ReconciliationController::class, 'index'])->name('reconciliation');
+                    Route::get('/sanggahan', [OperatorSanggahanController::class, 'index'])->name('sanggahan.index');
+                    Route::get('/sanggahan/{sanggahan}', [OperatorSanggahanController::class, 'show'])->name('sanggahan.show');
+                    Route::post('/sanggahan/{sanggahan}/keputusan', [OperatorSanggahanController::class, 'decide'])->name('sanggahan.decide');
                     Route::get('/seleksi', [SelectionController::class, 'index'])->name('selection');
                     Route::get('/seleksi/export', [SelectionController::class, 'export'])->name('selection.export');
                     Route::post('/seleksi/import', [SelectionController::class, 'import'])->name('selection.import');

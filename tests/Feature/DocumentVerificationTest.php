@@ -228,6 +228,91 @@ class DocumentVerificationTest extends TestCase
             ->assertSee('KTP buram');
     }
 
+    public function test_operator_show_page_renders_one_click_ms_without_note_panel(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+
+        $this->actingAs($operator)
+            ->get(route('operator.applications.show', $application))
+            ->assertOk()
+            ->assertSee('assessDocument(', false)
+            ->assertSee("'memenuhi'", false)
+            ->assertDontSee('Simpan MS')
+            ->assertDontSee('Konfirmasi Memenuhi Syarat');
+    }
+
+    public function test_document_assessment_endpoint_returns_json_for_ajax_requests(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $document = $application->documents->first();
+
+        $this->actingAs($operator)
+            ->postJson(
+                route('operator.applications.documents.verify', [$application, $document]),
+                ['result' => DocumentVerificationResult::MEMENUHI->value],
+            )
+            ->assertOk()
+            ->assertJson([
+                'result' => 'memenuhi',
+                'label' => 'Memenuhi Syarat',
+                'notes' => null,
+            ]);
+
+        $this->assertDatabaseHas('document_verifications', [
+            'document_id' => $document->id,
+            'stage' => 'dukcapil',
+            'result' => 'memenuhi',
+        ]);
+    }
+
+    public function test_document_assessment_cancel_endpoint_returns_json_for_ajax_requests(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $document = $application->documents->first();
+
+        app(AgencyVerificationService::class)->assessDocument(
+            $application,
+            $document,
+            $operator,
+            DocumentVerificationResult::MEMENUHI,
+        );
+
+        $this->actingAs($operator)
+            ->deleteJson(route('operator.applications.documents.verify.destroy', [$application, $document]))
+            ->assertOk()
+            ->assertJson([
+                'result' => null,
+                'label' => null,
+                'notes' => null,
+            ]);
+
+        $this->assertDatabaseMissing('document_verifications', ['document_id' => $document->id]);
+    }
+
+    public function test_ms_can_be_assessed_without_notes(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $document = $application->documents->first();
+
+        $this->actingAs($operator)
+            ->post(
+                route('operator.applications.documents.verify', [$application, $document]),
+                ['result' => DocumentVerificationResult::MEMENUHI->value],
+            )
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('document_verifications', [
+            'document_id' => $document->id,
+            'stage' => 'dukcapil',
+            'result' => 'memenuhi',
+            'notes' => null,
+        ]);
+    }
+
     private function applicationInAgencyQueue(ApplicationType $applicationType = ApplicationType::AKADEMIK): array
     {
         [$student, $village] = $this->studentWithCompleteProfile();

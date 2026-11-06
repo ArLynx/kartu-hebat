@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\SanggahanStatus;
 use App\Enums\UserRole;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
@@ -100,6 +101,144 @@ class Application extends Model
     public function selection(): HasOne
     {
         return $this->hasOne(Selection::class);
+    }
+
+    public function sanggahan(): HasOne
+    {
+        return $this->hasOne(Sanggahan::class);
+    }
+
+    /**
+     * Apakah application ini pernah mendapat sanggahan yang dikabulkan.
+     */
+    public function hasGrantedSanggahan(): bool
+    {
+        return $this->sanggahan?->status === SanggahanStatus::DIKABULKAN;
+    }
+
+    /**
+     * Application dibuka kembali untuk dinas hanya bila sanggahannya
+     * dikabulkan dan periode application masih aktif.
+     */
+    public function isReopenedForVerification(): bool
+    {
+        return $this->hasGrantedSanggahan()
+            && $this->resolvedPeriode()?->status === 'aktif';
+    }
+
+    /**
+     * Antrean verifikasi: application pada periode aktif aplikasi, ditambah
+     * application periode lain yang dibuka kembali lewat sanggahan.
+     */
+    public function scopeWhereOpenForVerification(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where('applications.periode', config('kartu_hebat.current_period'))
+                ->orWhere(function (Builder $query): void {
+                    $query->whereReopenedForVerification();
+                });
+        });
+    }
+
+    /**
+     * Padanan SQL dari isReopenedForVerification(): application memiliki
+     * sanggahan dikabulkan pada periode yang masih aktif.
+     */
+    public function scopeWhereReopenedForVerification(Builder $query): Builder
+    {
+        return $query
+            ->whereHas('sanggahan', fn (Builder $sanggahan) => $sanggahan
+                ->where('status', SanggahanStatus::DIKABULKAN->value)
+                ->whereHas('periode', fn (Builder $periode) => $periode
+                    ->where('status', 'aktif')));
+    }
+
+    /**
+     * Antrean sanggahan milik operator dinas: application yang dibuka kembali
+     * dan dinas operator ini belum mengirim keputusan baru pada putaran
+     * berjalan. Dinas yang sudah memutuskan tidak lagi ikut antrean.
+     */
+    public function scopeWhereAwaitingReverificationBy(Builder $query, User $user): Builder
+    {
+        $agency = $user->role->agencyCode();
+
+        if ($agency === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $track = $user->role->verifiedTrack();
+
+        return $query
+            ->where('applications.status', ApplicationStatus::VERIFIKASI_DINAS->value)
+            ->whereReopenedForVerification()
+            ->when($track, fn (Builder $query) => $query
+                ->where('applications.application_type', $track->value))
+            ->whereDoesntHave('agencyVerifications', fn (Builder $verification) => $verification
+                ->where('agency', $agency));
+    }
+
+    /**
+     * Application yang menunggu verifikasi ulang lewat sanggahan tidak lagi
+     * tampil di Antrean Pengajuan biasa; tempatnya di Antrean Sanggahan.
+     */
+    public function scopeWhereNotAwaitingReverification(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where('applications.status', '!=', ApplicationStatus::VERIFIKASI_DINAS->value)
+                ->orWhereDoesntHave('sanggahan', fn (Builder $sanggahan) => $sanggahan
+                    ->where('status', SanggahanStatus::DIKABULKAN->value));
+        });
+    }
+
+    /**
+     * Gerbang verifikasi dinas: tanggal pendaftaran periode masih berjalan,
+     * atau application dibuka kembali lewat sanggahan yang dikabulkan selama
+     * periodenya masih aktif.
+     */
+    public function isVerificationWindowOpen(): bool
+    {
+        $this->loadMissing(['pendaftaran.periode', 'sanggahan']);
+
+        if ($this->pendaftaran_id) {
+            $periode = $this->pendaftaran?->periode;
+
+            if (! $periode || $periode->status !== 'aktif') {
+                return false;
+            }
+
+            $today = today();
+
+            $isRegistrationOpen = $periode->tanggal_mulai?->lte($today)
+                && $periode->tanggal_selesai?->gte($today);
+
+            return $isRegistrationOpen || $this->isReopenedForVerification();
+        }
+
+        if ($this->periode === config('kartu_hebat.current_period')) {
+            return true;
+        }
+
+        return $this->isReopenedForVerification();
+    }
+
+    /**
+     * Periode yang menjadi konteks application. Application lama hanya
+     * menyimpan nama periode sebagai string, sehingga dicocokkan lewat nama.
+     */
+    public function resolvedPeriode(): ?Periode
+    {
+        if ($this->pendaftaran_id) {
+            $this->loadMissing('pendaftaran.periode');
+
+            return $this->pendaftaran?->periode;
+        }
+
+        return Periode::query()
+            ->where('nama', $this->periode)
+            ->latest('id')
+            ->first();
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder

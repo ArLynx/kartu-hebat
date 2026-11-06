@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\ApplicationStatus;
+use App\Enums\MasaSanggahStatus;
+use App\Enums\SanggahanStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +18,8 @@ class Periode extends Model
         'tanggal_selesai',
         'tanggal_mulai_lpj',
         'tanggal_selesai_lpj',
+        'tanggal_mulai_sanggah',
+        'tanggal_selesai_sanggah',
         'status',
     ];
 
@@ -25,7 +30,45 @@ class Periode extends Model
             'tanggal_selesai' => 'date',
             'tanggal_mulai_lpj' => 'date',
             'tanggal_selesai_lpj' => 'date',
+            'tanggal_mulai_sanggah' => 'date',
+            'tanggal_selesai_sanggah' => 'date',
         ];
+    }
+
+    public function masaSanggahStatus(): MasaSanggahStatus
+    {
+        if (! $this->tanggal_mulai_sanggah || ! $this->tanggal_selesai_sanggah) {
+            return MasaSanggahStatus::BELUM_DIJADWALKAN;
+        }
+
+        if (today()->betweenIncluded($this->tanggal_mulai_sanggah, $this->tanggal_selesai_sanggah)) {
+            return MasaSanggahStatus::SEDANG_BERLANGSUNG;
+        }
+
+        return today()->lt($this->tanggal_mulai_sanggah)
+            ? MasaSanggahStatus::BELUM_DIMULAI
+            : MasaSanggahStatus::TELAH_BERAKHIR;
+    }
+
+    public function isMasaSanggahOpen(): bool
+    {
+        return $this->masaSanggahStatus() === MasaSanggahStatus::SEDANG_BERLANGSUNG;
+    }
+
+    public function hasUnresolvedSanggahans(): bool
+    {
+        return $this->sanggahans()
+            ->where(function (Builder $query): void {
+                $query
+                    ->where('status', SanggahanStatus::DIAJUKAN->value)
+                    ->orWhere(function (Builder $query): void {
+                        $query
+                            ->where('status', SanggahanStatus::DIKABULKAN->value)
+                            ->whereHas('application', fn (Builder $application) => $application
+                                ->whereNotIn('status', ApplicationStatus::finalValues()));
+                    });
+            })
+            ->exists();
     }
 
     public function isLpjOpen(): bool
@@ -54,6 +97,18 @@ class Periode extends Model
             ->whereDate('tanggal_selesai', '>=', today());
     }
 
+    /**
+     * Periode yang sedang berstatus aktif dari sudut pandang konfigurasi
+     * aplikasi, tanpa melihat tanggal pendaftaran.
+     */
+    public static function latestAktif(): ?self
+    {
+        return self::query()
+            ->where('status', 'aktif')
+            ->latest('id')
+            ->first();
+    }
+
     public function kategoriBeasiswas(): HasMany
     {
         return $this->hasMany(KategoriBeasiswa::class);
@@ -62,5 +117,10 @@ class Periode extends Model
     public function pendaftarans(): HasMany
     {
         return $this->hasMany(Pendaftaran::class);
+    }
+
+    public function sanggahans(): HasMany
+    {
+        return $this->hasMany(Sanggahan::class);
     }
 }
