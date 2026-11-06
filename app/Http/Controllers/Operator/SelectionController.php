@@ -149,7 +149,10 @@ class SelectionController extends Controller
 
         $selectedJalur = $selectedJalurId ? $jalurBeasiswas->firstWhere('id', $selectedJalurId) : null;
 
-        $hasReopenedSanggahan = (clone $query)
+        $hasReopenedSanggahan = Application::query()
+            ->visibleTo($request->user())
+            ->where('applications.periode', $selectedPeriode)
+            ->where('applications.application_type', $selectedType->value)
             ->whereHas('sanggahan', fn ($sanggahan) => $sanggahan
                 ->where('status', SanggahanStatus::DIKABULKAN->value))
             ->exists();
@@ -178,7 +181,7 @@ class SelectionController extends Controller
             'jalurBeasiswas' => $jalurBeasiswas,
             'acceptedCount' => (clone $countySelections)
                 ->where(function ($q) {
-                    $q->where('manual_decision', ApplicationStatus::DITERIMA->value)
+                    $q->whereManualDecision(ApplicationStatus::DITERIMA)
                         ->orWhereHas('application', fn ($aq) => $aq->where('status', ApplicationStatus::DITERIMA));
                 })
                 ->count(),
@@ -256,11 +259,28 @@ class SelectionController extends Controller
         $request->validate([
             'sk_file' => ['required', File::types(['pdf'])->max(10 * 1024)],
             'title' => ['nullable', 'string', 'max:255'],
+            'periode' => ['nullable', 'string', 'max:255'],
         ], [
             'sk_file.required' => 'Surat Keputusan (SK) Penetapan format PDF wajib diunggah untuk memublikasikan hasil seleksi.',
             'sk_file.mimes' => 'Berkas SK harus berformat PDF.',
             'sk_file.max' => 'Ukuran berkas SK maksimal 10 MB.',
         ]);
+
+        $period = $request->string('periode')->trim()->toString();
+        $period = $period !== '' ? $period : null;
+
+        if ($period !== null && $period !== config('kartu_hebat.current_period')) {
+            $hasGrantedSanggahan = Application::query()
+                ->visibleTo($request->user())
+                ->where('periode', $period)
+                ->whereHas('sanggahan', fn ($sanggahan) => $sanggahan
+                    ->where('status', SanggahanStatus::DIKABULKAN->value))
+                ->exists();
+
+            if (! $hasGrantedSanggahan) {
+                return back()->with('error', 'Publikasi periode lampau hanya diizinkan untuk kandidat hasil sanggahan yang dikabulkan.');
+            }
+        }
 
         $title = $request->string('title')->trim()->toString();
         $title = $title !== '' ? $title : null;
@@ -269,7 +289,12 @@ class SelectionController extends Controller
             $request->user(),
             $request->file('sk_file'),
             $title,
+            $period,
         );
+
+        if ($count === 0) {
+            return back()->with('warning', 'Tidak ada hasil baru untuk dipublikasikan. Seluruh kandidat pada periode ini sudah pernah dipublikasikan.');
+        }
 
         return back()->with('success', "{$count} hasil seleksi berhasil dipublikasikan bersama Surat Keputusan (SK) resmi.");
     }

@@ -147,6 +147,17 @@ class SelectionWorkbookExportTest extends TestCase
         $this->assertSame(ApplicationStatus::DITERIMA->value, $nonReguler->fresh()->selection->manual_decision);
     }
 
+    public function test_export_reads_lowercase_manual_decisions_case_insensitively(): void
+    {
+        $candidate = $this->candidate(ApplicationType::AKADEMIK, $this->reguler, rank: 1);
+        $candidate->selection->update(['manual_decision' => 'diterima']);
+
+        $export = new CandidatesExport($this->operator->kabupaten_id, ApplicationType::AKADEMIK);
+        $row = $export->map($export->collection()->first());
+
+        $this->assertSame(ApplicationStatus::DITERIMA->value, $row[19]);
+    }
+
     private function candidate(ApplicationType $type, JalurBeasiswa $jalur, int $rank): Application
     {
         $student = User::factory()->create(['role' => UserRole::MAHASISWA]);

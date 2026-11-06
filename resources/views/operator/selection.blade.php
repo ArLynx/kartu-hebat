@@ -26,10 +26,18 @@
             <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
                 <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> 2. Publikasikan Hasil (Upload SK)
             </button>
+        @elseif($hasReopenedSanggahan)
+            <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
+                <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> Publikasikan Hasil Perbaikan (Upload SK)
+            </button>
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800">
+                <x-icon name="lock" class="h-4 w-4 text-amber-600" />
+                Mode Arsip (Sanggahan)
+            </span>
         @else
             <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800">
                 <x-icon name="lock" class="h-4 w-4 text-amber-600" />
-                {{ $hasReopenedSanggahan ? 'Mode Arsip (Sanggahan)' : 'Mode Arsip (Read-Only)' }}
+                Mode Arsip (Read-Only)
             </span>
         @endif
 
@@ -85,7 +93,7 @@
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <h3 class="text-lg font-bold text-slate-900">Publikasikan Hasil Seleksi Resmi</h3>
-                        <p class="text-xs text-slate-500">Unggah berkas Surat Keputusan (SK) untuk merilis hasil akhir ke publik &amp; mahasiswa.</p>
+                        <p class="text-xs text-slate-500">Unggah berkas Surat Keputusan (SK) untuk merilis hasil kandidat yang belum pernah dipublikasikan.</p>
                     </div>
                     <button type="button" @click="openPublishModal = false" class="text-slate-400 hover:text-slate-600">
                         <x-icon name="close" class="h-5 w-5" />
@@ -94,6 +102,7 @@
 
                 <form method="POST" action="{{ route('operator.selection.publish') }}" enctype="multipart/form-data" class="mt-5 space-y-4">
                     @csrf
+                    <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
                             Berkas SK Penetapan Resmi (PDF) <span class="text-red-500">*</span>
@@ -111,7 +120,7 @@
 
                     <div class="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex items-start gap-2">
                         <x-icon name="alert-triangle" class="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                        <span>Aksi ini akan menetapkan status akhir <b>DITERIMA</b> / <b>DITOLAK</b> secara permanen, melampirkan berkas SK ke pengumuman publik, dan mengirim notifikasi ke seluruh akun mahasiswa.</span>
+                        <span>Aksi ini hanya menetapkan kandidat yang <b>belum pernah dipublikasikan</b>. Penerima lama tidak menerima notifikasi ulang dan berkas SK lama tetap utuh; hasil perbaikan terbit sebagai pengumuman terpisah dengan SK baru.</span>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
@@ -338,6 +347,14 @@
                         <td>
                             <p class="font-semibold text-slate-900">{{ $application->mahasiswa->name }}</p>
                             <p class="mt-1 text-xs text-slate-500">{{ $application->nomor_pengajuan }}</p>
+                            @if($application->hasGrantedSanggahan())
+                                <p class="mt-1 flex flex-wrap items-center gap-2">
+                                    <span class="status-chip status-success">Hasil Sanggahan</span>
+                                    <a href="{{ route('operator.sanggahan.show', $application->sanggahan) }}" class="text-[11px] font-semibold text-brand-600">
+                                        Lihat detail →
+                                    </a>
+                                </p>
+                            @endif
                             @if($application->pendaftaran?->jalurBeasiswa)
                                 <p class="mt-1">
                                     <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold {{ $application->pendaftaran->jalurBeasiswa->kode === 'REGULER' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-purple-50 text-purple-700 border border-purple-200' }}">
@@ -386,12 +403,15 @@
                             <p class="font-display text-lg font-bold text-navy-900">{{ number_format((float) ($application->selection?->final_score ?? 0), 2) }}</p>
                         </td>
                         <td>
+                            @php
+                                $internalDecision = $application->selection?->manualDecisionStatus();
+                            @endphp
                             @if($application->selection?->published_at)
                                 <x-status-badge :status="$application->status" />
                                 <p class="mt-1 text-[11px] text-slate-500">Dipublikasikan {{ $application->selection->published_at->translatedFormat('d M Y') }}</p>
-                            @elseif($application->selection?->manual_decision)
-                                <span class="status-chip {{ $application->selection->manual_decision === 'DITERIMA' ? 'status-success' : 'status-danger' }}">
-                                    Internal: {{ $application->selection->manual_decision === 'DITERIMA' ? 'Diterima' : 'Ditolak' }}
+                            @elseif($internalDecision)
+                                <span class="status-chip {{ $internalDecision === \App\Enums\ApplicationStatus::DITERIMA ? 'status-success' : 'status-danger' }}">
+                                    Internal: {{ $internalDecision->label() }}
                                 </span>
                                 <p class="mt-1 text-[11px] text-slate-500">Belum dipublikasikan</p>
                             @else
@@ -417,16 +437,16 @@
                                 <form method="POST" action="{{ route('operator.selection.store', $application) }}" class="flex items-center gap-2">
                                     @csrf
                                     @php
-                                        $currentDecision = $application->selection?->manual_decision;
+                                        $currentDecision = $application->selection?->manualDecisionStatus();
                                     @endphp
                                     <select name="decision" 
                                             class="form-input !w-32 !py-2 text-xs font-semibold rounded-lg transition-colors
-                                                   {{ $currentDecision === 'DITERIMA' ? '!border-emerald-500 !bg-emerald-50 !text-emerald-800' : ($currentDecision === 'DITOLAK' ? '!border-rose-500 !bg-rose-50 !text-rose-800' : '!border-slate-300 text-slate-700') }}"
+                                                   {{ $currentDecision === \App\Enums\ApplicationStatus::DITERIMA ? '!border-emerald-500 !bg-emerald-50 !text-emerald-800' : ($currentDecision === \App\Enums\ApplicationStatus::DITOLAK ? '!border-rose-500 !bg-rose-50 !text-rose-800' : '!border-slate-300 text-slate-700') }}"
                                             onchange="this.className = 'form-input !w-32 !py-2 text-xs font-semibold rounded-lg transition-colors ' + (this.value === 'DITERIMA' ? '!border-emerald-500 !bg-emerald-50 !text-emerald-800' : (this.value === 'DITOLAK' ? '!border-rose-500 !bg-rose-50 !text-rose-800' : '!border-slate-300 text-slate-700'))"
                                             required>
                                         <option value="">Pilih</option>
-                                        <option value="DITERIMA" @selected($currentDecision === 'DITERIMA')>Diterima</option>
-                                        <option value="DITOLAK" @selected($currentDecision === 'DITOLAK')>Ditolak</option>
+                                        <option value="DITERIMA" @selected($currentDecision === \App\Enums\ApplicationStatus::DITERIMA)>Diterima</option>
+                                        <option value="DITOLAK" @selected($currentDecision === \App\Enums\ApplicationStatus::DITOLAK)>Ditolak</option>
                                     </select>
                                     <input name="notes" class="form-input !w-32 !py-2 text-xs" placeholder="Catatan" value="{{ $application->selection?->notes }}">
                                     <button class="btn-primary !px-3 !py-2 shrink-0" title="Simpan keputusan">

@@ -173,10 +173,13 @@ Jika terjadi persaingan nilai antarkandidat, pemeringkatan kabupaten (`recalcula
 2. **Export Rekap Ranking**: Operator kabupaten mengunduh berkas rekapitulasi Excel (`CandidatesExport`) untuk ditinjau bersama tim seleksi dan diajukan ke pimpinan daerah.
 3. **Persetujuan (ACC) & SK Penetapan**: Pimpinan menetapkan daftar penerima beasiswa dalam bentuk Surat Keputusan (SK) resmi.
 4. **Import Keputusan & Unggah SK**: Operator mengunggah kembali file Excel keputusan (`SelectionDecisionImport`) yang memuat status akhir penerima, sekaligus melampirkan berkas **PDF SK Penetapan**.
-5. **Publikasi Hasil**: Sistem mengeksekusi publikasi massal:
-   - Status aplikasi diubah menjadi `DITERIMA` atau `DITOLAK`.
+5. **Publikasi Hasil**: Sistem mengeksekusi publikasi inkremental:
+   - Kuota dan peringkat dihitung atas seluruh kandidat periode, tetapi hanya kandidat yang `selections.published_at` masih kosong yang ditulis.
+   - Status aplikasi kandidat baru diubah menjadi `DITERIMA` atau `DITOLAK`.
    - Mengisi nomor SK, tanggal SK, dan menyimpan path file PDF lampiran SK pada record `announcements`.
-   - Mengirim notifikasi kelulusan/penolakan ke akun mahasiswa.
+   - Mengirim notifikasi kelulusan/penolakan ke akun mahasiswa kandidat baru saja; penerima lama tidak dinotifikasi ulang.
+   - Publikasi pertama memakai slug `hasil-seleksi-<periode>`; publikasi perbaikan memakai slug `…-perbaikan-…` dengan SK baru sehingga berkas SK lama tetap dapat diunduh.
+   - Bila tidak ada kandidat baru, operator mendapat pesan "Tidak ada hasil baru untuk dipublikasikan".
    - Hasil dapat diakses publik pada halaman pengumuman hasil seleksi (`public.results`).
 
 ## 6. Pencatatan & Notifikasi
