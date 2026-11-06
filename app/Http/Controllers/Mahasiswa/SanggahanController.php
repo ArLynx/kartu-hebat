@@ -46,7 +46,7 @@ class SanggahanController extends Controller
 
         $periode = $eligibleApplications->first()?->resolvedPeriode()
             ?? $tmsApplications->first()?->resolvedPeriode()
-            ?? Periode::query()->where('status', 'aktif')->latest('id')->first();
+            ?? Periode::latestAktif();
 
         return view('mahasiswa.sanggahan.index', compact(
             'sanggahans',

@@ -1,9 +1,11 @@
 @props(['periode'])
 
 @php
-    $masaSanggahStatus = $periode?->masaSanggahStatus() ?? \App\Enums\MasaSanggahStatus::BELUM_DIJADWALKAN;
+    use App\Enums\MasaSanggahStatus;
+
+    $masaSanggahStatus = $periode?->masaSanggahStatus() ?? MasaSanggahStatus::BELUM_DIJADWALKAN;
     $periodeIsActive = $periode?->status === 'aktif';
-    $windowIsUsable = $periodeIsActive && $masaSanggahStatus === \App\Enums\MasaSanggahStatus::SEDANG_BERLANGSUNG;
+    $windowIsUsable = $periodeIsActive && $masaSanggahStatus === MasaSanggahStatus::SEDANG_BERLANGSUNG;
 @endphp
 
 <section class="card p-6">
@@ -14,7 +16,7 @@
                 {{ $periode?->nama ?? 'Belum ada periode aktif' }}
             </h2>
             <p class="mt-1 text-sm text-slate-600">
-                @if ($periode?->tanggal_mulai_sanggah && $periode?->tanggal_selesai_sanggah)
+                @if ($masaSanggahStatus->isScheduled())
                     {{ $periode->tanggal_mulai_sanggah->format('d M Y') }}
                     &mdash;
                     {{ $periode->tanggal_selesai_sanggah->format('d M Y') }}
@@ -37,7 +39,7 @@
             @if (! $periodeIsActive)
                 Masa sanggah hanya dapat digunakan selama periode beasiswa masih aktif.
             @else
-                Sanggahan hanya dapat diajukan selama masa sanggah berlangsung.
+                {{ $masaSanggahStatus->notice() }}
             @endif
         </p>
     @endif

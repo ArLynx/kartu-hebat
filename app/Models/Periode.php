@@ -97,6 +97,18 @@ class Periode extends Model
             ->whereDate('tanggal_selesai', '>=', today());
     }
 
+    /**
+     * Periode yang sedang berstatus aktif dari sudut pandang konfigurasi
+     * aplikasi, tanpa melihat tanggal pendaftaran.
+     */
+    public static function latestAktif(): ?self
+    {
+        return self::query()
+            ->where('status', 'aktif')
+            ->latest('id')
+            ->first();
+    }
+
     public function kategoriBeasiswas(): HasMany
     {
         return $this->hasMany(KategoriBeasiswa::class);

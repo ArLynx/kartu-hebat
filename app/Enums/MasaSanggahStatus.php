@@ -33,4 +33,17 @@ enum MasaSanggahStatus: string
     {
         return $this !== self::BELUM_DIJADWALKAN;
     }
+
+    /**
+     * Kalimat penjelas yang ditampilkan di bawah jadwal masa sanggah.
+     */
+    public function notice(): ?string
+    {
+        return match ($this) {
+            self::BELUM_DIMULAI => 'Masa sanggah belum dimulai. Pengajuan sanggahan baru dapat dilakukan pada tanggal mulai di atas.',
+            self::SEDANG_BERLANGSUNG => 'Masa sanggah sedang berlangsung sampai tanggal batas akhir di atas.',
+            self::TELAH_BERAKHIR => 'Masa sanggah telah berakhir.',
+            self::BELUM_DIJADWALKAN => null,
+        };
+    }
 }
