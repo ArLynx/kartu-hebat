@@ -26,6 +26,7 @@ use App\Http\Controllers\Operator\LpjController as OperatorLpjController;
 use App\Http\Controllers\Operator\ReconciliationController;
 use App\Http\Controllers\Operator\ReportController;
 use App\Http\Controllers\Operator\SanggahanController as OperatorSanggahanController;
+use App\Http\Controllers\Operator\SanggahanQueueController as OperatorSanggahanQueueController;
 use App\Http\Controllers\Operator\SelectionController;
 use App\Http\Controllers\Operator\VerificationController;
 use App\Http\Controllers\PrivateDocumentController;
@@ -217,6 +218,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
 
                 Route::middleware('role:operator_kecamatan,operator_kabupaten')->group(function (): void {
                     Route::get('/laporan/rekap-excel', [ReportController::class, 'recap'])->name('reports.recap');
+                });
+
+                Route::middleware([
+                    'role:operator_dukcapil,operator_sosial,operator_pendidikan,operator_bkpsdm,operator_dinkes,operator_parsepor',
+                ])->group(function (): void {
+                    Route::get('/antrean-sanggahan', [OperatorSanggahanQueueController::class, 'index'])->name('sanggahan-queue.index');
                 });
 
                 Route::middleware('role:operator_kabupaten')->group(function (): void {

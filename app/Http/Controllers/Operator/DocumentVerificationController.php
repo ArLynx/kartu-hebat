@@ -22,13 +22,21 @@ class DocumentVerificationController extends Controller
 
         abort_unless((int) $document->application_id === (int) $application->id, 404);
 
-        $service->assessDocument(
+        $verification = $service->assessDocument(
             $application,
             $document,
             $request->user(),
             DocumentVerificationResult::from($request->validated('result')),
             $request->validated('notes'),
         );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'result' => $verification->result->value,
+                'label' => $verification->result->label(),
+                'notes' => $verification->notes,
+            ]);
+        }
 
         return back()->with('success', 'Penilaian dokumen berhasil disimpan.');
     }
@@ -44,6 +52,14 @@ class DocumentVerificationController extends Controller
         abort_unless((int) $document->application_id === (int) $application->id, 404);
 
         $service->cancelDocumentAssessment($application, $document, $request->user());
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'result' => null,
+                'label' => null,
+                'notes' => null,
+            ]);
+        }
 
         return back()->with('success', 'Penilaian dokumen berhasil dibatalkan.');
     }

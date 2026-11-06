@@ -4,6 +4,27 @@
 @section('header', 'Antrean Pengajuan')
 
 @section('content')
+@if (($sanggahanQueueCount ?? 0) > 0)
+    <a href="{{ route('operator.sanggahan-queue.index') }}"
+       class="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 transition hover:border-amber-300 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                <x-icon name="warning" class="h-5 w-5" />
+            </div>
+            <div>
+                <p class="text-sm font-bold text-amber-900">{{ $sanggahanQueueCount }} pengajuan hasil sanggahan menunggu dinas Anda</p>
+                <p class="mt-1 text-xs leading-5 text-amber-800">
+                    Pengajuan yang dibuka kembali karena sanggahan dikabulkan dipindahkan ke Antrean Sanggahan agar antrean ini tetap berisi verifikasi normal.
+                </p>
+            </div>
+        </div>
+        <span class="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-amber-900">
+            Buka Antrean Sanggahan
+            <x-icon name="arrow-right" class="h-4 w-4" />
+        </span>
+    </a>
+@endif
+
 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
     <div>
         <h1 class="text-3xl font-extrabold">Daftar Pengajuan</h1>

@@ -20,6 +20,7 @@ class ApplicationController extends Controller
         $query = Application::query()
             ->visibleTo($user)
             ->whereOpenForVerification()
+            ->when($user->role->isAgency(), fn (Builder $query) => $query->whereNotAwaitingReverification())
             ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
             ->whereNot('status', ApplicationStatus::DRAFT->value);
 
@@ -58,6 +59,7 @@ class ApplicationController extends Controller
         $baseCountQuery = Application::query()
             ->visibleTo($user)
             ->whereOpenForVerification()
+            ->when($user->role->isAgency(), fn (Builder $query) => $query->whereNotAwaitingReverification())
             ->whereNot('applications.status', ApplicationStatus::DRAFT->value);
 
         if ($track = $user->role->verifiedTrack()) {
@@ -87,6 +89,9 @@ class ApplicationController extends Controller
             'jalurBeasiswas' => JalurBeasiswa::query()->where('aktif', true)->orderBy('urutan')->get(),
             'jalurCounts' => $rawJalurCounts,
             'totalQueueCount' => $rawJalurCounts->sum(),
+            'sanggahanQueueCount' => $user->role->isAgency()
+                ? Application::query()->visibleTo($user)->whereAwaitingReverificationBy($user)->count()
+                : 0,
         ]);
     }
 
@@ -107,7 +112,7 @@ class ApplicationController extends Controller
             'verificationLogs.actor',
             'scores.criterion',
             'selection',
-            'sanggahan',
+            'sanggahan.decidedBy',
             'pendaftaran.prestasis',
             'pendaftaran.jalurBeasiswa',
             'pendaftaran.formulirPendaftaran',

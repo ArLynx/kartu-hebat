@@ -133,6 +133,9 @@
             @else
                 <x-sidebar-link :href="route('operator.dashboard')" :active="request()->routeIs('operator.dashboard')" icon="home">Dashboard</x-sidebar-link>
                 <x-sidebar-link :href="route('operator.applications.index')" :active="request()->routeIs('operator.applications.*')" icon="form">Antrean Pengajuan</x-sidebar-link>
+                @if ($user->role->isAgency())
+                    <x-sidebar-link :href="route('operator.sanggahan-queue.index')" :active="request()->routeIs('operator.sanggahan-queue.*')" icon="warning">Antrean Sanggahan</x-sidebar-link>
+                @endif
                 @if ($user->hasRole('operator_kecamatan', 'operator_kabupaten'))
                     <a href="{{ route('operator.reports.recap') }}" class="sidebar-link">
                         <x-icon name="download" class="h-5 w-5" />

@@ -136,12 +136,59 @@ class Application extends Model
             $query
                 ->where('applications.periode', config('kartu_hebat.current_period'))
                 ->orWhere(function (Builder $query): void {
-                    $query
-                        ->whereHas('sanggahan', fn (Builder $sanggahan) => $sanggahan
-                            ->where('status', SanggahanStatus::DIKABULKAN->value))
-                        ->whereHas('pendaftaran.periode', fn (Builder $periode) => $periode
-                            ->where('status', 'aktif'));
+                    $query->whereReopenedForVerification();
                 });
+        });
+    }
+
+    /**
+     * Padanan SQL dari isReopenedForVerification(): application memiliki
+     * sanggahan dikabulkan pada periode yang masih aktif.
+     */
+    public function scopeWhereReopenedForVerification(Builder $query): Builder
+    {
+        return $query
+            ->whereHas('sanggahan', fn (Builder $sanggahan) => $sanggahan
+                ->where('status', SanggahanStatus::DIKABULKAN->value)
+                ->whereHas('periode', fn (Builder $periode) => $periode
+                    ->where('status', 'aktif')));
+    }
+
+    /**
+     * Antrean sanggahan milik operator dinas: application yang dibuka kembali
+     * dan dinas operator ini belum mengirim keputusan baru pada putaran
+     * berjalan. Dinas yang sudah memutuskan tidak lagi ikut antrean.
+     */
+    public function scopeWhereAwaitingReverificationBy(Builder $query, User $user): Builder
+    {
+        $agency = $user->role->agencyCode();
+
+        if ($agency === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $track = $user->role->verifiedTrack();
+
+        return $query
+            ->where('applications.status', ApplicationStatus::VERIFIKASI_DINAS->value)
+            ->whereReopenedForVerification()
+            ->when($track, fn (Builder $query) => $query
+                ->where('applications.application_type', $track->value))
+            ->whereDoesntHave('agencyVerifications', fn (Builder $verification) => $verification
+                ->where('agency', $agency));
+    }
+
+    /**
+     * Application yang menunggu verifikasi ulang lewat sanggahan tidak lagi
+     * tampil di Antrean Pengajuan biasa; tempatnya di Antrean Sanggahan.
+     */
+    public function scopeWhereNotAwaitingReverification(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where('applications.status', '!=', ApplicationStatus::VERIFIKASI_DINAS->value)
+                ->orWhereDoesntHave('sanggahan', fn (Builder $sanggahan) => $sanggahan
+                    ->where('status', SanggahanStatus::DIKABULKAN->value));
         });
     }
 

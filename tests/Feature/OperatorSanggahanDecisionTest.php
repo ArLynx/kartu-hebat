@@ -568,7 +568,7 @@ class OperatorSanggahanDecisionTest extends TestCase
             ->assertDontSee('Hasil Sanggahan');
     }
 
-    public function test_reopened_application_appears_in_the_agency_queue_from_a_historical_period(): void
+    public function test_reopened_application_moves_to_the_sanggahan_queue_from_a_historical_period(): void
     {
         $periode = $this->periode([
             'tahun' => 2025,
@@ -586,14 +586,23 @@ class OperatorSanggahanDecisionTest extends TestCase
             'decided_at' => now(),
         ]);
         $application->update(['status' => ApplicationStatus::VERIFIKASI_DINAS]);
+        $application->agencyVerifications()->where('agency', 'dukcapil')->delete();
 
         $control = $this->tmsApplication($this->student('Mahasiswa Tanpa Sanggahan'), $periode);
         $control->update(['status' => ApplicationStatus::VERIFIKASI_DINAS]);
 
-        $this->actingAs($this->agencyOperator(UserRole::OPERATOR_DUKCAPIL))
-            ->get(route('operator.applications.index'))
+        $dukcapil = $this->agencyOperator(UserRole::OPERATOR_DUKCAPIL);
+
+        $this->actingAs($dukcapil)
+            ->get(route('operator.sanggahan-queue.index'))
             ->assertOk()
             ->assertSee($application->nomor_pengajuan)
+            ->assertDontSee($control->nomor_pengajuan);
+
+        $this->actingAs($dukcapil)
+            ->get(route('operator.applications.index'))
+            ->assertOk()
+            ->assertDontSee($application->nomor_pengajuan)
             ->assertDontSee($control->nomor_pengajuan);
     }
 
