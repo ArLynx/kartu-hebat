@@ -89,7 +89,7 @@
                     <th>Data Seleksi</th>
                     <th>Wilayah</th>
                     <th>Status</th>
-                    <th>Tanggal Kirim</th>
+                    <th>Waktu Kirim</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -128,7 +128,16 @@
                             <p class="mt-1 text-xs text-slate-500">Kec. {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</p>
                         </td>
                         <td><x-status-badge :status="$application->status" /></td>
-                        <td>{{ $application->submitted_at?->translatedFormat('d M Y') ?? '-' }}</td>
+                        <td>
+                            @if($application->submitted_at)
+                                <p class="font-medium text-slate-800">{{ $application->submitted_at->translatedFormat('d M Y') }}</p>
+                                @if(! in_array(auth()->user()?->role, [\App\Enums\UserRole::OPERATOR_DESA, \App\Enums\UserRole::OPERATOR_KECAMATAN], true))
+                                    <p class="text-[11px] text-slate-500">{{ $application->submitted_at->format('H:i') }} WIB</p>
+                                @endif
+                            @else
+                                <span class="text-slate-400">-</span>
+                            @endif
+                        </td>
                         <td>
                             <a href="{{ route('operator.applications.show', $application) }}" class="btn-secondary !px-3 !py-2">
                                 <x-icon name="eye" class="h-4 w-4" />

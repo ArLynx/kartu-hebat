@@ -116,6 +116,8 @@ class ApplicationController extends Controller
             'pendaftaran.prestasis',
             'pendaftaran.jalurBeasiswa',
             'pendaftaran.formulirPendaftaran',
+            'pendaftaran.dataPribadi',
+            'pendaftaran.orangTua',
         ]);
 
         $verifications = $application->documentVerifications;
@@ -127,6 +129,29 @@ class ApplicationController extends Controller
             $canEditChecklist = AgencyVerificationService::canVerifyStage($application, $stage);
         }
 
+        $siblingApplications = collect();
+        if ($user->role === UserRole::OPERATOR_BKPSDM) {
+            $nomorKk = $application->pendaftaran?->dataPribadi?->nomor_kk;
+            if ($nomorKk) {
+                $periodeId = $application->pendaftaran?->periode_id;
+                $siblingApplications = Application::query()
+                    ->where('applications.id', '!=', $application->id)
+                    ->whereHas('pendaftaran', function ($pq) use ($nomorKk, $periodeId) {
+                        if ($periodeId) {
+                            $pq->where('periode_id', $periodeId);
+                        }
+                        $pq->whereHas('dataPribadi', fn ($dq) => $dq->where('nomor_kk', $nomorKk));
+                    })
+                    ->with([
+                        'mahasiswa',
+                        'pendaftaran.dataPribadi',
+                        'pendaftaran.orangTua',
+                        'pendaftaran.jalurBeasiswa',
+                    ])
+                    ->get();
+            }
+        }
+
         return view('operator.applications.show', [
             'application' => $application,
             'canVerify' => $user->can('verify', $application),
@@ -134,6 +159,7 @@ class ApplicationController extends Controller
             'docVerificationStage' => $stage,
             'canEditChecklist' => $canEditChecklist,
             'docVerificationRound' => $currentRound,
+            'siblingApplications' => $siblingApplications,
         ]);
     }
 

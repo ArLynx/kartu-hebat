@@ -233,6 +233,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                     Route::post('/sanggahan/{sanggahan}/keputusan', [OperatorSanggahanController::class, 'decide'])->name('sanggahan.decide');
                     Route::get('/seleksi', [SelectionController::class, 'index'])->name('selection');
                     Route::get('/seleksi/export', [SelectionController::class, 'export'])->name('selection.export');
+                    Route::get('/seleksi/export-tms', [SelectionController::class, 'exportTms'])->name('selection.export-tms');
                     Route::post('/seleksi/import', [SelectionController::class, 'import'])->name('selection.import');
                     Route::post('/seleksi/{application}', [SelectionController::class, 'store'])->name('selection.store');
                     Route::post('/seleksi-publikasi', [SelectionController::class, 'publish'])->name('selection.publish');

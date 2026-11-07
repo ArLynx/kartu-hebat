@@ -42,8 +42,8 @@ class RegistrationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password@123',
+            'password_confirmation' => 'Password@123',
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 
@@ -64,8 +64,8 @@ class RegistrationTest extends TestCase
             ->post('/register', [
                 'name' => 'Elsha Test',
                 'email' => 'elsha@example.com',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password@123',
+                'password_confirmation' => 'Password@123',
                 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
             ]);
 
@@ -93,8 +93,8 @@ class RegistrationTest extends TestCase
         $response = $this->from('/register')->post('/register', [
             'name' => 'Offline Student',
             'email' => 'offline@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password@123',
+            'password_confirmation' => 'Password@123',
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 
@@ -118,8 +118,8 @@ class RegistrationTest extends TestCase
         $response = $this->from('/register')->post('/register', [
             'name' => 'Short Pw Student',
             'email' => 'shortpw@example.com',
-            'password' => 'short',
-            'password_confirmation' => 'short',
+            'password' => 'Short@1',
+            'password_confirmation' => 'Short@1',
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 
@@ -127,6 +127,39 @@ class RegistrationTest extends TestCase
         $response->assertSessionHasErrors(['password']);
         $this->assertDatabaseMissing('users', ['email' => 'shortpw@example.com']);
         $this->assertGuest();
+    }
+
+    public function test_registration_validates_password_requires_uppercase_and_symbol(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        // Tanpa huruf kapital (hanya huruf kecil + simbol)
+        $responseNoUpper = $this->from('/register')->post('/register', [
+            'name' => 'No Uppercase Student',
+            'email' => 'noupper@example.com',
+            'password' => 'password@123',
+            'password_confirmation' => 'password@123',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $responseNoUpper->assertRedirect('/register');
+        $responseNoUpper->assertSessionHasErrors(['password']);
+        $this->assertDatabaseMissing('users', ['email' => 'noupper@example.com']);
+
+        // Tanpa simbol (hanya huruf kapital + huruf kecil + angka)
+        $responseNoSymbol = $this->from('/register')->post('/register', [
+            'name' => 'No Symbol Student',
+            'email' => 'nosymbol@example.com',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $responseNoSymbol->assertRedirect('/register');
+        $responseNoSymbol->assertSessionHasErrors(['password']);
+        $this->assertDatabaseMissing('users', ['email' => 'nosymbol@example.com']);
     }
 
     public function test_registration_validates_password_confirmation_match(): void
@@ -138,8 +171,8 @@ class RegistrationTest extends TestCase
         $response = $this->from('/register')->post('/register', [
             'name' => 'Mismatch Student',
             'email' => 'mismatch@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'different123',
+            'password' => 'Password@123',
+            'password_confirmation' => 'Different@123',
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 

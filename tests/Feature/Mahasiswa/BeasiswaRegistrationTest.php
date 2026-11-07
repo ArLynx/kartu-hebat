@@ -2,11 +2,15 @@
 
 namespace Tests\Feature\Mahasiswa;
 
+use App\Enums\ApplicationStatus;
+use App\Enums\ApplicationType;
 use App\Enums\UserRole;
+use App\Models\Application;
 use App\Models\JalurBeasiswa;
 use App\Models\KategoriBeasiswa;
 use App\Models\Pendaftaran;
 use App\Models\Periode;
+use App\Models\Selection;
 use App\Models\User;
 use App\Services\MahasiswaPendaftaranService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -114,6 +118,86 @@ class BeasiswaRegistrationTest extends TestCase
 
         $this->assertSame($currentRegistration->id, app(MahasiswaPendaftaranService::class)->currentFor($user)->id);
         $this->assertNotSame($oldRegistration->id, app(MahasiswaPendaftaranService::class)->currentFor($user)->id);
+    }
+
+    public function test_nomor_pendaftaran_dibuat_acak_kombinasi_huruf_dan_angka_tanpa_karakter_ambigu(): void
+    {
+        $periode = $this->createPeriode();
+        $jalur = $this->createJalur();
+        $kategori = $this->createCategory($periode);
+
+        $generatedNumbers = [];
+
+        for ($i = 0; $i < 5; $i++) {
+            $student = User::factory()->create([
+                'role' => UserRole::MAHASISWA,
+                'email_verified_at' => now(),
+            ]);
+
+            $this->actingAs($student)->post(route('mahasiswa.pendaftaran.store'), [
+                'jalur_beasiswa_id' => $jalur->id,
+                'kategori_beasiswa_id' => $kategori->id,
+                'persetujuan' => '1',
+            ])->assertRedirect(route('mahasiswa.data-pribadi.index'));
+
+            $pendaftaran = Pendaftaran::query()->where('user_id', $student->id)->firstOrFail();
+            $nomor = (string) $pendaftaran->nomor_pendaftaran;
+
+            // Format KHM-{TAHUN}-{6 karakter huruf kapital & angka tanpa O/0/I/1}
+            $this->assertMatchesRegularExpression('/^KHM-2026-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/', $nomor);
+
+            $suffix = substr($nomor, strlen('KHM-2026-'));
+            $this->assertMatchesRegularExpression('/[A-Z]/', $suffix);
+            $this->assertMatchesRegularExpression('/[2-9]/', $suffix);
+
+            $generatedNumbers[] = $nomor;
+        }
+
+        $this->assertCount(5, array_unique($generatedNumbers));
+    }
+
+    public function test_pencarian_pengumuman_publik_mengenali_nomor_tiket_acak_huruf_kecil(): void
+    {
+        $periode = $this->createPeriode('ditutup');
+        $kategori = $this->createCategory($periode);
+        $student = User::factory()->create([
+            'role' => UserRole::MAHASISWA,
+            'email_verified_at' => now(),
+        ]);
+
+        $nomorAcak = Pendaftaran::generateNomorPendaftaran($periode->tahun);
+
+        $pendaftaran = Pendaftaran::query()->create([
+            'user_id' => $student->id,
+            'periode_id' => $periode->id,
+            'kategori_beasiswa_id' => $kategori->id,
+            'nomor_pendaftaran' => $nomorAcak,
+            'status' => 'approved',
+            'submitted_at' => now(),
+        ]);
+
+        $application = Application::query()->create([
+            'pendaftaran_id' => $pendaftaran->id,
+            'mahasiswa_id' => $student->id,
+            'nomor_pengajuan' => $nomorAcak,
+            'periode' => $periode->nama,
+            'status' => ApplicationStatus::DITERIMA,
+            'application_type' => ApplicationType::AKADEMIK,
+            'submitted_at' => now(),
+            'locked_at' => now(),
+        ]);
+
+        Selection::query()->create([
+            'application_id' => $application->id,
+            'final_score' => 92.5,
+            'rank' => 1,
+            'published_at' => now(),
+        ]);
+
+        $this->get(route('public.results', ['nomor' => strtolower($nomorAcak)]))
+            ->assertOk()
+            ->assertSee($nomorAcak)
+            ->assertSee('Diterima');
     }
 
     private function createPeriode(string $status = 'aktif'): Periode

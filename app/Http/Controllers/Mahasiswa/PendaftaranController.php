@@ -217,13 +217,8 @@ class PendaftaranController extends Controller
                 }
 
                 if (! $pendaftaran->nomor_pendaftaran) {
-
                     $pendaftaran->forceFill([
-                        'nomor_pendaftaran' => sprintf(
-                            'KHM-%s-%06d',
-                            $periode->tahun,
-                            $pendaftaran->getKey()
-                        ),
+                        'nomor_pendaftaran' => Pendaftaran::generateNomorPendaftaran($periode->tahun),
                     ])->save();
                 }
 

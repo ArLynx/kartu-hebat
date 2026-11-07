@@ -12,8 +12,10 @@ use App\Models\JalurBeasiswa;
 use App\Models\Periode;
 use App\Models\Selection;
 use App\Services\SelectionWorkflowService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\File;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -149,6 +151,59 @@ class SelectionController extends Controller
 
         $selectedJalur = $selectedJalurId ? $jalurBeasiswas->firstWhere('id', $selectedJalurId) : null;
 
+        $activeTab = $request->string('tab')->trim()->toString() ?: 'lolos';
+        if (! in_array($activeTab, ['lolos', 'tms'], true)) {
+            $activeTab = 'lolos';
+        }
+
+        $tmsBaseQuery = Application::query()
+            ->visibleTo($request->user())
+            ->where('applications.periode', $selectedPeriode)
+            ->where(function (Builder $query): void {
+                $query->where('applications.status', ApplicationStatus::TMS->value)
+                    ->orWhere(function (Builder $subQuery): void {
+                        $subQuery->where('applications.status', ApplicationStatus::VERIFIKASI_DINAS->value)
+                            ->whereHas('sanggahan', fn (Builder $s) => $s->where('status', SanggahanStatus::DIKABULKAN->value));
+                    });
+            });
+
+        $currentTrackTmsBase = (clone $tmsBaseQuery)
+            ->where('applications.application_type', $selectedType->value);
+
+        if ($selectedJalurId) {
+            $currentTrackTmsBase->whereHas('pendaftaran', fn ($p) => $p->where('jalur_beasiswa_id', $selectedJalurId));
+        }
+
+        $currentTrackTmsCount = (clone $currentTrackTmsBase)->count();
+        $allTracksTmsCount = (clone $tmsBaseQuery)->count();
+
+        $tmsApplications = null;
+        if ($activeTab === 'tms') {
+            $tmsQuery = (clone $currentTrackTmsBase)
+                ->with([
+                    'mahasiswa.profile.village.kecamatan',
+                    'agencyVerifications.verifier',
+                    'sanggahan',
+                    'verificationLogs' => fn ($query) => $query->where('action', 'sanggahan_granted'),
+                    'pendaftaran.jalurBeasiswa',
+                    'pendaftaran.pendidikan',
+                ]);
+
+            if ($request->filled('search')) {
+                $search = '%'.$request->string('search')->trim()->toString().'%';
+                $tmsQuery->where(function ($builder) use ($search): void {
+                    $builder
+                        ->where('applications.nomor_pengajuan', 'like', $search)
+                        ->orWhereHas('mahasiswa', fn ($student) => $student->where('name', 'like', $search));
+                });
+            }
+
+            $tmsApplications = $tmsQuery
+                ->latest('applications.updated_at')
+                ->paginate(20)
+                ->withQueryString();
+        }
+
         $hasReopenedSanggahan = Application::query()
             ->visibleTo($request->user())
             ->where('applications.periode', $selectedPeriode)
@@ -158,6 +213,10 @@ class SelectionController extends Controller
             ->exists();
 
         return view('operator.selection', [
+            'activeTab' => $activeTab,
+            'currentTrackTmsCount' => $currentTrackTmsCount,
+            'allTracksTmsCount' => $allTracksTmsCount,
+            'tmsApplications' => $tmsApplications,
             'applications' => $query
                 ->leftJoin('selections', 'selections.application_id', '=', 'applications.id')
                 ->leftJoin('pendaftarans', 'pendaftarans.id', '=', 'applications.pendaftaran_id')
@@ -194,6 +253,24 @@ class SelectionController extends Controller
             'isCurrentPeriod' => $isCurrentPeriod,
             'hasReopenedSanggahan' => $hasReopenedSanggahan,
         ]);
+    }
+
+    public function exportTms(Request $request): BinaryFileResponse
+    {
+        $selectedPeriode = $request->string('periode')->trim()->toString() ?: (string) config('kartu_hebat.current_period');
+        $selectedType = ApplicationType::tryFrom($request->string('application_type')->toString());
+        $selectedJalurId = $request->filled('jalur_beasiswa_id') ? $request->integer('jalur_beasiswa_id') : null;
+        $jalur = $selectedJalurId ? JalurBeasiswa::find($selectedJalurId) : null;
+
+        $filename = 'rekap-tms-administrasi-'
+            .Str::slug($selectedPeriode)
+            .($selectedType ? '-'.strtolower($selectedType->value) : '-semua-jalur')
+            .($jalur ? '-'.strtolower($jalur->kode) : '')
+            .'.xlsx';
+
+        $export = $this->workflow->exportTmsCandidates($request->user(), $selectedPeriode, $selectedType, $selectedJalurId);
+
+        return Excel::download($export, $filename);
     }
 
     public function export(Request $request): BinaryFileResponse

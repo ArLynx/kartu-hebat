@@ -184,7 +184,7 @@
                                 name="jabatan_ayah"
                                 maxlength="150"
                                 value="{{ old('jabatan_ayah', $orangTua?->jabatan_ayah) }}"
-                                placeholder="Contoh: Kepala Bidang / Sekretaris Dinas / Guru / Staf Pelaksana"
+                                placeholder="Contoh: Kepala Dinas / Kepala Bidang / Sekretaris Dinas / Guru / Staf Pelaksana / Jabatan Fungsional"
                             >
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
@@ -330,7 +330,7 @@
                                 name="jabatan_ibu"
                                 maxlength="150"
                                 value="{{ old('jabatan_ibu', $orangTua?->jabatan_ibu) }}"
-                                placeholder="Contoh: Kepala Bidang / Sekretaris Dinas / Guru / Bidan / Staf Pelaksana"
+                                placeholder="Contoh: Kepala Dinas / Kepala Bidang / Sekretaris Dinas / Guru / Staf Pelaksana / Jabatan Fungsional"
                             >
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">

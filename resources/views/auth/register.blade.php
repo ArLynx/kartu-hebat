@@ -23,10 +23,10 @@
         <div x-data="{ show: false }">
             <label for="password" class="form-label">Kata Sandi</label>
             <div class="relative">
-                <input id="password" :type="show ? 'text' : 'password'" name="password" class="form-input !pr-16" autocomplete="new-password" required placeholder="Minimal 8 karakter">
+                <input id="password" :type="show ? 'text' : 'password'" name="password" class="form-input !pr-16" autocomplete="new-password" required placeholder="Minimal 8 karakter (contoh: Hebat@2026)">
                 <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-4 text-xs font-semibold text-slate-500 hover:text-brand-600" x-text="show ? 'Sembunyi' : 'Lihat'"></button>
             </div>
-            <p class="form-help">Minimal 8 karakter. Disarankan menggunakan kombinasi huruf dan angka agar akun Anda aman.</p>
+            <p class="form-help">Minimal 8 karakter, wajib memuat minimal 1 huruf kapital (A–Z) dan 1 karakter tanda/simbol (contoh: @, #, $, !).</p>
         </div>
 
         <div x-data="{ show: false }">

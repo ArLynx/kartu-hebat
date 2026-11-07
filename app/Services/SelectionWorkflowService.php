@@ -7,6 +7,7 @@ use App\Enums\ApplicationType;
 use App\Enums\SanggahanStatus;
 use App\Exports\CandidatesExport;
 use App\Exports\CandidatesWorkbookExport;
+use App\Exports\TmsCandidatesExport;
 use App\Imports\SelectionDecisionImport;
 use App\Models\Announcement;
 use App\Models\Application;
@@ -38,6 +39,20 @@ class SelectionWorkflowService
     public function exportCandidatesWorkbook(User $operator): CandidatesWorkbookExport
     {
         return new CandidatesWorkbookExport((int) $operator->kabupaten_id);
+    }
+
+    public function exportTmsCandidates(
+        User $operator,
+        ?string $periode = null,
+        ?ApplicationType $type = null,
+        ?int $jalurBeasiswaId = null,
+    ): TmsCandidatesExport {
+        return new TmsCandidatesExport(
+            (int) $operator->kabupaten_id,
+            $periode,
+            $type,
+            $jalurBeasiswaId,
+        );
     }
 
     public function importDecisionsFromExcel(

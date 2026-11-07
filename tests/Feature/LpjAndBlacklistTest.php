@@ -124,6 +124,81 @@ class LpjAndBlacklistTest extends TestCase
             'status' => 'menunggu_verifikasi',
             'original_name' => 'bukti-ukt.pdf',
         ]);
+
+        // Verifikasi pada kondisi normal: tidak ada instruksi lapor ke Kesra
+        $afterUploadView = $this->actingAs($student)->get(route('mahasiswa.lpj.index'));
+        $afterUploadView->assertSee('Berkas LPJ Telah Dikirim — Menunggu Verifikasi Admin');
+        $afterUploadView->assertDontSee('melapor diri ke Bagian Kesejahteraan Rakyat (Kesra)');
+    }
+
+    public function test_past_deadline_or_blocked_student_sees_kesra_instruction_when_uploading_lpj(): void
+    {
+        $student = User::factory()->create(['role' => UserRole::MAHASISWA]);
+        $village = Village::query()->first();
+
+        // Periode yang batas waktu LPJ-nya sudah terlewat
+        $periode = Periode::query()->create([
+            'tahun' => 2025,
+            'nama' => 'Beasiswa 2025',
+            'tanggal_mulai' => now()->subMonths(6)->format('Y-m-d'),
+            'tanggal_selesai' => now()->subMonths(5)->format('Y-m-d'),
+            'tanggal_mulai_lpj' => now()->subMonths(4)->format('Y-m-d'),
+            'tanggal_selesai_lpj' => now()->subMonths(1)->format('Y-m-d'),
+            'status' => 'aktif',
+        ]);
+
+        $kategori = KategoriBeasiswa::query()->first();
+
+        $pendaftaran = Pendaftaran::query()->create([
+            'user_id' => $student->id,
+            'periode_id' => $periode->id,
+            'kategori_beasiswa_id' => $kategori->id,
+            'nomor_pendaftaran' => 'KHM-TEST-SUSULAN-01',
+            'status' => 'approved',
+        ]);
+
+        DataPribadi::query()->create([
+            'pendaftaran_id' => $pendaftaran->id,
+            'nik' => '6212000000000099',
+            'nama_lengkap' => 'Mahasiswa Terlambat LPJ',
+            'tempat_lahir' => 'Puruk Cahu',
+            'tanggal_lahir' => '2003-01-01',
+            'jenis_kelamin' => 'L',
+            'alamat' => 'Jalan Jenderal Sudirman',
+            'village_id' => $village->id,
+            'provinsi' => 'Kalimantan Tengah',
+            'kabupaten' => 'Murung Raya',
+            'kecamatan' => 'Murung',
+            'desa' => 'Puruk Cahu',
+            'no_hp' => '081234567899',
+            'nomor_rekening' => '100200399',
+        ]);
+
+        // Sebelum upload: mahasiswa melihat alert akun terkunci dengan instruksi lapor ke Kesra setelah mengunggah
+        $viewResponse = $this->actingAs($student)->get(route('mahasiswa.lpj.index'));
+        $viewResponse->assertOk();
+        $viewResponse->assertSee('🚫 Akun Terkunci');
+        $viewResponse->assertSee('Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya');
+
+        // Upload berkas PDF susulan
+        $pdfFile = UploadedFile::fake()->create('bukti-ukt-susulan.pdf', 300, 'application/pdf');
+
+        $uploadResponse = $this->actingAs($student)->post(route('mahasiswa.lpj.store'), [
+            'file' => $pdfFile,
+        ]);
+
+        $uploadResponse->assertRedirect();
+        $uploadResponse->assertSessionHas('success', 'Laporan Pertanggungjawaban (LPJ) susulan berhasil diunggah. Mohon segera melapor diri ke Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya untuk proses verifikasi dokumen dan pembukaan blokir akun Anda.');
+
+        // Setelah upload: melihat status LPJ Susulan dan instruksi lapor ke Kesra
+        $afterUploadView = $this->actingAs($student)->get(route('mahasiswa.lpj.index'));
+        $afterUploadView->assertSee('Berkas LPJ Susulan Telah Dikirim — Menunggu Verifikasi');
+        $afterUploadView->assertSee('Mohon segera melapor diri ke Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya');
+
+        // Di dashboard juga melihat instruksi lapor ke Kesra
+        $dashboardView = $this->actingAs($student)->get(route('mahasiswa.dashboard'));
+        $dashboardView->assertSee('Anda telah mengunggah berkas LPJ susulan. Mohon segera melapor diri ke');
+        $dashboardView->assertSee('Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya');
     }
 
     public function test_upload_fails_if_file_exceeds_2mb(): void

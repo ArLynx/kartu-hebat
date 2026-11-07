@@ -852,10 +852,27 @@ class MasaSanggahDemoSeeder extends Seeder
 
     private function seedGrantedLog(Application $application, Sanggahan $sanggahan): void
     {
-        if (VerificationLog::query()
+        $metadata = [
+            'sanggahan_id' => $sanggahan->id,
+            'annulled_agencies' => [UserRole::OPERATOR_DUKCAPIL->agencyCode()],
+            'annulled_verifications' => [
+                [
+                    'agency' => UserRole::OPERATOR_DUKCAPIL->agencyCode(),
+                    'agency_label' => 'Dukcapil',
+                    'decision' => 'TMS',
+                    'notes' => 'NIK pada KTP berbeda satu digit dengan data pribadi.',
+                    'verifier_id' => $this->operators[UserRole::OPERATOR_DUKCAPIL->value]->id,
+                ],
+            ],
+        ];
+
+        $existing = VerificationLog::query()
             ->where('application_id', $application->id)
             ->where('action', 'sanggahan_granted')
-            ->exists()) {
+            ->first();
+
+        if ($existing) {
+            $existing->update(['metadata' => $metadata]);
             return;
         }
 
@@ -866,10 +883,7 @@ class MasaSanggahDemoSeeder extends Seeder
             'to_status' => ApplicationStatus::VERIFIKASI_DINAS->value,
             'action' => 'sanggahan_granted',
             'notes' => $sanggahan->catatan_keputusan,
-            'metadata' => [
-                'sanggahan_id' => $sanggahan->id,
-                'annulled_agencies' => [UserRole::OPERATOR_DUKCAPIL->agencyCode()],
-            ],
+            'metadata' => $metadata,
             'created_at' => now()->subHours(4),
         ]);
     }

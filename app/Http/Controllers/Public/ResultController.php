@@ -9,6 +9,7 @@ use App\Models\Periode;
 use App\Models\Selection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ResultController extends Controller
@@ -24,12 +25,13 @@ class ResultController extends Controller
             ]);
             $searched = true;
             $nomor = trim($validated['nomor']);
+            $nomorCandidates = array_values(array_unique([$nomor, Str::upper($nomor)]));
 
             $result = Application::query()
                 ->with(['mahasiswa.profile', 'selection', 'pendaftaran.periode', 'pendaftaran.jalurBeasiswa'])
-                ->where(function (Builder $query) use ($nomor): void {
+                ->where(function (Builder $query) use ($nomor, $nomorCandidates): void {
                     $query
-                        ->where('nomor_pengajuan', $nomor)
+                        ->whereIn('nomor_pengajuan', $nomorCandidates)
                         ->orWhereHas('mahasiswa.profile', fn (Builder $profile) => $profile->where('nik', $nomor));
                 })
                 ->whereIn('status', [ApplicationStatus::DITERIMA->value, ApplicationStatus::DITOLAK->value])

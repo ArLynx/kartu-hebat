@@ -532,8 +532,8 @@ class DemoDataSeeder extends Seeder
                     'ipk' => 3.62,
                     'alamat' => 'Jl. Pendidikan, Kabupaten Murung Raya',
                     'status_kependudukan' => 'sesuai',
-                    'penghasilan_keluarga' => 2500000,
-                    'jumlah_tanggungan' => 4,
+                    'penghasilan_keluarga' => null,
+                    'jumlah_tanggungan' => null,
                     'desil_sosial' => null,
                     'prestasi' => 'Finalis lomba inovasi teknologi tingkat provinsi.',
                 ],
@@ -573,8 +573,8 @@ class DemoDataSeeder extends Seeder
                     'nama_ayah' => 'Saputra Wijaya',
                     'status_ayah' => 'hidup',
                     'nik_ayah' => '6212010101700001',
-                    'pekerjaan_ayah' => 'Petani',
-                    'jabatan_ayah' => null,
+                    'pekerjaan_ayah' => 'ASN',
+                    'jabatan_ayah' => 'Kepala Bidang Pelayanan dan Mutasi (Eselon III)',
                     'nama_ibu' => 'Sumiati',
                     'status_ibu' => 'hidup',
                     'nik_ibu' => '6212014101720002',
@@ -609,8 +609,8 @@ class DemoDataSeeder extends Seeder
                     'disability_document_number' => 'DOK-DIS-2024-00123',
                     'alamat' => 'Jl. G. Obos No. 45, Kabupaten Murung Raya',
                     'status_kependudukan' => 'sesuai',
-                    'penghasilan_keluarga' => 3500000,
-                    'jumlah_tanggungan' => 3,
+                    'penghasilan_keluarga' => null,
+                    'jumlah_tanggungan' => null,
                     'desil_sosial' => null,
                     'prestasi' => null,
                 ],
@@ -668,7 +668,7 @@ class DemoDataSeeder extends Seeder
                 'name' => 'Budi Hartono',
                 'nomor_pendaftaran' => 'KHM-'.$periode->tahun.'-000130',
                 'application_type' => ApplicationType::NON_AKADEMIK,
-                'status' => ApplicationStatus::SELEKSI_KABUPATEN,
+                'status' => ApplicationStatus::VERIFIKASI_DINAS,
                 'submitted_at' => now()->subDays(2),
                 'verified_agency_count' => 0,
                 'village' => $village,
@@ -683,14 +683,14 @@ class DemoDataSeeder extends Seeder
                     'ipk' => 3.61,
                     'alamat' => 'Jl. Yos Sudarso No. 88, Kabupaten Murung Raya',
                     'status_kependudukan' => 'sesuai',
-                    'penghasilan_keluarga' => 5000000,
-                    'jumlah_tanggungan' => 3,
+                    'penghasilan_keluarga' => null,
+                    'jumlah_tanggungan' => null,
                     'desil_sosial' => null,
                     'prestasi' => 'Juara 1 Debat Bahasa Indonesia Tingkat Nasional (2025)',
                 ],
                 'data_pribadi' => [
                     'nik' => '6212010101010004',
-                    'nomor_kk' => '6212010101019004',
+                    'nomor_kk' => '6212010101019001',
                     'nomor_rekening' => '6212000001300',
                     'nama_lengkap' => 'Budi Hartono',
                     'tempat_lahir' => 'Puruk Cahu',
@@ -721,15 +721,15 @@ class DemoDataSeeder extends Seeder
                     'alamat_perguruan_tinggi' => 'Jl. Yos Sudarso, Palangka Raya, Kalimantan Tengah',
                 ],
                 'orang_tua' => [
-                    'nama_ayah' => 'Hartono Wijaya',
+                    'nama_ayah' => 'Saputra Wijaya',
                     'status_ayah' => 'hidup',
-                    'nik_ayah' => '6212010101700005',
-                    'pekerjaan_ayah' => 'Pedagang',
-                    'jabatan_ayah' => null,
-                    'nama_ibu' => 'Ratna Sari',
+                    'nik_ayah' => '6212010101700001',
+                    'pekerjaan_ayah' => 'ASN',
+                    'jabatan_ayah' => 'Kepala Bidang Pelayanan dan Mutasi (Eselon III)',
+                    'nama_ibu' => 'Sumiati',
                     'status_ibu' => 'hidup',
-                    'nik_ibu' => '6212014101720006',
-                    'pekerjaan_ibu' => 'Guru',
+                    'nik_ibu' => '6212014101720002',
+                    'pekerjaan_ibu' => 'Ibu Rumah Tangga',
                     'jabatan_ibu' => null,
                     'memiliki_wali' => false,
                     'pekerjaan_wali' => null,
@@ -750,6 +750,80 @@ class DemoDataSeeder extends Seeder
                     ],
                 ],
             ],
+            [
+                'email' => 'mahasiswa.tidakmampu@kartuhebat.test',
+                'name' => 'Siti Aminah',
+                'nomor_pendaftaran' => 'KHM-'.$periode->tahun.'-000131',
+                'application_type' => ApplicationType::TIDAK_MAMPU,
+                'status' => ApplicationStatus::VERIFIKASI_DINAS,
+                'submitted_at' => now()->subDays(2),
+                'verified_agency_count' => 0,
+                'village' => $village,
+                'jalur_beasiswa_id' => $jalurBeasiswaId,
+                'profile' => [
+                    'nik' => '6212014101010005',
+                    'nim' => 'KHM20260005',
+                    'phone' => '081234567895',
+                    'universitas' => 'Universitas Palangka Raya',
+                    'program_studi' => 'Pendidikan Guru Sekolah Dasar',
+                    'semester' => 3,
+                    'ipk' => 3.48,
+                    'alamat' => 'Jl. Veteran No. 12, Kabupaten Murung Raya',
+                    'status_kependudukan' => 'sesuai',
+                    'penghasilan_keluarga' => null,
+                    'jumlah_tanggungan' => null,
+                    'desil_sosial' => 2,
+                    'prestasi' => null,
+                ],
+                'data_pribadi' => [
+                    'nik' => '6212014101010005',
+                    'nomor_kk' => '6212010101019005',
+                    'nomor_rekening' => '6212000001310',
+                    'nama_lengkap' => 'Siti Aminah',
+                    'tempat_lahir' => 'Puruk Cahu',
+                    'tanggal_lahir' => '2005-04-15',
+                    'jenis_kelamin' => 'P',
+                    'agama' => 'Islam',
+                    'alamat' => 'Jl. Veteran No. 12, Kabupaten Murung Raya',
+                    'provinsi' => 'Kalimantan Tengah',
+                    'kabupaten' => 'Murung Raya',
+                    'kecamatan' => 'Murung',
+                    'desa' => 'Beriwit',
+                    'kode_pos' => '73911',
+                    'no_hp' => '081234567895',
+                ],
+                'pendidikan' => [
+                    'nim' => 'KHM20260005',
+                    'universitas' => 'Universitas Palangka Raya',
+                    'fakultas' => 'Fakultas Keguruan dan Ilmu Pendidikan',
+                    'jurusan' => 'Pendidikan Guru Sekolah Dasar',
+                    'program_studi' => 'Pendidikan Guru Sekolah Dasar',
+                    'jenjang' => 'S1',
+                    'semester' => 3,
+                    'ipk' => 3.48,
+                    'nominal_ukt' => 2000000,
+                    'tahun_masuk' => 2024,
+                    'status_perguruan_tinggi' => 'negeri',
+                    'akreditasi_perguruan_tinggi' => 'Baik',
+                    'alamat_perguruan_tinggi' => 'Jl. Yos Sudarso, Palangka Raya, Kalimantan Tengah',
+                ],
+                'orang_tua' => [
+                    'nama_ayah' => 'Supriadi',
+                    'status_ayah' => 'hidup',
+                    'nik_ayah' => '6212010101700007',
+                    'pekerjaan_ayah' => 'Petani',
+                    'jabatan_ayah' => null,
+                    'nama_ibu' => 'Aminah',
+                    'status_ibu' => 'hidup',
+                    'nik_ibu' => '6212014101720008',
+                    'pekerjaan_ibu' => 'Ibu Rumah Tangga',
+                    'jabatan_ibu' => null,
+                    'memiliki_wali' => false,
+                    'pekerjaan_wali' => null,
+                    'jabatan_wali' => null,
+                ],
+                'prestasis' => [],
+            ],
         ];
     }
 
@@ -761,14 +835,6 @@ class DemoDataSeeder extends Seeder
     {
         $villages = Village::query()->with('kecamatan')->orderBy('id')->get();
         $types = ApplicationType::cases();
-        $statuses = [
-            ApplicationStatus::VERIFIKASI_DINAS,
-            ApplicationStatus::SELEKSI_KABUPATEN,
-            ApplicationStatus::SELEKSI_KABUPATEN,
-            ApplicationStatus::SELEKSI_KABUPATEN,
-            ApplicationStatus::SELEKSI_KABUPATEN,
-            ApplicationStatus::SELEKSI_KABUPATEN,
-        ];
         $universities = [
             'Universitas Palangka Raya',
             'Universitas Lambung Mangkurat',
@@ -778,10 +844,18 @@ class DemoDataSeeder extends Seeder
         $programs = ['Teknik Informatika', 'Ekonomi', 'Pendidikan', 'Kesehatan Masyarakat', 'Akuntansi'];
 
         $students = [];
+        $typeCounters = [];
 
         foreach (range(1, 28) as $index) {
             $type = $types[$index % count($types)];
-            $status = $statuses[$index % count($statuses)];
+            $typeCounters[$type->value] = ($typeCounters[$type->value] ?? 0) + 1;
+            $typeCount = $typeCounters[$type->value];
+
+            // 2 mahasiswa pertama untuk setiap jalur berada pada VERIFIKASI_DINAS (ada di antrean operator dinas),
+            // sisanya pada SELEKSI_KABUPATEN (siap untuk operator kabupaten)
+            $status = $typeCount <= 2
+                ? ApplicationStatus::VERIFIKASI_DINAS
+                : ApplicationStatus::SELEKSI_KABUPATEN;
             $village = $villages[$index % $villages->count()];
             $isDisability = $type === ApplicationType::DISABILITAS;
             $isPrestasi = $type === ApplicationType::NON_AKADEMIK;
@@ -808,6 +882,10 @@ class DemoDataSeeder extends Seeder
             $pekerjaanAyah = fake()->randomElement($pekerjaanOptions);
             $pekerjaanIbu = fake()->randomElement($pekerjaanOptions);
 
+            $verifiedAgencyCount = $status === ApplicationStatus::VERIFIKASI_DINAS
+                ? ($typeCount === 1 ? 0 : 1)
+                : 0;
+
             $students[] = [
                 'email' => 'mahasiswa'.$index.'@example.test',
                 'name' => fake()->name(),
@@ -815,7 +893,7 @@ class DemoDataSeeder extends Seeder
                 'application_type' => $type,
                 'status' => $status,
                 'submitted_at' => now()->subDays(fake()->numberBetween(2, 35)),
-                'verified_agency_count' => $status === ApplicationStatus::VERIFIKASI_DINAS ? $index % 3 : 0,
+                'verified_agency_count' => $verifiedAgencyCount,
                 'village' => $village,
                 'jalur_beasiswa_id' => $jalurIds === [] ? null : $jalurIds[$index % count($jalurIds)],
                 'profile' => [
@@ -833,8 +911,8 @@ class DemoDataSeeder extends Seeder
                         : null,
                     'alamat' => fake()->streetAddress(),
                     'status_kependudukan' => 'sesuai',
-                    'penghasilan_keluarga' => fake()->numberBetween(1200000, 6500000),
-                    'jumlah_tanggungan' => fake()->numberBetween(2, 7),
+                    'penghasilan_keluarga' => null,
+                    'jumlah_tanggungan' => null,
                     'desil_sosial' => $desil,
                     'prestasi' => $isPrestasi ? 'Juara kejuaraan non-akademik tingkat provinsi.' : null,
                 ],

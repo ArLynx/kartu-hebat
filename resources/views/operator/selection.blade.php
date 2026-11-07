@@ -13,32 +13,41 @@
         </p>
     </div>
     <div class="flex flex-wrap items-center gap-2" x-data="{ openImportModal: false, openPublishModal: false }">
-        <a href="{{ route('operator.selection.export', array_filter(['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId, 'periode' => $selectedPeriode])) }}" class="btn-secondary !py-2 bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100">
-            <x-icon name="download" class="h-4 w-4" /> Unduh Excel Jalur Ini
-        </a>
-        <a href="{{ route('operator.selection.export', ['periode' => $selectedPeriode]) }}" class="btn-secondary !py-2 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100">
-            <x-icon name="download" class="h-4 w-4" /> Unduh Semua Jalur
-        </a>
-        @if($isCurrentPeriod)
-            <button type="button" @click="openImportModal = true" class="btn-secondary !py-2 bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100">
-                <x-icon name="upload" class="h-4 w-4 mr-1 inline" /> 1. Impor ACC Excel
-            </button>
-            <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
-                <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> 2. Publikasikan Hasil (Upload SK)
-            </button>
-        @elseif($hasReopenedSanggahan)
-            <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
-                <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> Publikasikan Hasil Perbaikan (Upload SK)
-            </button>
-            <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800">
-                <x-icon name="lock" class="h-4 w-4 text-amber-600" />
-                Mode Arsip (Sanggahan)
-            </span>
+        @if($activeTab === 'lolos')
+            <a href="{{ route('operator.selection.export', array_filter(['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId, 'periode' => $selectedPeriode])) }}" class="btn-secondary !py-2 bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100" title="Unduh Excel kandidat lolos jalur ini">
+                <x-icon name="download" class="h-4 w-4" /> Unduh Excel Jalur Ini
+            </a>
+            <a href="{{ route('operator.selection.export', ['periode' => $selectedPeriode]) }}" class="btn-secondary !py-2 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100" title="Unduh Excel kandidat lolos semua jalur">
+                <x-icon name="download" class="h-4 w-4" /> Unduh Semua Jalur
+            </a>
+            @if($isCurrentPeriod)
+                <button type="button" @click="openImportModal = true" class="btn-secondary !py-2 bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100">
+                    <x-icon name="upload" class="h-4 w-4 mr-1 inline" /> 1. Impor ACC Excel
+                </button>
+                <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
+                    <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> 2. Publikasikan Hasil (Upload SK)
+                </button>
+            @elseif($hasReopenedSanggahan)
+                <button type="button" @click="openPublishModal = true" class="btn-primary !py-2 bg-emerald-600 hover:bg-emerald-700">
+                    <x-icon name="check-circle" class="h-4 w-4 mr-1 inline" /> Publikasikan Hasil Perbaikan (Upload SK)
+                </button>
+                <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800">
+                    <x-icon name="lock" class="h-4 w-4 text-amber-600" />
+                    Mode Arsip (Sanggahan)
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800">
+                    <x-icon name="lock" class="h-4 w-4 text-amber-600" />
+                    Mode Arsip (Read-Only)
+                </span>
+            @endif
         @else
-            <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800">
-                <x-icon name="lock" class="h-4 w-4 text-amber-600" />
-                Mode Arsip (Read-Only)
-            </span>
+            <a href="{{ route('operator.selection.export-tms', array_filter(['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId, 'periode' => $selectedPeriode])) }}" class="btn-secondary !py-2 bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100" title="Unduh rekap berkas TMS verifikasi dinas untuk jalur ini">
+                <x-icon name="download" class="h-4 w-4" /> Unduh Excel TMS (Jalur Ini)
+            </a>
+            <a href="{{ route('operator.selection.export-tms', ['periode' => $selectedPeriode]) }}" class="btn-secondary !py-2 bg-slate-50 text-rose-700 border-rose-200 hover:bg-rose-50" title="Unduh rekap berkas TMS verifikasi dinas semua jalur">
+                <x-icon name="download" class="h-4 w-4" /> Unduh TMS (Semua)
+            </a>
         @endif
 
         <!-- Step 1: Import Modal -->
@@ -135,7 +144,30 @@
     </div>
 </div>
 
-{{-- PILIHAN TAHUN / PERIODE BEASISWA (DI PALING ATAS SEBELUM KATEGORI & JENIS BEASISWA) --}}
+{{-- SISTEM 2 TAB: KANDIDAT LOLOS VS DAFTAR BERKAS TMS (BERWARNA & JELAS) --}}
+<div id="tab-seleksi" class="mt-6 scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
+    <nav class="flex flex-wrap items-center gap-2.5" aria-label="Tabs Seleksi">
+        <a href="{{ route('operator.selection', array_filter(['tab' => 'lolos', 'application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId, 'periode' => $selectedPeriode])) }}#tab-seleksi"
+           class="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-extrabold transition-all duration-200 {{ $activeTab === 'lolos' ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-600/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900' }}">
+            <x-icon name="check-circle" class="h-5 w-5 {{ $activeTab === 'lolos' ? 'text-white' : 'text-emerald-600' }}" />
+            <span>Calon Penerima Lolos (Siap Ditetapkan)</span>
+            <span class="rounded-full px-2.5 py-0.5 text-xs font-bold {{ $activeTab === 'lolos' ? 'bg-white/20 text-white' : 'bg-white text-slate-700 shadow-xs' }}">
+                {{ number_format($totalCurrentTypeCount) }}
+            </span>
+        </a>
+
+        <a href="{{ route('operator.selection', array_filter(['tab' => 'tms', 'application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId, 'periode' => $selectedPeriode])) }}#tab-seleksi"
+           class="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-extrabold transition-all duration-200 {{ $activeTab === 'tms' ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-600/20' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/80' }}">
+            <x-icon name="x-circle" class="h-5 w-5 {{ $activeTab === 'tms' ? 'text-white' : 'text-rose-600' }}" />
+            <span>Daftar Berkas TMS (Gugur Administrasi / Masa Sanggah)</span>
+            <span class="rounded-full px-2.5 py-0.5 text-xs font-bold {{ $activeTab === 'tms' ? 'bg-white/20 text-white' : 'bg-rose-200/80 text-rose-900' }}">
+                {{ number_format($currentTrackTmsCount) }}
+            </span>
+        </a>
+    </nav>
+</div>
+
+{{-- PILIHAN TAHUN / PERIODE BEASISWA --}}
 <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div class="flex items-center gap-3">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
@@ -147,7 +179,8 @@
         </div>
     </div>
     @if(isset($availablePeriodes) && $availablePeriodes->count() > 0)
-        <form method="GET" action="{{ route('operator.selection') }}" class="flex items-center gap-2">
+        <form method="GET" action="{{ route('operator.selection') }}#tab-seleksi" class="flex items-center gap-2">
+            <input type="hidden" name="tab" value="{{ $activeTab }}">
             <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
             @if($selectedJalurId)
                 <input type="hidden" name="jalur_beasiswa_id" value="{{ $selectedJalurId }}">
@@ -185,7 +218,7 @@
 <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Kategori:</span>
     <div class="flex flex-wrap items-center gap-2">
-        <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'periode' => $selectedPeriode]) }}"
+        <a href="{{ route('operator.selection', ['tab' => $activeTab, 'application_type' => $selectedType->value, 'periode' => $selectedPeriode]) }}#tab-seleksi"
            class="inline-flex flex-col items-start gap-0.5 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ empty($selectedJalurId) ? 'bg-navy-900 text-white shadow-sm ring-2 ring-navy-900/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
             <span class="inline-flex items-center gap-2">
                 <span>Semua</span>
@@ -199,7 +232,7 @@
         </a>
         @foreach($jalurBeasiswas as $jalur)
             @php $isActive = (int) $selectedJalurId === (int) $jalur->id; @endphp
-            <a href="{{ route('operator.selection', ['application_type' => $selectedType->value, 'jalur_beasiswa_id' => $jalur->id, 'periode' => $selectedPeriode]) }}"
+            <a href="{{ route('operator.selection', ['tab' => $activeTab, 'application_type' => $selectedType->value, 'jalur_beasiswa_id' => $jalur->id, 'periode' => $selectedPeriode]) }}#tab-seleksi"
                class="inline-flex flex-col items-start gap-0.5 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ $isActive ? ($jalur->kode === 'REGULER' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/20' : 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-600/20') : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
                 <span class="inline-flex items-center gap-2">
                     <span>{{ $jalur->nama }}</span>
@@ -217,7 +250,7 @@
 
 <div class="mt-5 grid gap-3 sm:grid-cols-2">
     @foreach($applicationTypes as $type)
-        <a href="{{ route('operator.selection', ['application_type' => $type->value, 'periode' => $selectedPeriode]) }}"
+        <a href="{{ route('operator.selection', ['tab' => $activeTab, 'application_type' => $type->value, 'periode' => $selectedPeriode]) }}#tab-seleksi"
            class="rounded-xl border p-5 transition {{ $selectedType === $type ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-100' : 'border-slate-200 bg-white hover:border-brand-200' }}">
             <div class="flex items-center justify-between gap-4">
                 <div>
@@ -234,6 +267,8 @@
         </a>
     @endforeach
 </div>
+
+@if($activeTab === 'lolos')
 
 <div class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
     <div class="card p-5">
@@ -278,7 +313,8 @@
 
 <div class="mt-7 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
     <div class="flex flex-wrap items-center gap-2">
-        <form method="GET" action="{{ route('operator.selection') }}" class="flex items-center gap-2">
+        <form method="GET" action="{{ route('operator.selection') }}#tab-seleksi" class="flex items-center gap-2">
+            <input type="hidden" name="tab" value="lolos">
             <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
             <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
             @if($selectedJalurId)
@@ -296,7 +332,8 @@
             </select>
         </form>
     </div>
-    <form method="GET" action="{{ route('operator.selection') }}" class="flex w-full items-center gap-2 sm:w-auto">
+    <form method="GET" action="{{ route('operator.selection') }}#tab-seleksi" class="flex w-full items-center gap-2 sm:w-auto">
+        <input type="hidden" name="tab" value="lolos">
         <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
         <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
         @if($selectedJalurId)
@@ -311,7 +348,7 @@
         </div>
         <button class="btn-secondary !py-1.5 !px-3 text-sm">Cari</button>
         @if(request()->hasAny(['search', 'status_filter']))
-            <a href="{{ route('operator.selection', array_filter(['periode' => $selectedPeriode, 'application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId])) }}" class="btn-secondary !py-1.5 !px-3 text-sm" title="Reset filter pencarian">
+            <a href="{{ route('operator.selection', array_filter(['tab' => 'lolos', 'periode' => $selectedPeriode, 'application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId])) }}#tab-seleksi" class="btn-secondary !py-1.5 !px-3 text-sm" title="Reset filter pencarian">
                 ✕
             </a>
         @endif
@@ -464,4 +501,217 @@
     </div>
 </div>
 <div class="mt-6">{{ $applications->links() }}</div>
+@else
+    {{-- TAB 2: DAFTAR BERKAS TMS (GUGUR ADMINISTRASI / MASA SANGGAH) --}}
+    <div class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="card p-5">
+            <p class="text-sm font-semibold text-slate-500">Berkas TMS Jalur {{ $selectedJalur?->nama ?? $selectedType->label() }}</p>
+            <p class="metric-number mt-2 text-rose-600">{{ number_format($currentTrackTmsCount) }}</p>
+            <p class="mt-1 text-xs text-slate-500">Mahasiswa gugur administrasi verifikasi dinas teknis</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-semibold text-slate-500">Total Berkas TMS Semua Jalur</p>
+            <p class="metric-number mt-2 text-slate-800">{{ number_format($allTracksTmsCount) }}</p>
+            <p class="mt-1 text-xs text-slate-500">Periode {{ $selectedPeriode }}</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-semibold text-slate-500">Tindak Lanjut Masa Sanggah</p>
+            <p class="mt-2 text-sm font-bold text-navy-900">Hak Sanggah Mahasiswa</p>
+            <p class="mt-1 text-xs text-slate-500">Berkas yang dikabulkan sanggahannya otomatis dipulihkan ke Tab Calon Lolos.</p>
+        </div>
+    </div>
+
+    <div class="mt-7 rounded-xl border border-rose-200 bg-rose-50 p-5">
+        <div class="flex items-start gap-3">
+            <x-icon name="info" class="mt-0.5 h-5 w-5 shrink-0 text-rose-700" />
+            <div class="text-sm leading-6 text-rose-900">
+                <p class="font-bold">Daftar Berkas Tidak Memenuhi Syarat (TMS) Verifikasi Dinas Teknis</p>
+                <p class="mt-1 text-xs text-rose-800">
+                    Mahasiswa di bawah ini dinyatakan TMS pada verifikasi administrasi oleh dinas teknis (Dukcapil, Dinsos, Disdikbud, Dinkes, BKPSDM, Parsepor).
+                    Daftar ini digunakan untuk <b>merekap pengumuman sementara pra-sanggah</b> dan <b>memantau masa sanggah</b>.
+                    Sesuai prinsip keadilan Perbup, mahasiswa berkas TMS <b>tidak diberi nomor peringkat maupun skor kuota</b>. Apabila sanggahan mahasiswa dikabulkan (karena koreksi kesalahan verifikator), berkas akan dipulihkan ke tahap seleksi untuk diperingkat bersama kandidat lainnya.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-7 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+        <div class="text-xs font-medium text-slate-600">
+            Menampilkan berkas TMS jalur <b>{{ $selectedType->label() }}</b>@if($selectedJalur) - <b>{{ $selectedJalur->nama }}</b>@endif ({{ number_format($currentTrackTmsCount) }} mahasiswa)
+        </div>
+        <form method="GET" action="{{ route('operator.selection') }}#tab-seleksi" class="flex w-full items-center gap-2 sm:w-auto">
+            <input type="hidden" name="tab" value="tms">
+            <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
+            <input type="hidden" name="application_type" value="{{ $selectedType->value }}">
+            @if($selectedJalurId)
+                <input type="hidden" name="jalur_beasiswa_id" value="{{ $selectedJalurId }}">
+            @endif
+            <div class="relative w-full sm:w-64">
+                <x-icon name="search" class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input name="search" value="{{ request('search') }}" class="form-input !py-1.5 !pl-9 text-sm" placeholder="Cari nomor pengajuan / nama...">
+            </div>
+            <button class="btn-secondary !py-1.5 !px-3 text-sm">Cari</button>
+            @if(request()->filled('search'))
+                <a href="{{ route('operator.selection', array_filter(['tab' => 'tms', 'periode' => $selectedPeriode, 'application_type' => $selectedType->value, 'jalur_beasiswa_id' => $selectedJalurId])) }}#tab-seleksi" class="btn-secondary !py-1.5 !px-3 text-sm" title="Reset filter pencarian">
+                    ✕
+                </a>
+            @endif
+        </form>
+    </div>
+
+    <div class="table-shell mt-5">
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="w-12 text-center">No</th>
+                        <th>Mahasiswa</th>
+                        <th>Jalur & Kategori</th>
+                        <th>Wilayah</th>
+                        <th>Dinas Penolak</th>
+                        <th>Alasan / Catatan Penolakan Dinas</th>
+                        <th>Status Sanggahan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($tmsApplications as $application)
+                        @php
+                            $profile = $application->mahasiswa?->profile;
+                            $tmsVerifications = $application->agencyVerifications->where('decision', \App\Enums\VerificationDecision::TMS);
+                            $catatanTms = $tmsVerifications
+                                ->filter(fn ($v) => filled($v->notes))
+                                ->map(fn ($v) => \App\Services\AgencyVerificationService::stageLabel($v->agency).': '.$v->notes)
+                                ->values();
+                            if ($catatanTms->isEmpty() && filled($application->catatan)) {
+                                $catatanTms = collect([$application->catatan]);
+                            }
+
+                            $isWaitingDinas = $application->status === \App\Enums\ApplicationStatus::VERIFIKASI_DINAS
+                                && $application->sanggahan?->status === \App\Enums\SanggahanStatus::DIKABULKAN;
+
+                            $grantedLog = $isWaitingDinas
+                                ? $application->verificationLogs->firstWhere('action', 'sanggahan_granted')
+                                : null;
+                            $metadata = $grantedLog?->metadata ?? [];
+                            $annulledAgencies = collect($metadata['annulled_agencies'] ?? []);
+                            $annulledVerifications = collect($metadata['annulled_verifications'] ?? []);
+
+                            if ($annulledVerifications->isEmpty() && $annulledAgencies->isNotEmpty()) {
+                                $annulledVerifications = $annulledAgencies->map(fn ($ag) => [
+                                    'agency' => $ag,
+                                    'agency_label' => \App\Services\AgencyVerificationService::stageLabel($ag),
+                                    'notes' => $application->sanggahan?->catatan_keputusan ?? 'Keputusan TMS dianulir lewat sanggahan.',
+                                ]);
+                            }
+
+                            if ($tmsVerifications->isEmpty() && $annulledVerifications->isNotEmpty()) {
+                                $catatanTms = $annulledVerifications
+                                    ->filter(fn ($v) => filled($v['notes'] ?? null))
+                                    ->map(fn ($v) => ($v['agency_label'] ?? \App\Services\AgencyVerificationService::stageLabel($v['agency'])).': '.$v['notes'])
+                                    ->values();
+                            }
+
+                            $rowNum = ($tmsApplications->currentPage() - 1) * $tmsApplications->perPage() + $loop->iteration;
+                        @endphp
+                        <tr>
+                            <td class="text-center font-bold text-slate-500">
+                                {{ $rowNum }}
+                            </td>
+                            <td>
+                                <p class="font-semibold text-slate-900">{{ $application->mahasiswa?->name }}</p>
+                                <p class="mt-0.5 text-xs text-slate-500">{{ $application->nomor_pengajuan }}</p>
+                                @php
+                                    $pendidikan = $application->pendaftaran?->pendidikan;
+                                @endphp
+                                @if($pendidikan)
+                                    <p class="mt-1 text-xs text-slate-600">
+                                        {{ $pendidikan->nama_perguruan_tinggi }} · {{ $pendidikan->program_studi }} (Smtr {{ $pendidikan->semester }})
+                                    </p>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                                    {{ $application->application_type->label() }}
+                                </span>
+                                @if($application->pendaftaran?->jalurBeasiswa)
+                                    <p class="mt-1">
+                                        <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold {{ $application->pendaftaran->jalurBeasiswa->kode === 'REGULER' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-purple-50 text-purple-700 border border-purple-200' }}">
+                                            {{ $application->pendaftaran->jalurBeasiswa->nama }}
+                                        </span>
+                                    </p>
+                                @endif
+                            </td>
+                            <td>
+                                <p class="text-xs font-semibold text-slate-800">{{ $profile?->village?->display_name ?? '-' }}</p>
+                                <p class="text-[11px] text-slate-500">{{ $profile?->village?->kecamatan?->name ?? '-' }}</p>
+                            </td>
+                            <td>
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse($tmsVerifications as $v)
+                                        <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
+                                            {{ \App\Services\AgencyVerificationService::stageLabel($v->agency) }}
+                                        </span>
+                                    @empty
+                                        @if($annulledVerifications->isNotEmpty())
+                                            @foreach($annulledVerifications as $av)
+                                                <span class="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200" title="Keputusan TMS dianulir, sedang dinilai ulang oleh dinas">
+                                                    {{ $av['agency_label'] ?? \App\Services\AgencyVerificationService::stageLabel($av['agency']) }}
+                                                </span>
+                                            @endforeach
+                                        @else
+                                            <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
+                                                Dinas Teknis
+                                            </span>
+                                        @endif
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td class="max-w-xs">
+                                <div class="space-y-1">
+                                    @forelse($catatanTms as $note)
+                                        <p class="text-xs text-slate-700 leading-relaxed">{{ $note }}</p>
+                                    @empty
+                                        <p class="text-xs italic text-slate-400">Tidak ada catatan rincian dari dinas.</p>
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td>
+                                @if($application->sanggahan)
+                                    <div>
+                                        <span class="status-chip {{ $application->sanggahan->status === \App\Enums\SanggahanStatus::DIKABULKAN ? 'status-success' : ($application->sanggahan->status === \App\Enums\SanggahanStatus::DITOLAK ? 'status-danger' : 'status-purple') }}">
+                                            {{ $application->sanggahan->status->label() }}
+                                        </span>
+
+                                        @if($application->sanggahan->status === \App\Enums\SanggahanStatus::DIKABULKAN && $application->status === \App\Enums\ApplicationStatus::VERIFIKASI_DINAS)
+                                            <p class="mt-0.5 text-[11px] font-semibold text-emerald-700">
+                                                Menunggu dinas menilai ulang
+                                            </p>
+                                        @endif
+
+                                        <a href="{{ route('operator.sanggahan.index') }}" class="mt-1 block text-[11px] font-semibold text-brand-600 hover:text-brand-800">
+                                            Lihat di Antrean Sanggahan →
+                                        </a>
+                                    </div>
+                                @else
+                                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                                        Belum Ada Sanggahan
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-14 text-center text-slate-500">
+                                Tidak ada berkas TMS untuk jalur {{ $selectedType->label() }}@if($selectedJalur) ({{ $selectedJalur->nama }})@endif.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if($tmsApplications)
+        <div class="mt-6">{{ $tmsApplications->links() }}</div>
+    @endif
+@endif
 @endsection

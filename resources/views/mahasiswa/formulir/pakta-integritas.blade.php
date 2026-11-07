@@ -144,6 +144,19 @@
             height: 22mm;
         }
 
+        .materai-box {
+            display: inline-block;
+            width: 17mm;
+            margin-top: 5mm;
+            margin-right: 16mm;
+            padding: 1.2mm 1mm;
+            border: 0.5pt solid #333;
+            font-size: 7pt;
+            line-height: 1.15;
+            text-align: center;
+            color: #222;
+        }
+
         .signature-name {
             text-align: center;
             white-space: nowrap;
@@ -419,7 +432,7 @@
          ========================================================= --}}
 
     <div class="statement-intro">
-        Dalam rangka penerimaan Bantuan Biaya Pendidikan melalui Program
+        Dalam rangka penerimaan Beasiswa melalui Program
         Kartu Hebat Mahasiswa, dengan ini menyatakan bahwa:
     </div>
 
@@ -435,15 +448,14 @@
             <td class="statement-content">
                 Saya tidak pernah melakukan pemalsuan dokumen yang menjadi
                 persyaratan administrasi dalam mengajukan permohonan untuk
-                mendapatkan Bantuan Biaya Pendidikan;
+                mendapatkan Beasiswa;
             </td>
         </tr>
 
         <tr>
             <td class="statement-letter">b.</td>
             <td class="statement-content">
-                Saya akan mempertanggungjawabkan semua dana Bantuan Biaya
-                Pendidikan ini sesuai dengan peruntukannya dan menyampaikan
+                Saya akan mempertanggungjawabkan semua dana Beasiswa ini sesuai dengan peruntukannya dan menyampaikan
                 laporan pertanggungjawabannya tepat waktu;
             </td>
         </tr>
@@ -452,7 +464,7 @@
             <td class="statement-letter">c.</td>
             <td class="statement-content">
                 Saya tidak sedang menerima beasiswa sejenis yang bersumber dari
-                APBN, APBD;
+                APBN dan APBD;
             </td>
         </tr>
 
@@ -468,7 +480,7 @@
             <td class="statement-letter">e.</td>
             <td class="statement-content">
                 Apabila saya melanggar Pakta Integritas ini, saya bersedia
-                mengembalikan secara keseluruhan dana Bantuan Biaya pendidikan
+                mengembalikan secara keseluruhan dana Beasiswa
                 yang saya terima ke Kas Daerah dan akan dikenakan sanksi sesuai
                 dengan ketentuan peraturan perundang-undangan yang berlaku.
             </td>
@@ -526,7 +538,12 @@
                         Yang membuat pernyataan,
                     </div>
 
-                    <div class="signature-space"></div>
+                    <div class="signature-space">
+                        <div class="materai-box">
+                            Materai<br>
+                            Rp. 10.000
+                        </div>
+                    </div>
 
                     <div class="signature-name">
                         {{ $namaMahasiswa }}

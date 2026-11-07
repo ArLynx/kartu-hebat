@@ -87,7 +87,7 @@
                         @foreach($agencies as $code)
                             <td>
                                 @if(! in_array($code, $required, true))
-                                    <span class="status-chip status-neutral">Tidak berlaku</span>
+                                    <span class="status-chip status-neutral">Tidak melakukan verifikasi</span>
                                 @elseif($agency->has($code))
                                     @php $decision = $agency[$code]->decision; @endphp
                                     <span class="status-chip {{ $decision->value === 'MS' ? 'status-success' : 'status-danger' }}">
