@@ -28,6 +28,34 @@ class Pendaftaran extends Model
         });
     }
 
+    /**
+     * Menghasilkan nomor tiket pendaftaran acak (huruf kapital & angka tanpa karakter ambigu O/0/I/1)
+     * yang dijamin unik di tabel pendaftarans maupun applications.
+     * Contoh hasil: KHM-2026-8K4M9P
+     */
+    public static function generateNomorPendaftaran(int|string $tahun, int $length = 6): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $maxIndex = strlen($alphabet) - 1;
+
+        do {
+            $randomCode = '';
+            for ($i = 0; $i < $length; $i++) {
+                $randomCode .= $alphabet[random_int(0, $maxIndex)];
+            }
+
+            $nomor = sprintf('KHM-%s-%s', $tahun, $randomCode);
+            $isMixed = preg_match('/[A-Z]/', $randomCode) === 1
+                && preg_match('/[2-9]/', $randomCode) === 1;
+
+            $shouldRetry = ! $isMixed
+                || static::query()->where('nomor_pendaftaran', $nomor)->exists()
+                || Application::query()->where('nomor_pengajuan', $nomor)->exists();
+        } while ($shouldRetry);
+
+        return $nomor;
+    }
+
     protected function casts(): array
     {
         return [

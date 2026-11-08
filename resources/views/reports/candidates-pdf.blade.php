@@ -48,7 +48,7 @@
                     <td>{{ $application->mahasiswa->profile?->desil_sosial ?? '-' }}</td>
                     <td>{{ $application->mahasiswa->profile?->village?->display_name }}, {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</td>
                     <td>{{ number_format((float) ($application->selection?->final_score ?? 0), 2) }}</td>
-                    <td>{{ $application->selection?->published_at ? $application->status->label() : ($application->selection?->manual_decision ?? 'Menunggu') }}</td>
+                    <td>{{ $application->selection?->published_at ? $application->status->label() : ($application->selection?->manualDecisionStatus()?->label() ?? 'Menunggu') }}</td>
                 </tr>
             @empty
                 <tr><td colspan="12">Tidak ada data.</td></tr>

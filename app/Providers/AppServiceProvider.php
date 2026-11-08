@@ -33,10 +33,7 @@ class AppServiceProvider extends ServiceProvider
 
         try {
             if (Schema::hasTable('periodes')) {
-                $activePeriod = Periode::query()
-                    ->where('status', 'aktif')
-                    ->latest('id')
-                    ->first();
+                $activePeriod = Periode::latestAktif();
 
                 if ($activePeriod) {
                     $activePeriodName = $activePeriod->nama ?: (string) $activePeriod->tahun;

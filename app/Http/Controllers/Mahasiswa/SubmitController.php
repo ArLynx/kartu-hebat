@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Pendaftaran;
 use App\Services\ApplicationWorkflowService;
 use App\Services\MahasiswaPendaftaranService;
+use App\Services\SanggahanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +18,7 @@ class SubmitController extends Controller
     public function __construct(
         private readonly MahasiswaPendaftaranService $flow,
         private readonly ApplicationWorkflowService $workflow,
+        private readonly SanggahanService $sanggahanService,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -28,13 +31,23 @@ class SubmitController extends Controller
                 ->with('error', 'Buat pendaftaran beasiswa terlebih dahulu.');
         }
 
-        $pendaftaran->load(['periode', 'kategoriBeasiswa', 'application']);
+        $pendaftaran->load(['periode', 'kategoriBeasiswa', 'application.agencyVerifications.verifier', 'application.sanggahan']);
+
+        $application = $pendaftaran->application;
+        $canSubmitSanggahan = $application !== null
+            && $request->user()->can('submitSanggahan', $application);
+
+        $sanggahanReason = $application !== null && $application->status === ApplicationStatus::TMS
+            ? $this->sanggahanService->ineligibilityReason($application, $request->user())
+            : null;
 
         return view('mahasiswa.submit.index', [
             'pendaftaran' => $pendaftaran,
             'stepStatuses' => $this->flow->completion($pendaftaran),
             'missingStages' => $this->flow->missingStageLabels($pendaftaran, true),
             'canEdit' => $this->flow->isEditable($pendaftaran),
+            'canSubmitSanggahan' => $canSubmitSanggahan,
+            'sanggahanReason' => $sanggahanReason,
         ]);
     }
 

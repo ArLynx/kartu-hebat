@@ -108,7 +108,7 @@ class LpjController extends Controller
                 $q->where('status', 'approved')
                     ->orWhereHas('application', fn ($aq) => $aq->where('status', ApplicationStatus::DITERIMA));
             })
-            ->with(['laporanPertanggungjawaban'])
+            ->with(['laporanPertanggungjawaban', 'periode', 'dataPribadi'])
             ->latest('id')
             ->first();
 
@@ -151,7 +151,21 @@ class LpjController extends Controller
             ]
         );
 
-        return back()->with('success', 'Laporan Pertanggungjawaban (LPJ) berhasil diunggah dan sedang menunggu verifikasi Admin Kabupaten.');
+        $isPastDeadline = $pendaftaran->periode?->isLpjPastDeadline() ?? false;
+        $userNik = $user->profile?->nik ?? $pendaftaran->dataPribadi?->nik;
+        $isBlacklisted = false;
+        if ($userNik) {
+            $isBlacklisted = Blacklist::query()
+                ->where('nik', $userNik)
+                ->where('aktif', true)
+                ->exists();
+        }
+
+        $successMessage = ($isPastDeadline || $isBlacklisted)
+            ? 'Laporan Pertanggungjawaban (LPJ) susulan berhasil diunggah. Mohon segera melapor diri ke Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya untuk proses verifikasi dokumen dan pembukaan blokir akun Anda.'
+            : 'Laporan Pertanggungjawaban (LPJ) berhasil diunggah dan sedang menunggu verifikasi Admin Kabupaten.';
+
+        return back()->with('success', $successMessage);
     }
 
     public function file(Request $request): StreamedResponse|RedirectResponse

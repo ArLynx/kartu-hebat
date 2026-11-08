@@ -24,6 +24,7 @@
                     <th>Tahun / Periode</th>
                     <th>Jadwal Pendaftaran</th>
                     <th>Jadwal LPJ</th>
+                    <th>Masa Sanggah</th>
                     <th>Kategori Terkait</th>
                     <th>Total Pendaftar</th>
                     <th>Status</th>
@@ -75,6 +76,20 @@
                             @endif
                         </td>
                         <td>
+                            @php($masaSanggahStatus = $periode->masaSanggahStatus())
+                            @if($masaSanggahStatus->isScheduled())
+                                <div class="flex items-center gap-1.5 text-sm text-slate-700">
+                                    <x-icon name="calendar" class="h-4 w-4 text-slate-400" />
+                                    <span>{{ $periode->tanggal_mulai_sanggah->format('d M Y') }} — {{ $periode->tanggal_selesai_sanggah->format('d M Y') }}</span>
+                                </div>
+                            @else
+                                <span class="text-xs italic text-slate-400">Belum diatur</span>
+                            @endif
+                            <div class="mt-1">
+                                <x-status-badge :status="$masaSanggahStatus" class="text-xs" />
+                            </div>
+                        </td>
+                        <td>
                             <span class="status-chip status-info">{{ $periode->kategori_beasiswas_count }} kategori</span>
                         </td>
                         <td>
@@ -106,7 +121,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-12 text-center text-slate-500">
+                        <td colspan="8" class="py-12 text-center text-slate-500">
                             Belum ada data periode beasiswa. Klik tombol <strong>Tambah Periode</strong> untuk membuatnya.
                         </td>
                     </tr>

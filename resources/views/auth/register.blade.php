@@ -2,7 +2,6 @@
     <div class="mb-8">
         <p class="section-kicker">Pendaftaran mahasiswa</p>
         <h1 class="mt-3 text-3xl font-extrabold">Buat akun baru</h1>
-        <p class="mt-2 text-sm leading-6 text-slate-600">Akun baru otomatis memperoleh role Mahasiswa. Akun internal dibuat oleh pengelola sistem.</p>
     </div>
 
     <x-validation-errors class="mb-5" />
@@ -18,15 +17,16 @@
         <div>
             <label for="email" class="form-label">Email Aktif</label>
             <input id="email" type="email" name="email" value="{{ old('email') }}" class="form-input" autocomplete="username" required placeholder="nama@email.com">
+            <p class="form-help">Gunakan email dari Gmail, Yahoo, Outlook, atau email institusi kampus ( .ac.id ).</p>
         </div>
 
         <div x-data="{ show: false }">
             <label for="password" class="form-label">Kata Sandi</label>
             <div class="relative">
-                <input id="password" :type="show ? 'text' : 'password'" name="password" class="form-input !pr-16" autocomplete="new-password" required placeholder="Minimal 8 karakter">
+                <input id="password" :type="show ? 'text' : 'password'" name="password" class="form-input !pr-16" autocomplete="new-password" required placeholder="Minimal 8 karakter (contoh: Hebat@2026)">
                 <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-4 text-xs font-semibold text-slate-500 hover:text-brand-600" x-text="show ? 'Sembunyi' : 'Lihat'"></button>
             </div>
-            <p class="form-help">Minimal 8 karakter. Disarankan menggunakan kombinasi huruf dan angka agar akun Anda aman.</p>
+            <p class="form-help">Minimal 8 karakter, wajib memuat minimal 1 huruf kapital (A–Z) dan 1 karakter tanda/simbol (contoh: @, #, $, !).</p>
         </div>
 
         <div x-data="{ show: false }">

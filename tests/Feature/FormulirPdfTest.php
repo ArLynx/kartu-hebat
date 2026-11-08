@@ -396,6 +396,33 @@ class FormulirPdfTest extends TestCase
         $response = $this->actingAs($user)->get(route('mahasiswa.formulir.pakta-integritas'));
         $response->assertOk();
         $response->assertHeader('content-disposition', 'attachment; filename=Pakta-Integritas-REG-2026-PI01.pdf');
+
+        $pendaftaran->load([
+            'periode',
+            'kategoriBeasiswa',
+            'jalurBeasiswa',
+            'dataPribadi',
+            'pendidikan',
+            'orangTua',
+        ]);
+
+        $html = view('mahasiswa.formulir.pakta-integritas', [
+            'pendaftaran' => $pendaftaran,
+        ])->render();
+
+        $this->assertStringContainsString('Materai', $html);
+        $this->assertStringContainsString('Rp. 10.000', $html);
+        $this->assertStringContainsString('APBN dan APBD;', $html);
+        $this->assertStringNotContainsStringIgnoringCase('bantuan biaya pendidikan', $html);
+
+        $pdf = Pdf::loadView('mahasiswa.formulir.pakta-integritas', [
+            'pendaftaran' => $pendaftaran,
+        ]);
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->output();
+
+        $pageCount = $pdf->getCanvas()->get_page_count();
+        $this->assertSame(1, $pageCount, 'Pakta Integritas harus tetap tepat 1 halaman.');
     }
 
     public function test_surat_permohonan_tidak_mampu_renders_exactly_1_page(): void

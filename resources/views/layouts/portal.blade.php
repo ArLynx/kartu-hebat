@@ -95,6 +95,11 @@
                 <x-sidebar-link :href="route('public.results')" :active="request()->routeIs('public.results')" icon="announcement">
                     Pengumuman
                 </x-sidebar-link>
+
+                {{-- Sanggahan --}}
+                <x-sidebar-link :href="route('mahasiswa.sanggahan.index')" :active="request()->routeIs('mahasiswa.sanggahan.*')" icon="shield">
+                    Sanggahan
+                </x-sidebar-link>
             @elseif($user->isSuperadmin())
                 <x-sidebar-link :href="route('superadmin.dashboard')" :active="request()->routeIs('superadmin.dashboard')" icon="home">
                     Dashboard
@@ -128,6 +133,9 @@
             @else
                 <x-sidebar-link :href="route('operator.dashboard')" :active="request()->routeIs('operator.dashboard')" icon="home">Dashboard</x-sidebar-link>
                 <x-sidebar-link :href="route('operator.applications.index')" :active="request()->routeIs('operator.applications.*')" icon="form">Antrean Pengajuan</x-sidebar-link>
+                @if ($user->role->isAgency())
+                    <x-sidebar-link :href="route('operator.sanggahan-queue.index')" :active="request()->routeIs('operator.sanggahan-queue.*')" icon="warning">Antrean Sanggahan</x-sidebar-link>
+                @endif
                 @if ($user->hasRole('operator_kecamatan', 'operator_kabupaten'))
                     <a href="{{ route('operator.reports.recap') }}" class="sidebar-link">
                         <x-icon name="download" class="h-5 w-5" />
@@ -137,6 +145,7 @@
                 @if ($user->hasRole('operator_kabupaten'))
                     <x-sidebar-link :href="route('operator.reconciliation')" :active="request()->routeIs('operator.reconciliation')" icon="shield">Rekonsiliasi
                         Dinas</x-sidebar-link>
+                    <x-sidebar-link :href="route('operator.sanggahan.index')" :active="request()->routeIs('operator.sanggahan.*')" icon="warning">Sanggahan</x-sidebar-link>
                     <x-sidebar-link :href="route('operator.selection')" :active="request()->routeIs('operator.selection*')" icon="users">Penetapan
                         Penerima</x-sidebar-link>
                     <x-sidebar-link :href="route('operator.lpj.index')" :active="request()->routeIs('operator.lpj.*')" icon="folder">Monitoring LPJ & Blokir</x-sidebar-link>

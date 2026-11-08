@@ -332,9 +332,10 @@ class ApplicationWorkflowService
     private function documentApplicationType(string $code, ApplicationType $applicationType): ?string
     {
         return match (Str::upper($code)) {
-            'KTP', 'KK', 'KTM', 'SURAT-AKTIF' => null,
-            'KHS' => ApplicationType::AKADEMIK->value,
+            'KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'SERTIFIKAT-AKREDITASI', 'BUKU-REKENING-BPDK', 'SCREENSHOT-PDDIKTI', 'TAGIHAN-UKT', 'KHS', 'TAMBAHAN' => null,
             'SKTM' => ApplicationType::TIDAK_MAMPU->value,
+            'SURAT-DISABILITAS', 'FOTO-KONDISI' => ApplicationType::DISABILITAS->value,
+            'SERTIFIKAT-PRESTASI' => ApplicationType::NON_AKADEMIK->value,
             default => $applicationType->value,
         };
     }

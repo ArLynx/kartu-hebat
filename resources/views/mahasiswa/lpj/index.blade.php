@@ -45,9 +45,15 @@
                                 <span class="italic text-slate-700">{{ $activeBlacklist->alasan }}</span>
                             </div>
                         @endif
-                        <p class="mt-2 text-xs font-semibold text-rose-950">
-                            Silakan unggah berkas bukti pembayaran UKT / LPJ yang valid di bawah ini agar dapat diverifikasi oleh Admin Kabupaten untuk memulihkan hak pendaftaran Anda.
-                        </p>
+                        @if($lpj && $lpj->status === 'menunggu_verifikasi')
+                            <p class="mt-2 text-xs font-semibold text-rose-950">
+                                Berkas LPJ susulan Anda telah terkirim ke sistem. Mohon segera melapor diri ke <strong>Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya</strong> agar berkas dapat diverifikasi dan blokir akun pendaftaran Anda dibuka.
+                            </p>
+                        @else
+                            <p class="mt-2 text-xs font-semibold text-rose-950">
+                                Silakan unggah berkas bukti pembayaran UKT / LPJ yang valid di bawah ini. Setelah berhasil mengunggah, silakan melapor diri ke <strong>Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya</strong> untuk verifikasi berkas dan pembukaan blokir akun pendaftaran Anda.
+                            </p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -106,8 +112,13 @@
                             <p class="mt-0.5 text-emerald-600 font-semibold">● Kewajiban LPJ Selesai (Berkas Disetujui)</p>
                             <p class="mt-0.5 text-[11px] text-slate-500">Anda telah menyelesaikan kewajiban LPJ periode ini dan bebas mendaftar di periode berikutnya.</p>
                         @elseif($lpj && $lpj->status === 'menunggu_verifikasi')
-                            <p class="mt-0.5 text-purple-600 font-semibold">● Berkas LPJ Telah Dikirim — Menunggu Verifikasi Admin</p>
-                            <p class="mt-0.5 text-[11px] text-slate-500">Bukti pembayaran UKT Anda sedang dalam antrean pemeriksaan oleh Admin Kabupaten.</p>
+                            @if($isPastDeadline || $isBlacklisted)
+                                <p class="mt-0.5 text-purple-600 font-semibold">● Berkas LPJ Susulan Telah Dikirim — Menunggu Verifikasi</p>
+                                <p class="mt-0.5 text-[11px] text-purple-900 font-medium">Berkas telah terkirim ke sistem. Mohon segera melapor diri ke Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya untuk proses verifikasi dan pembukaan blokir akun.</p>
+                            @else
+                                <p class="mt-0.5 text-purple-600 font-semibold">● Berkas LPJ Telah Dikirim — Menunggu Verifikasi Admin</p>
+                                <p class="mt-0.5 text-[11px] text-slate-500">Bukti pembayaran UKT Anda sedang dalam antrean pemeriksaan oleh Admin Kabupaten.</p>
+                            @endif
                         @elseif($lpj && $lpj->status === 'ditolak')
                             <p class="mt-0.5 text-rose-600 font-semibold">● Berkas Perlu Perbaikan — Wajib Unggah Ulang Berkas yang Sesuai</p>
                         @elseif($isLpjOpen)
@@ -177,7 +188,7 @@
                     {{ $lpj && $lpj->file_path ? 'Unggah Ulang Berkas LPJ' : 'Unggah Bukti Pembayaran UKT / LPJ' }}
                 </h3>
                 <p class="mt-1 text-xs text-slate-600">
-                    Unggah bukti pembayaran UKT atau struk resmi dari perguruan tinggi Anda.
+                    Unggah bukti pembayaran UKT atau kuitansi resmi dari perguruan tinggi Anda.
                 </p>
 
                 <form method="POST" action="{{ route('mahasiswa.lpj.store') }}" enctype="multipart/form-data" class="mt-5 space-y-4">
@@ -282,7 +293,7 @@
                 </div>
                 <div class="text-xs">
                     <p class="font-bold text-slate-800">Bukti Pembayaran UKT / SPP Asli</p>
-                    <p class="mt-0.5 text-slate-500">Struk ATM, bukti setoran bank, atau kuitansi resmi dari kampus yang terbaca jelas.</p>
+                    <p class="mt-0.5 text-slate-500">Bukti setoran bank atau kuitansi resmi dari kampus yang terbaca jelas.</p>
                 </div>
             </div>
 

@@ -19,7 +19,8 @@ class ApplicationController extends Controller
         $user = $request->user();
         $query = Application::query()
             ->visibleTo($user)
-            ->where('periode', config('kartu_hebat.current_period'))
+            ->whereOpenForVerification()
+            ->when($user->role->isAgency(), fn (Builder $query) => $query->whereNotAwaitingReverification())
             ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
             ->whereNot('status', ApplicationStatus::DRAFT->value);
 
@@ -57,7 +58,8 @@ class ApplicationController extends Controller
 
         $baseCountQuery = Application::query()
             ->visibleTo($user)
-            ->where('applications.periode', config('kartu_hebat.current_period'))
+            ->whereOpenForVerification()
+            ->when($user->role->isAgency(), fn (Builder $query) => $query->whereNotAwaitingReverification())
             ->whereNot('applications.status', ApplicationStatus::DRAFT->value);
 
         if ($track = $user->role->verifiedTrack()) {
@@ -87,6 +89,9 @@ class ApplicationController extends Controller
             'jalurBeasiswas' => JalurBeasiswa::query()->where('aktif', true)->orderBy('urutan')->get(),
             'jalurCounts' => $rawJalurCounts,
             'totalQueueCount' => $rawJalurCounts->sum(),
+            'sanggahanQueueCount' => $user->role->isAgency()
+                ? Application::query()->visibleTo($user)->whereAwaitingReverificationBy($user)->count()
+                : 0,
         ]);
     }
 
@@ -107,8 +112,12 @@ class ApplicationController extends Controller
             'verificationLogs.actor',
             'scores.criterion',
             'selection',
+            'sanggahan.decidedBy',
             'pendaftaran.prestasis',
             'pendaftaran.jalurBeasiswa',
+            'pendaftaran.formulirPendaftaran',
+            'pendaftaran.dataPribadi',
+            'pendaftaran.orangTua',
         ]);
 
         $verifications = $application->documentVerifications;
@@ -120,6 +129,29 @@ class ApplicationController extends Controller
             $canEditChecklist = AgencyVerificationService::canVerifyStage($application, $stage);
         }
 
+        $siblingApplications = collect();
+        if ($user->role === UserRole::OPERATOR_BKPSDM) {
+            $nomorKk = $application->pendaftaran?->dataPribadi?->nomor_kk;
+            if ($nomorKk) {
+                $periodeId = $application->pendaftaran?->periode_id;
+                $siblingApplications = Application::query()
+                    ->where('applications.id', '!=', $application->id)
+                    ->whereHas('pendaftaran', function ($pq) use ($nomorKk, $periodeId) {
+                        if ($periodeId) {
+                            $pq->where('periode_id', $periodeId);
+                        }
+                        $pq->whereHas('dataPribadi', fn ($dq) => $dq->where('nomor_kk', $nomorKk));
+                    })
+                    ->with([
+                        'mahasiswa',
+                        'pendaftaran.dataPribadi',
+                        'pendaftaran.orangTua',
+                        'pendaftaran.jalurBeasiswa',
+                    ])
+                    ->get();
+            }
+        }
+
         return view('operator.applications.show', [
             'application' => $application,
             'canVerify' => $user->can('verify', $application),
@@ -127,6 +159,7 @@ class ApplicationController extends Controller
             'docVerificationStage' => $stage,
             'canEditChecklist' => $canEditChecklist,
             'docVerificationRound' => $currentRound,
+            'siblingApplications' => $siblingApplications,
         ]);
     }
 

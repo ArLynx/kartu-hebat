@@ -5,12 +5,20 @@ namespace Tests\Feature;
 use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
 use App\Models\Application;
+use App\Models\Blacklist;
 use App\Models\FormulirPendaftaran;
 use App\Models\LaporanPertanggungjawaban;
 use App\Models\Pendaftaran;
 use App\Models\Periode;
 use App\Models\User;
+use Database\Seeders\BeasiswaMasterSeeder;
+use Database\Seeders\DemoDataSeeder;
+use Database\Seeders\DisabilityTrackSeeder;
+use Database\Seeders\JalurBeasiswaSeeder;
+use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\MultiPeriodeDemoSeeder;
+use Database\Seeders\PrestasiTrackSeeder;
+use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -91,12 +99,18 @@ class MultiPeriodeDemoSeederTest extends TestCase
 
     public function test_sequential_run_with_demo_data_seeder_succeeds_without_conflict(): void
     {
-        // Master seeders prasyarat bawaan
-        $this->seed(\Database\Seeders\RegionSeeder::class);
-        $this->seed(\Database\Seeders\MasterDataSeeder::class);
+        // Master seeders prasyarat bawaan (urutan sama dengan DatabaseSeeder).
+        // DemoDataSeeder membutuhkan periode aktif dan kategori beasiswa per
+        // application_type, keduanya dibuat oleh BeasiswaMasterSeeder.
+        $this->seed(RegionSeeder::class);
+        $this->seed(MasterDataSeeder::class);
+        $this->seed(BeasiswaMasterSeeder::class);
+        $this->seed(DisabilityTrackSeeder::class);
+        $this->seed(PrestasiTrackSeeder::class);
+        $this->seed(JalurBeasiswaSeeder::class);
 
         // Jalankan DemoDataSeeder bawaan teman terlebih dahulu
-        $this->seed(\Database\Seeders\DemoDataSeeder::class);
+        $this->seed(DemoDataSeeder::class);
 
         // Lanjut jalankan MultiPeriodeDemoSeeder kita
         $this->seed(MultiPeriodeDemoSeeder::class);
@@ -195,6 +209,6 @@ class MultiPeriodeDemoSeederTest extends TestCase
             ->assertRedirect();
 
         // 4. Status Fajar di blacklist sekarang tidak aktif
-        $this->assertFalse((bool) \App\Models\Blacklist::query()->where('nik', '6212052345670009')->first()->aktif);
+        $this->assertFalse((bool) Blacklist::query()->where('nik', '6212052345670009')->first()->aktif);
     }
 }

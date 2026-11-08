@@ -13,9 +13,10 @@ class SecurityHeaders
         $response = $next($request);
 
         // Anti-MIME-sniffing, anti-clickjacking, dan kebijakan referrer.
-        // Pratinjau dokumen dirender di dalam <iframe> milik aplikasi sendiri,
-        // jadi hanya respons itu yang boleh di-frame same-origin.
-        $framed = $request->routeIs('documents.preview');
+        // Pratinjau dokumen dan formulir dirender di dalam <iframe> milik
+        // aplikasi sendiri, jadi hanya respons pratinjau itu yang boleh
+        // di-frame same-origin.
+        $framed = $request->routeIs('documents.preview', 'operator.applications.formulir.lihat');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', $framed ? 'SAMEORIGIN' : 'DENY');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

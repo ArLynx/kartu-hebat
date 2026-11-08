@@ -7,6 +7,18 @@ return [
     'current_period' => env('KHM_CURRENT_PERIOD', '2026/2027 Ganjil'),
     'registration_open' => env('KHM_REGISTRATION_OPEN', '2026-08-01'),
     'registration_close' => env('KHM_REGISTRATION_CLOSE', '2026-11-30'),
+    'allowed_email_domains' => [
+        'gmail.com', 'googlemail.com',
+        'yahoo.com', 'yahoo.co.id', 'ymail.com',
+        'outlook.com', 'outlook.co.id', 'hotmail.com', 'hotmail.co.id',
+        'live.com', 'live.co.id', 'msn.com',
+        'icloud.com', 'me.com', 'mac.com',
+        'protonmail.com', 'proton.me',
+        'aol.com', 'zoho.com', 'mail.com',
+    ],
+    'allowed_email_suffixes' => [
+        '.ac.id', '.go.id', '.sch.id', '.edu',
+    ],
     'quota' => (int) env('KHM_QUOTA_AKADEMIK', 250)
         + (int) env('KHM_QUOTA_TIDAK_MAMPU', 250)
         + (int) env('KHM_QUOTA_DISABILITAS', 50)

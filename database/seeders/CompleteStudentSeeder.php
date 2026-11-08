@@ -36,11 +36,6 @@ class CompleteStudentSeeder extends Seeder
             return;
         }
 
-        DocumentType::query()
-            ->where('code', 'SKD')
-            ->whereNull('application_type')
-            ->update(['application_type' => ApplicationType::DISABILITAS->value]);
-
         $this->syncKategoriDokumen();
 
         $students = [
@@ -205,11 +200,28 @@ class CompleteStudentSeeder extends Seeder
         $this->command?->info("✓ Akun {$user->email} siap di langkah terakhir (Submit). Jalur: {$payload['application_type']->label()}");
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private function commonDocuments(): array
+    {
+        return [
+            'KTP',
+            'KK',
+            'KTM',
+            'SERTIFIKAT-AKREDITASI',
+            'BUKU-REKENING-BPDK',
+            'SURAT-AKTIF',
+            'SCREENSHOT-PDDIKTI',
+            'TAGIHAN-UKT',
+        ];
+    }
+
     private function syncKategoriDokumen(): void
     {
-        $requiredGlobal = ['UKT', 'TRANSKRIP'];
+        $requiredGlobal = ['TAGIHAN-UKT', 'KHS'];
         $requiredByType = [
-            ApplicationType::DISABILITAS->value => ['SKD'],
+            ApplicationType::DISABILITAS->value => ['SURAT-DISABILITAS'],
         ];
 
         $byCode = JenisDokumen::query()
@@ -343,7 +355,7 @@ class CompleteStudentSeeder extends Seeder
                     'keterangan' => 'Finalis nasional LKTI.',
                 ],
             ],
-            'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'UKT', 'TRANSKRIP', 'KHS'],
+            'documents' => array_merge($this->commonDocuments(), ['KHS']),
         ];
     }
 
@@ -422,7 +434,7 @@ class CompleteStudentSeeder extends Seeder
                 'memiliki_wali' => false,
             ],
             'prestasis' => [],
-            'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'UKT', 'TRANSKRIP', 'SKTM'],
+            'documents' => array_merge($this->commonDocuments(), ['KHS']),
         ];
     }
 
@@ -512,7 +524,7 @@ class CompleteStudentSeeder extends Seeder
                     'keterangan' => 'Cabang Tilawah Dewasa.',
                 ],
             ],
-            'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'UKT', 'TRANSKRIP', 'KHS', 'SURAT-DISABILITAS', 'SKD'],
+            'documents' => array_merge($this->commonDocuments(), ['KHS', 'SURAT-DISABILITAS']),
         ];
     }
 
@@ -612,7 +624,7 @@ class CompleteStudentSeeder extends Seeder
                     'keterangan' => 'Kategori tanding kelas B.',
                 ],
             ],
-            'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'UKT', 'TRANSKRIP', 'KHS', 'SERTIFIKAT-PRESTASI'],
+            'documents' => array_merge($this->commonDocuments(), ['KHS']),
         ];
     }
 
@@ -693,7 +705,7 @@ class CompleteStudentSeeder extends Seeder
                 'memiliki_wali' => false,
             ],
             'prestasis' => [],
-            'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'UKT', 'TRANSKRIP', 'KHS'],
+            'documents' => array_merge($this->commonDocuments(), ['KHS']),
         ];
     }
 }

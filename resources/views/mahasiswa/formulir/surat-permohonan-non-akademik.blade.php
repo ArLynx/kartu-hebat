@@ -417,7 +417,7 @@
     </table>
 
     <div class="statement">
-        Dengan ini mengajukan permohonan bantuan biaya pendidikan untuk keperluan perkuliahan.
+        Dengan ini mengajukan permohonan beasiswa untuk keperluan pembayaran uang kuliah tunggal.
     </div>
 
     <div class="attachment-intro">

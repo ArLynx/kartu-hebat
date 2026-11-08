@@ -123,8 +123,10 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             return $application->status->value;
         }
 
-        if ($application->selection?->manual_decision) {
-            return $application->selection->manual_decision;
+        $manualDecision = $application->selection?->manualDecisionStatus();
+
+        if ($manualDecision !== null) {
+            return $manualDecision->value;
         }
 
         $rank = $application->selection?->rank;

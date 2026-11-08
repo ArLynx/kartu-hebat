@@ -4,6 +4,27 @@
 @section('header', 'Antrean Pengajuan')
 
 @section('content')
+@if (($sanggahanQueueCount ?? 0) > 0)
+    <a href="{{ route('operator.sanggahan-queue.index') }}"
+       class="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 transition hover:border-amber-300 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                <x-icon name="warning" class="h-5 w-5" />
+            </div>
+            <div>
+                <p class="text-sm font-bold text-amber-900">{{ $sanggahanQueueCount }} pengajuan hasil sanggahan menunggu dinas Anda</p>
+                <p class="mt-1 text-xs leading-5 text-amber-800">
+                    Pengajuan yang dibuka kembali karena sanggahan dikabulkan dipindahkan ke Antrean Sanggahan agar antrean ini tetap berisi verifikasi normal.
+                </p>
+            </div>
+        </div>
+        <span class="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-amber-900">
+            Buka Antrean Sanggahan
+            <x-icon name="arrow-right" class="h-4 w-4" />
+        </span>
+    </a>
+@endif
+
 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
     <div>
         <h1 class="text-3xl font-extrabold">Daftar Pengajuan</h1>
@@ -68,7 +89,7 @@
                     <th>Data Seleksi</th>
                     <th>Wilayah</th>
                     <th>Status</th>
-                    <th>Tanggal Kirim</th>
+                    <th>Waktu Kirim</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -107,7 +128,16 @@
                             <p class="mt-1 text-xs text-slate-500">Kec. {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</p>
                         </td>
                         <td><x-status-badge :status="$application->status" /></td>
-                        <td>{{ $application->submitted_at?->translatedFormat('d M Y') ?? '-' }}</td>
+                        <td>
+                            @if($application->submitted_at)
+                                <p class="font-medium text-slate-800">{{ $application->submitted_at->translatedFormat('d M Y') }}</p>
+                                @if(! in_array(auth()->user()?->role, [\App\Enums\UserRole::OPERATOR_DESA, \App\Enums\UserRole::OPERATOR_KECAMATAN], true))
+                                    <p class="text-[11px] text-slate-500">{{ $application->submitted_at->format('H:i') }} WIB</p>
+                                @endif
+                            @else
+                                <span class="text-slate-400">-</span>
+                            @endif
+                        </td>
                         <td>
                             <a href="{{ route('operator.applications.show', $application) }}" class="btn-secondary !px-3 !py-2">
                                 <x-icon name="eye" class="h-4 w-4" />

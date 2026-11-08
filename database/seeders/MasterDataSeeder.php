@@ -12,15 +12,25 @@ class MasterDataSeeder extends Seeder
     public function run(): void
     {
         $documents = [
-            ['KHS', 'Kartu Hasil Studi (KHS)', 'KHS semester terakhir yang telah dilegalisasi untuk jalur Akademik.', true, 10, ApplicationType::AKADEMIK],
-            ['SKTM', 'Surat Keterangan Tidak Mampu', 'SKTM yang masih berlaku untuk jalur Tidak Mampu.', true, 20, ApplicationType::TIDAK_MAMPU],
-            ['SURAT-DISABILITAS', 'Surat Keterangan Disabilitas', 'Surat keterangan disabilitas dari dokter/RS atau dari dinas sosial yang masih berlaku.', true, 15, ApplicationType::DISABILITAS],
-            ['FOTO-KONDISI', 'Foto Kondisi / Alat Bantu', 'Foto kondisi disabilitas atau alat bantu yang digunakan (jika ada).', false, 16, ApplicationType::DISABILITAS],
-            ['SERTIFIKAT-PRESTASI', 'Sertifikat / Piagam Prestasi', 'Sertifikat atau piagam kejuaraan beserta surat keterangan dari perguruan tinggi untuk jalur Non-Akademik.', true, 25, ApplicationType::NON_AKADEMIK],
-            ['KTP', 'Kartu Tanda Penduduk', 'KTP mahasiswa yang masih berlaku.', true, 30, null],
-            ['KK', 'Kartu Keluarga', 'Kartu Keluarga terbaru.', true, 40, null],
-            ['KTM', 'Kartu Mahasiswa', 'Kartu Tanda Mahasiswa aktif.', true, 50, null],
-            ['TAMBAHAN', 'Dokumen Tambahan', 'Dokumen prestasi atau dokumen pendukung lain.', false, 60, null],
+            // Persyaratan umum
+            ['KTP', 'Kartu Tanda Penduduk', 'KTP mahasiswa yang masih berlaku.', true, 10, null],
+            ['KK', 'Kartu Keluarga', 'Kartu Keluarga terbaru dan terbaca jelas.', true, 20, null],
+            ['KTM', 'Kartu Tanda Mahasiswa', 'KTM atau kartu identitas mahasiswa lain yang masih berlaku.', true, 30, null],
+            ['SERTIFIKAT-AKREDITASI', 'Sertifikat Akreditasi Perguruan Tinggi', 'Sertifikat akreditasi perguruan tinggi yang masih berlaku.', true, 40, null],
+            ['BUKU-REKENING-BPDK', 'Buku Rekening Bank Kalteng (BPD Kalimantan Tengah)', 'Buku rekening atas nama mahasiswa pada Bank Pembangunan Daerah Kalimantan Tengah.', true, 50, null],
+            ['SURAT-AKTIF', 'Surat Keterangan Aktif Kuliah', 'Surat keterangan aktif kuliah dari perguruan tinggi dengan tanda tangan dan cap basah atau tanda tangan elektronik pejabat berwenang.', true, 60, null],
+            ['SCREENSHOT-PDDIKTI', 'Tangkapan Layar PDDIKTI', 'Gambar tangkapan layar terdaftar aktif sebagai mahasiswa pada PDDIKTI.', true, 70, null],
+            ['TAGIHAN-UKT', 'Tagihan Pembayaran UKT Semester Terakhir', 'Tagihan pembayaran uang kuliah tunggal (UKT) semester terakhir yang sedang ditempuh.', true, 80, null],
+
+            // Persyaratan khusus
+            ['KHS', 'Kartu Hasil Studi (KHS) / Transkrip Nilai', 'Transkrip nilai atau KHS terakhir dengan IPK kumulatif minimal 2,50 untuk jalur Tidak Mampu dan 3,00 untuk jalur Prestasi Akademik.', true, 90, null],
+            ['SKTM', 'Surat Keterangan Tidak Mampu', 'SKTM atau dokumen sosial ekonomi lain yang masih berlaku (dokumen pendukung, tidak wajib).', false, 100, ApplicationType::TIDAK_MAMPU],
+            ['SERTIFIKAT-PRESTASI', 'Sertifikat Prestasi / SK Organisasi', 'Sertifikat penghargaan atau SK kepengurusan organisasi mahasiswa (diunggah melalui data prestasi, tidak wajib sebagai dokumen administrasi).', false, 110, ApplicationType::NON_AKADEMIK],
+            ['SURAT-DISABILITAS', 'Surat Keterangan Disabilitas', 'Kartu penyandang disabilitas atau surat keterangan ragam penyandang disabilitas dari dokter/tenaga profesional yang berwenang.', true, 120, ApplicationType::DISABILITAS],
+
+            // Dokumen tambahan
+            ['FOTO-KONDISI', 'Foto Kondisi / Alat Bantu', 'Foto kondisi disabilitas atau alat bantu yang digunakan (jika ada).', false, 130, ApplicationType::DISABILITAS],
+            ['TAMBAHAN', 'Dokumen Tambahan', 'Dokumen prestasi atau dokumen pendukung lain.', false, 140, null],
         ];
 
         foreach ($documents as [$code, $name, $description, $required, $order, $applicationType]) {

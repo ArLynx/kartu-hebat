@@ -46,9 +46,20 @@
                                 <span class="italic text-slate-700">{{ session('error_lpj') ?? (session('error_blacklist') ?? $activeBlacklist->alasan) }}</span>
                             </div>
                         @endif
-                        <p class="mt-2 text-xs text-rose-900">
-                            Silakan perbaiki dan kumpulkan bukti pembayaran UKT yang sah di menu LPJ Beasiswa agar hak pendaftaran Anda dipulihkan oleh Admin Kabupaten.
-                        </p>
+                        @php
+                            $hasPendingLpj = isset($riwayatPendaftarans) && $riwayatPendaftarans->contains(function ($r) {
+                                return $r->laporanPertanggungjawaban && $r->laporanPertanggungjawaban->status === 'menunggu_verifikasi';
+                            });
+                        @endphp
+                        @if($hasPendingLpj)
+                            <p class="mt-2 text-xs font-semibold text-rose-950">
+                                Anda telah mengunggah berkas LPJ susulan. Mohon segera melapor diri ke <strong>Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya</strong> untuk proses verifikasi dan pembukaan blokir akun Anda.
+                            </p>
+                        @else
+                            <p class="mt-2 text-xs text-rose-900">
+                                Silakan perbaiki dan kumpulkan bukti pembayaran UKT yang sah di menu LPJ Beasiswa. Setelah berhasil mengunggah, silakan melapor diri ke <strong>Bagian Kesejahteraan Rakyat (Kesra) Sekretariat Daerah Kabupaten Murung Raya</strong> agar hak pendaftaran Anda dipulihkan.
+                            </p>
+                        @endif
                     </div>
                 </div>
                 <a href="{{ route('mahasiswa.lpj.index') }}" class="btn-primary shrink-0 text-xs bg-rose-600 hover:bg-rose-700 border-none whitespace-nowrap">

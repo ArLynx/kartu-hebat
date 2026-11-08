@@ -7,9 +7,12 @@ use App\Enums\UserRole;
 use App\Models\Application;
 use App\Models\User;
 use App\Services\AgencyVerificationService;
+use App\Services\SanggahanService;
 
 class ApplicationPolicy
 {
+    public function __construct(private readonly SanggahanService $sanggahanService) {}
+
     public function view(User $user, Application $application): bool
     {
         $application->loadMissing('mahasiswa.profile.village');
@@ -50,10 +53,13 @@ class ApplicationPolicy
 
     public function verify(User $user, Application $application): bool
     {
-        if (
-            ! $this->view($user, $application)
-            || $application->periode !== config('kartu_hebat.current_period')
-        ) {
+        if (! $this->view($user, $application)) {
+            return false;
+        }
+
+        $isCurrentPeriod = $application->periode === config('kartu_hebat.current_period');
+
+        if (! $isCurrentPeriod && ! $application->isReopenedForVerification()) {
             return false;
         }
 
@@ -76,11 +82,23 @@ class ApplicationPolicy
     {
         return $this->view($user, $application)
             && $user->role === UserRole::OPERATOR_KABUPATEN
-            && $application->periode === config('kartu_hebat.current_period')
+            && ($application->periode === config('kartu_hebat.current_period')
+                || $application->hasGrantedSanggahan())
             && in_array($application->status, [
                 ApplicationStatus::SELEKSI_KABUPATEN,
                 ApplicationStatus::DITERIMA,
                 ApplicationStatus::DITOLAK,
             ], true);
+    }
+
+    public function submitSanggahan(User $user, Application $application): bool
+    {
+        return $this->sanggahanService->ineligibilityReason($application, $user) === null;
+    }
+
+    public function decideSanggahan(User $user, Application $application): bool
+    {
+        return $this->view($user, $application)
+            && $user->role === UserRole::OPERATOR_KABUPATEN;
     }
 }

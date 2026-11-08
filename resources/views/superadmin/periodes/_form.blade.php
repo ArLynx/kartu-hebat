@@ -46,6 +46,23 @@
         </div>
     </div>
 
+    <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+        <h4 class="text-sm font-bold text-slate-800">Jadwal Masa Sanggah</h4>
+        <p class="text-xs text-slate-500 mt-0.5">Jendela waktu mahasiswa TMS mengajukan sanggahan. Kosongkan bila belum dijadwalkan.</p>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="tanggal_mulai_sanggah" class="form-label text-xs">Tanggal Mulai Masa Sanggah</label>
+                <input id="tanggal_mulai_sanggah" name="tanggal_mulai_sanggah" type="date" class="form-input" value="{{ old('tanggal_mulai_sanggah', isset($periode->tanggal_mulai_sanggah) ? $periode->tanggal_mulai_sanggah->format('Y-m-d') : '') }}">
+                @error('tanggal_mulai_sanggah')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="tanggal_selesai_sanggah" class="form-label text-xs">Tanggal Selesai Masa Sanggah</label>
+                <input id="tanggal_selesai_sanggah" name="tanggal_selesai_sanggah" type="date" class="form-input" value="{{ old('tanggal_selesai_sanggah', isset($periode->tanggal_selesai_sanggah) ? $periode->tanggal_selesai_sanggah->format('Y-m-d') : '') }}">
+                @error('tanggal_selesai_sanggah')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+            </div>
+        </div>
+    </div>
+
     <div class="lg:col-span-2">
         <label for="status" class="form-label">Status Periode <span class="text-red-500">*</span></label>
         <select id="status" name="status" class="form-input" required>

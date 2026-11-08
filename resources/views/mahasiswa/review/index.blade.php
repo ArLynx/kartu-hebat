@@ -729,6 +729,23 @@
 
 
 
+                {{-- PERINGATAN / WARNING DI ATAS UNDUH --}}
+                <div class="mx-6 mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 sm:mx-8">
+                    <div class="flex items-start gap-3">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                            <x-icon name="exclamation-triangle" class="h-5 w-5" />
+                        </div>
+                        <div class="text-xs sm:text-sm text-amber-900 leading-relaxed">
+                            <p class="font-bold text-amber-950">
+                                Perhatian: Keabsahan Dokumen Formulir & Pakta Integritas
+                            </p>
+                            <p class="mt-1">
+                                Setelah diunduh dan dicetak, <strong>Surat Permohonan dan Pakta Integritas wajib ditandatangani oleh pemohon (mahasiswa)</strong>. Dokumen formulir dan pakta yang <strong>tidak ditandatangani oleh pemohon dianggap tidak sah</strong> dan tidak dapat diproses saat verifikasi berkas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- FORMULIR --}}
 
                 <div class="grid gap-5 p-6 sm:p-8 md:grid-cols-2">
@@ -916,7 +933,7 @@
                                 </li>
 
                                 <li>
-                                    Tanda tangani formulir sesuai ketentuan.
+                                    Tanda tangani formulir sesuai ketentuan. <strong>Surat Permohonan dan Pakta Integritas yang tidak ditandatangani oleh pemohon dianggap tidak sah.</strong>
                                 </li>
 
                                 <li>
@@ -931,9 +948,7 @@
                             </ol>
 
                             <p class="mt-3 text-xs font-semibold leading-5 text-red-600">
-                                Penting: Jika terdapat kesalahan data pada Surat Permohonan atau
-                                Pakta Integritas, jangan langsung dicetak dan ditandatangani.
-                                Perbaiki terlebih dahulu data pendaftaran pada sistem.
+                                Penting: Surat Permohonan dan Pakta Integritas yang tidak ditandatangani oleh pemohon dianggap tidak sah dan pendaftaran tidak dapat diproses saat verifikasi. Jika terdapat kesalahan data pada formulir, jangan langsung dicetak dan ditandatangani, perbaiki terlebih dahulu data pendaftaran pada sistem.
                             </p>
 
                         </div>
@@ -1005,6 +1020,15 @@
                                 <p class="mt-1 text-sm leading-6 text-slate-500">
                                     {{ $namaKategoriFormulir ? 'Surat Permohonan — ' . $namaKategoriFormulir : 'Surat Permohonan Beasiswa' }}
                                 </p>
+
+                                <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                                    <p class="text-sm font-bold text-amber-800">
+                                        ⚠️ Perhatian
+                                    </p>
+                                    <p class="mt-1 text-sm leading-6 text-amber-700">
+                                        Surat Permohonan wajib ditandatangani oleh pemohon (mahasiswa). Formulir yang tidak ditandatangani oleh pemohon dianggap tidak sah.
+                                    </p>
+                                </div>
 
                             </div>
 
@@ -1204,9 +1228,8 @@
                                         </p>
 
                                         <p class="mt-1 text-sm leading-6 text-amber-700">
-                                            Pakta Integritas wajib ditandatangani oleh Orang Tua/Wali dan mahasiswa/pendaftar.
-                                            Pendaftar sebagai pihak yang membuat pernyataan, tanda tangan
-                                            <strong>ber-materai Rp10.000</strong> atau pada bagian tanda tangan "yang membuat pernyataan"
+                                            Pakta Integritas wajib ditandatangani oleh Orang Tua/Wali dan mahasiswa/pendaftar. Dokumen yang tidak ditandatangani oleh pemohon dianggap tidak sah. Pendaftar sebagai pihak yang membuat pernyataan, tanda tangan
+                                            <strong>ber-materai Rp10.000</strong> pada bagian tanda tangan "yang membuat pernyataan"
                                             sebelum diunggah kembali. Orang Tua/Wali tidak perlu pakai materai.
                                         </p>
                                     </div>

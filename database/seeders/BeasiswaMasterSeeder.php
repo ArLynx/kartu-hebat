@@ -23,6 +23,17 @@ class BeasiswaMasterSeeder extends Seeder
             ],
         );
 
+        $generalDocuments = [
+            'KTP',
+            'KK',
+            'KTM',
+            'SERTIFIKAT-AKREDITASI',
+            'BUKU-REKENING-BPDK',
+            'SURAT-AKTIF',
+            'SCREENSHOT-PDDIKTI',
+            'TAGIHAN-UKT',
+        ];
+
         $categories = [
             [
                 'kode' => 'BEASISWA-MAHASISWA',
@@ -30,7 +41,7 @@ class BeasiswaMasterSeeder extends Seeder
                 'nama' => 'Beasiswa Prestasi Akademik',
                 'deskripsi' => 'Jenis beasiswa berdasarkan IPK dan semester aktif.',
                 'urutan' => 1,
-                'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'KHS'],
+                'documents' => array_merge($generalDocuments, ['KHS']),
             ],
             [
                 'kode' => 'BEASISWA-TIDAK-MAMPU',
@@ -38,7 +49,7 @@ class BeasiswaMasterSeeder extends Seeder
                 'nama' => 'Beasiswa Tidak Mampu',
                 'deskripsi' => 'Jenis beasiswa berdasarkan kondisi sosial ekonomi yang diverifikasi lintas dinas.',
                 'urutan' => 2,
-                'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'KHS', 'SKTM'],
+                'documents' => array_merge($generalDocuments, ['KHS']),
             ],
             [
                 'kode' => 'BEASISWA-DISABILITAS',
@@ -46,7 +57,7 @@ class BeasiswaMasterSeeder extends Seeder
                 'nama' => 'Beasiswa Mahasiswa Disabilitas',
                 'deskripsi' => 'Jenis beasiswa untuk mahasiswa penyandang disabilitas.',
                 'urutan' => 3,
-                'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'KHS', 'SURAT-DISABILITAS'],
+                'documents' => array_merge($generalDocuments, ['KHS', 'SURAT-DISABILITAS']),
             ],
             [
                 'kode' => 'BEASISWA-NON-AKADEMIK',
@@ -54,7 +65,7 @@ class BeasiswaMasterSeeder extends Seeder
                 'nama' => 'Beasiswa Prestasi Non Akademik',
                 'deskripsi' => 'Jenis beasiswa untuk mahasiswa berprestasi di bidang keagamaan, olahraga, seni budaya, kepemudaan atau aktif kepengurusan organisasi mahasiswa.',
                 'urutan' => 4,
-                'documents' => ['KTP', 'KK', 'KTM', 'SURAT-AKTIF', 'KHS', 'SERTIFIKAT-PRESTASI'],
+                'documents' => array_merge($generalDocuments, ['KHS']),
             ],
         ];
 
@@ -71,32 +82,62 @@ class BeasiswaMasterSeeder extends Seeder
             ],
             'KTM' => [
                 'nama' => 'Kartu Tanda Mahasiswa',
-                'deskripsi' => 'KTM atau identitas mahasiswa yang masih berlaku.',
+                'deskripsi' => 'KTM atau kartu identitas mahasiswa lain yang masih berlaku.',
+                'format_file' => 'pdf,jpg,jpeg,png',
+            ],
+            'SERTIFIKAT-AKREDITASI' => [
+                'nama' => 'Sertifikat Akreditasi Perguruan Tinggi',
+                'deskripsi' => 'Sertifikat akreditasi perguruan tinggi yang masih berlaku.',
+                'format_file' => 'pdf,jpg,jpeg,png',
+            ],
+            'BUKU-REKENING-BPDK' => [
+                'nama' => 'Buku Rekening Bank Kalteng (BPD Kalimantan Tengah)',
+                'deskripsi' => 'Buku rekening atas nama mahasiswa pada Bank Pembangunan Daerah Kalimantan Tengah.',
                 'format_file' => 'pdf,jpg,jpeg,png',
             ],
             'SURAT-AKTIF' => [
                 'nama' => 'Surat Keterangan Aktif Kuliah',
-                'deskripsi' => 'Surat aktif kuliah dari perguruan tinggi untuk semester berjalan.',
-                'format_file' => 'pdf',
+                'deskripsi' => 'Surat keterangan aktif kuliah dari perguruan tinggi dengan tanda tangan dan cap basah atau tanda tangan elektronik pejabat berwenang.',
+                'format_file' => 'pdf,jpg,jpeg,png',
+            ],
+            'SCREENSHOT-PDDIKTI' => [
+                'nama' => 'Tangkapan Layar PDDIKTI',
+                'deskripsi' => 'Gambar tangkapan layar terdaftar aktif sebagai mahasiswa pada PDDIKTI.',
+                'format_file' => 'pdf,jpg,jpeg,png',
+            ],
+            'TAGIHAN-UKT' => [
+                'nama' => 'Tagihan Pembayaran UKT Semester Terakhir',
+                'deskripsi' => 'Tagihan pembayaran uang kuliah tunggal (UKT) semester terakhir yang sedang ditempuh.',
+                'format_file' => 'pdf,jpg,jpeg,png',
             ],
             'KHS' => [
                 'nama' => 'Kartu Hasil Studi (KHS) / Transkrip Nilai',
-                'deskripsi' => 'KHS semester terakhir yang memuat Indeks Prestasi Total.',
+                'deskripsi' => 'Transkrip nilai atau KHS terakhir dengan IPK kumulatif minimal 2,50 untuk jalur Tidak Mampu dan 3,00 untuk jalur Prestasi Akademik.',
                 'format_file' => 'pdf,jpg,jpeg,png',
             ],
             'SKTM' => [
                 'nama' => 'Surat Keterangan Tidak Mampu',
-                'deskripsi' => 'SKTM atau dokumen sosial ekonomi lain yang masih berlaku.',
+                'deskripsi' => 'SKTM atau dokumen sosial ekonomi lain yang masih berlaku (dokumen pendukung, tidak wajib).',
+                'format_file' => 'pdf,jpg,jpeg,png',
+            ],
+            'SERTIFIKAT-PRESTASI' => [
+                'nama' => 'Sertifikat Prestasi / SK Organisasi',
+                'deskripsi' => 'Sertifikat penghargaan atau SK kepengurusan organisasi mahasiswa (diunggah melalui data prestasi, tidak wajib sebagai dokumen administrasi).',
                 'format_file' => 'pdf,jpg,jpeg,png',
             ],
             'SURAT-DISABILITAS' => [
                 'nama' => 'Surat Keterangan Disabilitas',
-                'deskripsi' => 'Surat keterangan dari dokter/dinas sosial yang menyatakan jenis dan tingkat disabilitas.',
-                'format_file' => 'pdf',
+                'deskripsi' => 'Kartu penyandang disabilitas atau surat keterangan ragam penyandang disabilitas dari dokter/tenaga profesional yang berwenang.',
+                'format_file' => 'pdf,jpg,jpeg,png',
             ],
-            'SERTIFIKAT-PRESTASI' => [
-                'nama' => 'Sertifikat Prestasi / SK Organisasi',
-                'deskripsi' => 'Sertifikat kejuaraan non-akademik atau SK kepengurusan organisasi mahasiswa di perguruan tinggi.',
+            'FOTO-KONDISI' => [
+                'nama' => 'Foto Kondisi / Alat Bantu',
+                'deskripsi' => 'Foto kondisi disabilitas atau alat bantu yang digunakan (jika ada).',
+                'format_file' => 'pdf,jpg,jpeg,png',
+            ],
+            'TAMBAHAN' => [
+                'nama' => 'Dokumen Tambahan',
+                'deskripsi' => 'Dokumen prestasi atau dokumen pendukung lain.',
                 'format_file' => 'pdf,jpg,jpeg,png',
             ],
         ];
