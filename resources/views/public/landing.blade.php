@@ -21,7 +21,7 @@
         </div>
 
         {{-- Ambient Glow --}}
-        <div aria-hidden="true" data-parallax="glow"
+        <div aria-hidden="true"
             class="pointer-events-none absolute left-1/4 top-0 h-96 w-96 rounded-full bg-blue-200/20 blur-[100px]">
         </div>
 
@@ -37,7 +37,7 @@
             class="container-page relative grid w-full items-center gap-10 py-12 sm:py-14 lg:grid-cols-[0.95fr_1.05fr] lg:gap-8 lg:py-10 lg:-translate-x-8">
 
             {{-- HERO CONTENT --}}
-            <div class="relative z-10 min-w-0" data-parallax="text">
+            <div class="relative z-10 min-w-0">
 
                 <span data-hero-badge
                     class="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/80 px-4 py-2 text-xs font-bold tracking-wide text-blue-700 shadow-[0_4px_20px_rgba(37,99,235,0.06)] backdrop-blur-md">
@@ -116,8 +116,7 @@
             </div>
 
             {{-- HERO IMAGE --}}
-            <div data-parallax="visual"
-                class="relative mx-auto w-full max-w-xl lg:-mr-8 lg:w-[125%] lg:max-w-[780px] lg:-translate-x-9">
+            <div class="relative mx-auto w-full max-w-xl lg:-mr-8 lg:w-[125%] lg:max-w-[780px] lg:-translate-x-9">
 
                 {{-- BACKGROUND VISUAL COMPOSITION --}}
                 <div aria-hidden="true" class="pointer-events-none absolute inset-0">
@@ -155,8 +154,8 @@
                 </div>
 
                 {{-- Main Image --}}
-                <img data-hero-visual src="{{ asset('images/Perayaan Wisuda Tiga Sahabat.png') }}"
-                    alt="Portal Kartu Hebat Mahasiswa" class="relative z-10 block h-auto w-full object-contain">
+                <img src="{{ asset('images/Perayaan Wisuda Tiga Sahabat.png') }}" alt="Portal Kartu Hebat Mahasiswa"
+                    class="relative z-10 block h-auto w-full object-contain">
 
                 {{-- Bottom Accent --}}
                 <div aria-hidden="true"
@@ -173,6 +172,7 @@
         </div>
 
     </section>
+
 
 
     {{-- ========================================================= --}}
@@ -215,8 +215,8 @@
 
                 </div>
 
-                {{-- Countdown and Quota --}}
-                <div class="relative mt-8 flex items-center gap-7 md:mt-0">
+                {{-- Countdown --}}
+                <div class="relative mt-8 flex items-center md:mt-0">
 
                     <div class="min-w-[85px] text-center">
 
@@ -226,20 +226,6 @@
 
                         <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
                             Hari tersisa
-                        </p>
-
-                    </div>
-
-                    <div class="h-12 w-px bg-slate-200"></div>
-
-                    <div class="min-w-[85px] text-center">
-
-                        <p class="font-display text-3xl font-extrabold tracking-tight text-slate-900">
-                            {{ number_format(config('kartu_hebat.quota')) }}
-                        </p>
-
-                        <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
-                            Kuota
                         </p>
 
                     </div>
@@ -261,7 +247,6 @@
         </div>
 
     </section>
-
 
     {{-- ========================================================= --}}
     {{-- ALUR PENDAFTARAN --}}

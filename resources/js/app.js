@@ -210,57 +210,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const hero = document.querySelector('#hero');
 
         if (hero) {
+            const heroElements = [
+                '[data-hero-badge]',
+                '[data-hero-title]',
+                '[data-hero-description]',
+                '[data-hero-actions]',
+                '[data-hero-trust]',
+            ];
+
             const heroTimeline = gsap.timeline({
                 defaults: {
-                    ease: 'power3.out',
+                    ease: 'power2.out',
                 },
             });
 
             heroTimeline
                 .fromTo(
-                    '[data-hero-badge]',
-                    { autoAlpha: 0, y: 20 },
-                    { autoAlpha: 1, y: 0, duration: 0.8 }
+                    heroElements[0],
+                    { autoAlpha: 0, y: 12 },
+                    { autoAlpha: 1, y: 0, duration: 0.65 }
                 )
                 .fromTo(
-                    '[data-hero-title]',
-                    { autoAlpha: 0, y: 35 },
-                    { autoAlpha: 1, y: 0, duration: 1 },
-                    '-=0.55'
-                )
-                .fromTo(
-                    '[data-hero-description]',
-                    { autoAlpha: 0, y: 25 },
-                    { autoAlpha: 1, y: 0, duration: 0.9 },
-                    '-=0.65'
-                )
-                .fromTo(
-                    '[data-hero-actions]',
-                    { autoAlpha: 0, y: 20 },
+                    heroElements[1],
+                    { autoAlpha: 0, y: 16 },
                     { autoAlpha: 1, y: 0, duration: 0.8 },
-                    '-=0.55'
+                    '-=0.4'
                 )
                 .fromTo(
-                    '[data-hero-trust]',
-                    { autoAlpha: 0, y: 15 },
-                    { autoAlpha: 1, y: 0, duration: 0.8 },
+                    heroElements[2],
+                    { autoAlpha: 0, y: 12 },
+                    { autoAlpha: 1, y: 0, duration: 0.7 },
                     '-=0.5'
                 )
                 .fromTo(
-                    '[data-hero-visual]',
+                    heroElements[3],
+                    { autoAlpha: 0, y: 10 },
+                    { autoAlpha: 1, y: 0, duration: 0.65 },
+                    '-=0.4'
+                )
+                .fromTo(
+                    heroElements[4],
+                    { autoAlpha: 0, y: 8 },
+                    { autoAlpha: 1, y: 0, duration: 0.6 },
+                    '-=0.35'
+                );
+
+            // Hero image muncul lebih tenang.
+            const heroVisual = hero.querySelector('[data-hero-visual]');
+
+            if (heroVisual) {
+                gsap.fromTo(
+                    heroVisual,
                     {
                         autoAlpha: 0,
-                        scale: 0.95,
-                        filter: 'blur(10px)',
+                        scale: 0.97,
+                        y: 12,
                     },
                     {
                         autoAlpha: 1,
                         scale: 1,
-                        filter: 'blur(0px)',
-                        duration: 1.3,
-                    },
-                    '-=0.9'
+                        y: 0,
+                        duration: 1.1,
+                        ease: 'power2.out',
+                        delay: 0.25,
+                        clearProps: 'transform',
+                    }
                 );
+            }
         }
 
         // ------------------------------------------
@@ -268,35 +284,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // ------------------------------------------
         if (hero) {
             gsap.to('[data-parallax="text"]', {
-                y: -55,
+                y: -18,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: hero,
                     start: 'top top',
                     end: 'bottom top',
-                    scrub: 1.2,
+                    scrub: 2,
                 },
             });
 
             gsap.to('[data-parallax="glow"]', {
-                y: -90,
+                y: -35,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: hero,
                     start: 'top top',
                     end: 'bottom top',
-                    scrub: 1.5,
+                    scrub: 2,
                 },
             });
 
             gsap.to('[data-parallax="visual"]', {
-                y: -25,
+                y: -12,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: hero,
                     start: 'top top',
                     end: 'bottom top',
-                    scrub: 1.5,
+                    scrub: 2,
                 },
             });
         }
