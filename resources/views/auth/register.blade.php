@@ -2,7 +2,6 @@
     <div class="mb-8">
         <p class="section-kicker">Pendaftaran mahasiswa</p>
         <h1 class="mt-3 text-3xl font-extrabold">Buat akun baru</h1>
-        <p class="mt-2 text-sm leading-6 text-slate-600">Akun baru otomatis memperoleh role Mahasiswa. Akun internal dibuat oleh pengelola sistem.</p>
     </div>
 
     <x-validation-errors class="mb-5" />
@@ -18,6 +17,7 @@
         <div>
             <label for="email" class="form-label">Email Aktif</label>
             <input id="email" type="email" name="email" value="{{ old('email') }}" class="form-input" autocomplete="username" required placeholder="nama@email.com">
+            <p class="form-help">Gunakan email dari Gmail, Yahoo, Outlook, atau email institusi kampus ( .ac.id ).</p>
         </div>
 
         <div x-data="{ show: false }">

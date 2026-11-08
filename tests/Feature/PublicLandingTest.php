@@ -204,15 +204,21 @@ class PublicLandingTest extends TestCase
         $nonAkademikPanel = $this->extractElementById($html, 'persyaratan-panel-'.$nonAkademik->id);
 
         $this->assertStringContainsString('Kartu Hasil Studi (KHS) / Transkrip Nilai', $akademikPanel);
+        $this->assertStringContainsString('Sertifikat Akreditasi Perguruan Tinggi', $akademikPanel);
+        $this->assertStringContainsString('Buku Rekening Bank Kalteng (BPD Kalimantan Tengah)', $akademikPanel);
+        $this->assertStringContainsString('Tangkapan Layar PDDIKTI', $akademikPanel);
+        $this->assertStringContainsString('Tagihan Pembayaran UKT Semester Terakhir', $akademikPanel);
         $this->assertStringContainsString('PDF, JPG, JPEG, PNG', $akademikPanel);
         $this->assertStringContainsString('2 MB', $akademikPanel);
         $this->assertStringNotContainsString('Surat Keterangan Tidak Mampu', $akademikPanel);
         $this->assertStringNotContainsString('Surat Keterangan Disabilitas', $akademikPanel);
         $this->assertStringNotContainsString('Sertifikat Prestasi / SK Organisasi', $akademikPanel);
 
-        $this->assertStringContainsString('Surat Keterangan Tidak Mampu', $tidakMampuPanel);
+        $this->assertStringContainsString('Kartu Hasil Studi (KHS) / Transkrip Nilai', $tidakMampuPanel);
+        $this->assertStringNotContainsString('Surat Keterangan Tidak Mampu', $tidakMampuPanel);
         $this->assertStringContainsString('Surat Keterangan Disabilitas', $disabilitasPanel);
-        $this->assertStringContainsString('Sertifikat Prestasi / SK Organisasi', $nonAkademikPanel);
+        $this->assertStringContainsString('Sertifikat Akreditasi Perguruan Tinggi', $nonAkademikPanel);
+        $this->assertStringNotContainsString('Sertifikat Prestasi / SK Organisasi', $nonAkademikPanel);
     }
 
     private function extractElementById(string $html, string $id): string
