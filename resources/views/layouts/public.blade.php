@@ -8,22 +8,145 @@
     <title>@yield('title', config('kartu_hebat.name'))</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+    <style>
+        /* =========================================================
+   MOBILE NAVIGATION — SMOOTH OVERLAY ANIMATION
+   Desktop navigation remains untouched.
+========================================================= */
+
+        @media (max-width: 1023px) {
+            .mobile-nav-panel {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                z-index: 40;
+
+                display: grid;
+                grid-template-rows: 0fr;
+
+                width: 100%;
+                overflow: hidden;
+
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+
+                transform: translateY(-8px);
+                transform-origin: top;
+
+                border-top: 1px solid transparent;
+
+                transition:
+                    grid-template-rows 380ms cubic-bezier(0.22, 1, 0.36, 1),
+                    opacity 260ms ease,
+                    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+                    border-color 260ms ease,
+                    visibility 0s linear 380ms;
+            }
+
+            .mobile-nav-panel>nav {
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .mobile-nav-panel.is-open {
+                grid-template-rows: 1fr;
+
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+
+                transform: translateY(0);
+
+                border-top-color: rgb(241 245 249);
+
+                transition:
+                    grid-template-rows 380ms cubic-bezier(0.22, 1, 0.36, 1),
+                    opacity 260ms ease,
+                    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+                    border-color 260ms ease,
+                    visibility 0s;
+            }
+
+            /* Stagger animation untuk setiap menu */
+            .mobile-nav-panel nav>div:first-child>a,
+            .mobile-nav-panel nav>div:last-child {
+                opacity: 0;
+                transform: translateY(-7px);
+
+                transition:
+                    opacity 240ms ease,
+                    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            .mobile-nav-panel.is-open nav>div:first-child>a,
+            .mobile-nav-panel.is-open nav>div:last-child {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .mobile-nav-panel.is-open nav>div:first-child>a:nth-child(1) {
+                transition-delay: 45ms;
+            }
+
+            .mobile-nav-panel.is-open nav>div:first-child>a:nth-child(2) {
+                transition-delay: 80ms;
+            }
+
+            .mobile-nav-panel.is-open nav>div:first-child>a:nth-child(3) {
+                transition-delay: 115ms;
+            }
+
+            .mobile-nav-panel.is-open nav>div:first-child>a:nth-child(4) {
+                transition-delay: 150ms;
+            }
+
+            .mobile-nav-panel.is-open nav>div:first-child>a:nth-child(5) {
+                transition-delay: 185ms;
+            }
+
+            .mobile-nav-panel.is-open nav>div:last-child {
+                transition-delay: 220ms;
+            }
+        }
+
+        /* Pastikan panel tidak pernah tampil di desktop */
+        @media (min-width: 1024px) {
+            #mobile-navigation {
+                display: none !important;
+            }
+        }
+
+        /* Hormati preferensi reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+
+            .mobile-nav-panel,
+            .mobile-nav-panel *,
+            .mobile-nav-panel::before {
+                transition: none !important;
+                transform: none !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="min-h-screen bg-white antialiased">
+
 
     {{-- ========================================================= --}}
     {{-- NAVBAR --}}
     {{-- ========================================================= --}}
     <header data-animate-navbar
-        class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/85 shadow-[0_4px_24px_rgba(15,23,42,0.035)] backdrop-blur-xl">
+        class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/90 shadow-[0_4px_24px_rgba(15,23,42,0.035)] backdrop-blur-xl">
 
         {{-- Subtle Top Accent --}}
         <div
             class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent">
         </div>
 
-        <div class="container-page relative flex h-[76px] items-center justify-between py-3">
+        {{-- NAVBAR MAIN --}}
+        <div class="container-page relative flex h-[68px] items-center justify-between py-2.5 lg:h-[76px] lg:py-3">
 
             {{-- BRAND --}}
             <a href="{{ route('home') }}" aria-label="Beranda Kartu Hebat Mahasiswa"
@@ -33,108 +156,169 @@
 
             </a>
 
-
             {{-- DESKTOP NAVIGATION --}}
             <nav class="hidden items-center gap-8 text-[13px] font-semibold tracking-wide text-slate-600 lg:flex">
 
                 <a href="{{ route('home') }}"
                     class="group relative py-3 transition-colors duration-300 hover:text-blue-700">
-
                     Beranda
-
                     <span
                         class="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 rounded-full bg-blue-600 transition-transform duration-300 group-hover:scale-x-100">
                     </span>
-
                 </a>
 
                 <a href="{{ route('home') }}#informasi"
                     class="group relative py-3 transition-colors duration-300 hover:text-blue-700">
-
                     Informasi
-
                     <span
                         class="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 rounded-full bg-blue-600 transition-transform duration-300 group-hover:scale-x-100">
                     </span>
-
                 </a>
 
                 <a href="{{ route('home') }}#persyaratan"
                     class="group relative py-3 transition-colors duration-300 hover:text-blue-700">
-
                     Persyaratan
-
                     <span
                         class="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 rounded-full bg-blue-600 transition-transform duration-300 group-hover:scale-x-100">
                     </span>
-
                 </a>
 
                 <a href="{{ route('home') }}#jadwal"
                     class="group relative py-3 transition-colors duration-300 hover:text-blue-700">
-
                     Jadwal
-
                     <span
                         class="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 rounded-full bg-blue-600 transition-transform duration-300 group-hover:scale-x-100">
                     </span>
-
                 </a>
 
                 <a href="{{ route('public.announcements.index') }}"
-                    class="group relative py-3 transition-colors duration-300 hover:text-blue-700 {{ request()->routeIs('public.announcements.*') ? 'text-blue-700 font-bold' : '' }}">
-
+                    class="group relative py-3 transition-colors duration-300 hover:text-blue-700 {{ request()->routeIs('public.announcements.*') ? 'font-bold text-blue-700' : '' }}">
                     Pengumuman
-
                     <span
                         class="absolute inset-x-0 bottom-0 h-[2px] origin-center rounded-full bg-blue-600 transition-transform duration-300 {{ request()->routeIs('public.announcements.*') ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100' }}">
                     </span>
-
                 </a>
 
             </nav>
 
+            {{-- DESKTOP ACTION BUTTONS --}}
+            <div class="relative z-10 hidden items-center gap-2 lg:flex">
 
-            {{-- ACTION & AUTHENTICATION BUTTONS --}}
-            <div class="relative z-10 flex items-center gap-2">
-
-                {{-- TOMBOL CEPAT CEK HASIL SELEKSI --}}
-                <a href="{{ route('public.results') }}"
-                    title="Periksa Pengumuman Hasil Seleksi & Nomor Tiket"
+                <a href="{{ route('public.results') }}" title="Periksa Pengumuman Hasil Seleksi & Nomor Tiket"
                     class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-200/80 bg-blue-50/70 px-3.5 py-2.5 text-xs font-bold tracking-wide text-blue-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-600 hover:text-white hover:shadow-[0_4px_12px_rgba(37,99,235,0.2)] {{ request()->routeIs('public.results') ? 'border-blue-600 bg-blue-600 !text-white shadow-sm' : '' }}">
 
                     <x-icon name="search" class="h-3.5 w-3.5" />
-
                     <span>Cek Hasil</span>
 
                 </a>
 
                 @auth
-
                     <a href="{{ route('dashboard') }}"
                         class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-xs font-bold tracking-wide text-white shadow-[0_5px_15px_rgba(37,99,235,0.16)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-[0_9px_22px_rgba(37,99,235,0.23)]">
-
                         Dashboard
-
                     </a>
                 @else
                     <a href="{{ route('login') }}"
                         class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold tracking-wide text-slate-700 shadow-sm transition-all duration-300 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
-
                         Masuk
-
                     </a>
 
                     <a href="{{ route('register') }}"
                         class="inline-flex items-center justify-center rounded-xl bg-blue-700 px-5 py-2.5 text-xs font-bold tracking-wide text-white shadow-[0_5px_15px_rgba(37,99,235,0.16)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-[0_9px_22px_rgba(37,99,235,0.23)]">
-
                         Daftar
-
                     </a>
-
                 @endauth
 
             </div>
+
+            {{-- MOBILE ACTIONS --}}
+            <div class="relative z-10 flex items-center gap-2 lg:hidden">
+
+                {{-- Cek Hasil --}}
+                <a href="{{ route('public.results') }}" aria-label="Cek hasil seleksi"
+                    class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-700 transition-colors duration-200 {{ request()->routeIs('public.results') ? 'border-blue-600 bg-blue-600 text-white' : '' }}">
+
+                    <x-icon name="search" class="h-4 w-4" />
+                    <span>Cek Hasil</span>
+
+                </a>
+
+                {{-- Menu Toggle --}}
+                <button type="button" id="mobile-menu-button" aria-label="Buka menu navigasi" aria-expanded="false"
+                    aria-controls="mobile-navigation"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40">
+
+                    <x-icon name="menu" class="h-5 w-5" />
+
+                </button>
+
+            </div>
+
+        </div>
+
+        {{-- MOBILE NAVIGATION PANEL --}}
+        <div id="mobile-navigation" aria-hidden="true" inert
+            class="mobile-nav-panel bg-white shadow-[0_12px_24px_rgba(15,23,42,0.06)] lg:hidden">
+
+            <nav aria-label="Navigasi mobile" class="container-page py-3">
+
+                {{-- NAVIGATION LINKS --}}
+                <div class="space-y-1">
+
+                    <a href="{{ route('home') }}"
+                        class="flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 {{ request()->routeIs('home') && !request()->routeIs('public.announcements.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-700' }}">
+                        Beranda
+                    </a>
+
+                    <a href="{{ route('home') }}#informasi"
+                        class="flex items-center rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition-colors duration-200 hover:bg-slate-50 hover:text-blue-700">
+                        Informasi
+                    </a>
+
+                    <a href="{{ route('home') }}#persyaratan"
+                        class="flex items-center rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition-colors duration-200 hover:bg-slate-50 hover:text-blue-700">
+                        Persyaratan
+                    </a>
+
+                    <a href="{{ route('home') }}#jadwal"
+                        class="flex items-center rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition-colors duration-200 hover:bg-slate-50 hover:text-blue-700">
+                        Jadwal
+                    </a>
+
+                    <a href="{{ route('public.announcements.index') }}"
+                        class="flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 {{ request()->routeIs('public.announcements.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-700' }}">
+                        Pengumuman
+                    </a>
+
+                </div>
+
+                {{-- AUTHENTICATION LINKS --}}
+                <div class="mt-3 border-t border-slate-100 pt-3">
+
+                    @auth
+                        <a href="{{ route('dashboard') }}"
+                            class="flex w-full items-center justify-center rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors duration-200 hover:bg-blue-800">
+                            Dashboard
+                        </a>
+                    @else
+                        <div class="grid grid-cols-2 gap-2">
+
+                            <a href="{{ route('login') }}"
+                                class="flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-colors duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                                Masuk
+                            </a>
+
+                            <a href="{{ route('register') }}"
+                                class="flex items-center justify-center rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors duration-200 hover:bg-blue-800">
+                                Daftar
+                            </a>
+
+                        </div>
+                    @endauth
+
+                </div>
+
+            </nav>
 
         </div>
 
@@ -358,6 +542,77 @@
 
 
     @stack('scripts')
+
+    <script>
+        (() => {
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileNavigation = document.getElementById('mobile-navigation');
+
+            if (!menuButton || !mobileNavigation) return;
+
+            function setMenuState(isOpen) {
+                mobileNavigation.classList.toggle('is-open', isOpen);
+
+                menuButton.setAttribute('aria-expanded', String(isOpen));
+                menuButton.setAttribute(
+                    'aria-label',
+                    isOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'
+                );
+
+                mobileNavigation.setAttribute('aria-hidden', String(!isOpen));
+                mobileNavigation.inert = !isOpen;
+
+                menuButton.innerHTML = isOpen ?
+                    `<svg xmlns="http://www.w3.org/2000/svg"
+                   class="h-5 w-5"
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   stroke="currentColor"
+                   stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                   <path d="M18 6 6 18M6 6l12 12"/>
+               </svg>` :
+                    `<svg xmlns="http://www.w3.org/2000/svg"
+                   class="h-5 w-5"
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   stroke="currentColor"
+                   stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                   <path d="M4 6h16M4 12h16M4 18h16"/>
+               </svg>`;
+            }
+
+            menuButton.addEventListener('click', () => {
+                const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
+                setMenuState(!isOpen);
+            });
+
+            mobileNavigation.querySelectorAll('a').forEach((link) => {
+                link.addEventListener('click', () => {
+                    setMenuState(false);
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (
+                    event.key === 'Escape' &&
+                    menuButton.getAttribute('aria-expanded') === 'true'
+                ) {
+                    setMenuState(false);
+                    menuButton.focus();
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    setMenuState(false);
+                }
+            });
+        })();
+    </script>
 
 </body>
 

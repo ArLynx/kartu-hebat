@@ -228,8 +228,8 @@
                 </div>
 
                 {{-- Main Image --}}
-                <img src="{{ asset('images/Perayaan Wisuda Tiga Sahabat.png') }}" alt="Portal Kartu Hebat Mahasiswa"
-                    class="relative z-10 block h-auto w-full object-contain">
+                <img data-hero-visual src="{{ asset('images/Perayaan Wisuda Tiga Sahabat.png') }}"
+                    alt="Portal Kartu Hebat Mahasiswa" class="relative z-10 block h-auto w-full object-contain">
 
                 {{-- Bottom Accent --}}
                 <div aria-hidden="true"
@@ -553,7 +553,6 @@
             <div data-reveal class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
 
                 <div>
-
                     <p class="section-kicker">
                         Berkas wajib
                     </p>
@@ -567,6 +566,7 @@
                         serta batas ukuran maksimal unggahan.
                     </p>
 
+                    <div class="mr-auto mt-6 h-1 w-16 rounded-full bg-gradient-to-r from-blue-600 to-sky-300"></div>
                 </div>
 
                 @auth
@@ -662,9 +662,10 @@
 
                 <div data-reveal data-requirement-tabs class="mt-10">
 
+
                     {{-- CATEGORY TABS --}}
                     <div role="tablist" aria-label="Jenis Beasiswa"
-                        class="grid gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/90 p-2 {{ $tabGridCols }}">
+                        class="grid gap-2.5 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-slate-50/80 p-2.5 shadow-[0_4px_18px_rgba(15,23,42,0.035)] {{ $tabGridCols }}">
 
                         @foreach ($categories as $category)
                             @php
@@ -677,10 +678,22 @@
                                 aria-selected="{{ $isActiveTab ? 'true' : 'false' }}"
                                 aria-controls="persyaratan-panel-{{ $category->id }}"
                                 tabindex="{{ $isActiveTab ? '0' : '-1' }}" data-requirement-tab="{{ $category->id }}"
-                                class="group flex items-center gap-3.5 rounded-xl border px-4 py-3.5 text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 {{ $isActiveTab ? 'border-blue-200 bg-white text-blue-800 shadow-[0_8px_24px_rgba(37,99,235,0.09)]' : 'border-transparent bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900' }}">
+                                class="group relative flex items-center gap-3.5 rounded-xl border px-4 py-3.5 text-left
+                   transition-all duration-300 ease-out
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2
+                   {{ $isActiveTab
+                       ? 'border-blue-200/90 bg-white text-blue-800 shadow-[0_4px_14px_rgba(37,99,235,0.09),inset_0_0_0_1px_rgba(37,99,235,0.025)]'
+                       : 'border-transparent bg-transparent text-slate-600 hover:-translate-y-px hover:border-slate-200 hover:bg-white hover:text-slate-900 hover:shadow-[0_4px_12px_rgba(15,23,42,0.045)]' }}">
 
                                 <span data-tab-icon
-                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 {{ $isActiveTab ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25' : 'border border-slate-200/80 bg-white text-slate-500 group-hover:border-blue-200 group-hover:text-blue-600' }}">
+                                    class="relative flex h-10 w-10 shrink-0 items-center justify-center
+           rounded-xl border border-blue-100/90
+           bg-gradient-to-br from-white to-blue-50
+           text-blue-700
+           shadow-[0_2px_6px_rgba(15,23,42,0.04)]
+           transition-colors duration-300
+           {{ $isActiveTab ? 'border-blue-600 bg-blue-600 text-white shadow-[0_3px_8px_rgba(37,99,235,0.22)]' : '' }}">
+
                                     @if ($appTypeValue === 'AKADEMIK')
                                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
                                             stroke="currentColor" aria-hidden="true">
@@ -708,20 +721,25 @@
 
                                 <span class="min-w-0 flex-1">
                                     <span data-tab-title
-                                        class="block truncate text-xs font-extrabold leading-snug sm:text-sm {{ $isActiveTab ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900' }}">
+                                        class="block truncate text-xs font-bold leading-snug tracking-[0.01em] sm:text-sm
+                           {{ $isActiveTab ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900' }}">
                                         {{ $category->nama }}
                                     </span>
 
                                     <span data-tab-badge
-                                        class="mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold {{ $isActiveTab ? 'bg-blue-50 text-blue-700' : 'bg-slate-200/70 text-slate-600' }}">
+                                        class="mt-1.5 inline-flex items-center rounded-md px-2 py-0.5
+                           text-[10px] font-semibold tracking-wide
+                           {{ $isActiveTab
+                               ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100'
+                               : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-700' }}">
                                         {{ $docCount }} berkas wajib
                                     </span>
                                 </span>
-
                             </button>
                         @endforeach
 
                     </div>
+
 
                     {{-- CATEGORY PANELS --}}
                     @foreach ($categories as $category)
@@ -754,7 +772,7 @@
 
                             {{-- Document Cards Grid --}}
                             @if ($category->jenisDokumens->isNotEmpty())
-                                <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                <div class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 
                                     @foreach ($category->jenisDokumens as $dokumen)
                                         @php
@@ -776,62 +794,99 @@
                                         @endphp
 
                                         <div
-                                            class="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-400/50 hover:shadow-[0_20px_40px_rgba(37,99,235,0.06)]">
+                                            class="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_5px_20px_rgba(15,23,42,0.035)] transition-[transform,border-color,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:border-blue-300 hover:shadow-[0_18px_42px_rgba(30,64,175,0.13)]">
 
-                                            {{-- Hover Accent --}}
+                                            {{-- Top Accent --}}
                                             <div
-                                                class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-blue-600 to-sky-300 transition-transform duration-500 group-hover:scale-x-100">
+                                                class="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-gradient-to-r from-blue-800 via-blue-600 to-sky-400 transition-transform duration-500 ease-out group-hover:scale-x-100">
                                             </div>
 
+                                            {{-- Card Header --}}
                                             <div class="flex items-center justify-between gap-3">
+
+                                                {{-- Original Document Icon --}}
                                                 <div
-                                                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-blue-600/20">
+                                                    class="relative flex h-12 w-12 shrink-0 items-center justify-center
+                                                            rounded-xl border border-blue-100/90
+                                                            bg-gradient-to-br from-white to-blue-50
+                                                            text-blue-700
+                                                            shadow-[0_2px_6px_rgba(15,23,42,0.04)]
+                                                            transition-all duration-300 ease-out
+                                                            group-hover:-translate-y-0.5
+                                                            group-hover:border-blue-600
+                                                            group-hover:bg-blue-600
+                                                            group-hover:from-blue-600
+                                                            group-hover:to-blue-600
+                                                            group-hover:text-white
+                                                            group-hover:shadow-[0_6px_14px_rgba(37,99,235,0.25)]">
 
-                                                    <x-icon name="document" class="h-5 w-5" />
-
+                                                    <x-icon name="document"
+                                                        class="h-5 w-5 shrink-0 text-current opacity-100" />
                                                 </div>
 
+                                                {{-- Document Number --}}
                                                 <span
-                                                    class="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                                    class="inline-flex shrink-0 items-center border border-slate-200/80 bg-slate-50 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-500 transition-colors duration-300 group-hover:border-blue-100 group-hover:bg-blue-50 group-hover:text-blue-700">
+
                                                     Berkas {{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}
+
                                                 </span>
+
                                             </div>
 
-                                            <h4 class="mt-5 text-base font-extrabold leading-snug text-slate-900">
-                                                {{ $dokumen->nama }}
-                                            </h4>
+                                            {{-- Document Information --}}
+                                            <div class="mt-6">
 
-                                            <p class="mt-2.5 text-xs leading-6 text-slate-500">
-                                                {{ filled($dokumen->deskripsi) ? $dokumen->deskripsi : 'Dokumen persyaratan wajib sesuai ketentuan pendaftaran.' }}
-                                            </p>
+                                                <h4
+                                                    class="text-[15px] font-extrabold leading-snug tracking-[-0.02em] text-slate-900 transition-colors duration-300 group-hover:text-blue-800">
+                                                    {{ $dokumen->nama }}
+                                                </h4>
 
-                                            <div class="mt-auto pt-6">
-                                                <div
-                                                    class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-left">
+                                                <p class="mt-2.5 text-xs leading-[1.85] text-slate-500">
+                                                    {{ filled($dokumen->deskripsi) ? $dokumen->deskripsi : 'Dokumen persyaratan wajib sesuai ketentuan pendaftaran.' }}
+                                                </p>
 
-                                                    <div>
+                                            </div>
+
+                                            {{-- Document Metadata --}}
+                                            <div class="mt-auto pt-7">
+
+                                                <div class="border-t border-slate-100"></div>
+
+                                                <div class="mt-4 grid grid-cols-2 gap-3">
+
+                                                    {{-- File Format --}}
+                                                    <div class="min-w-0">
+
                                                         <p
-                                                            class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                            class="text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
                                                             Format file
                                                         </p>
 
-                                                        <p class="mt-1 text-xs font-extrabold text-slate-700">
+                                                        <p
+                                                            class="mt-2 break-words text-xs font-bold leading-relaxed text-slate-700">
                                                             {{ $formattedFormats }}
                                                         </p>
+
                                                     </div>
 
-                                                    <div>
+                                                    {{-- Maximum File Size --}}
+                                                    <div class="min-w-0 border-l border-slate-100 pl-3">
+
                                                         <p
-                                                            class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                            class="text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
                                                             Ukuran maks.
                                                         </p>
 
-                                                        <p class="mt-1 text-sm font-extrabold text-blue-700">
+                                                        <p
+                                                            class="mt-1.5 text-sm font-extrabold tracking-tight text-blue-700">
                                                             {{ $maxSizeLabel }}
                                                         </p>
+
                                                     </div>
 
                                                 </div>
+
                                             </div>
 
                                         </div>
@@ -840,7 +895,7 @@
                                 </div>
                             @else
                                 <div
-                                    class="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-8 text-center text-sm text-slate-500">
+                                    class="mt-6 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-8 text-center text-sm text-slate-500">
                                     Belum ada rincian dokumen wajib pada jenis beasiswa ini.
                                 </div>
                             @endif

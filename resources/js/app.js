@@ -210,72 +210,92 @@ document.addEventListener('DOMContentLoaded', () => {
         const hero = document.querySelector('#hero');
 
         if (hero) {
-            const heroElements = [
-                '[data-hero-badge]',
-                '[data-hero-title]',
-                '[data-hero-description]',
-                '[data-hero-actions]',
-                '[data-hero-trust]',
-            ];
+            const badge = hero.querySelector('[data-hero-badge]');
+            const title = hero.querySelector('[data-hero-title]');
+            const description = hero.querySelector('[data-hero-description]');
+            const actions = hero.querySelector('[data-hero-actions]');
+            const trust = hero.querySelector('[data-hero-trust]');
+            const visual = hero.querySelector('[data-hero-visual]');
+
+            const textElements = [
+                badge,
+                title,
+                description,
+                actions,
+                trust,
+            ].filter(Boolean);
+
+            // Kondisi awal elemen teks.
+            gsap.set(textElements, {
+                autoAlpha: 0,
+                y: 18,
+            });
+
+            // Kondisi awal visual hero.
+            if (visual) {
+                gsap.set(visual, {
+                    autoAlpha: 0,
+                    y: 20,
+                    scale: 0.975,
+                    transformOrigin: '50% 50%',
+                });
+            }
 
             const heroTimeline = gsap.timeline({
+                delay: 0.12,
                 defaults: {
-                    ease: 'power2.out',
+                    ease: 'power3.out',
                 },
             });
 
-            heroTimeline
-                .fromTo(
-                    heroElements[0],
-                    { autoAlpha: 0, y: 12 },
-                    { autoAlpha: 1, y: 0, duration: 0.65 }
-                )
-                .fromTo(
-                    heroElements[1],
-                    { autoAlpha: 0, y: 16 },
-                    { autoAlpha: 1, y: 0, duration: 0.8 },
-                    '-=0.4'
-                )
-                .fromTo(
-                    heroElements[2],
-                    { autoAlpha: 0, y: 12 },
-                    { autoAlpha: 1, y: 0, duration: 0.7 },
-                    '-=0.5'
-                )
-                .fromTo(
-                    heroElements[3],
-                    { autoAlpha: 0, y: 10 },
-                    { autoAlpha: 1, y: 0, duration: 0.65 },
-                    '-=0.4'
-                )
-                .fromTo(
-                    heroElements[4],
-                    { autoAlpha: 0, y: 8 },
-                    { autoAlpha: 1, y: 0, duration: 0.6 },
-                    '-=0.35'
-                );
+            if (badge) {
+                heroTimeline.to(badge, {
+                    autoAlpha: 1,
+                    y: 0,
+                    duration: 0.65,
+                }, 0);
+            }
 
-            // Hero image muncul lebih tenang.
-            const heroVisual = hero.querySelector('[data-hero-visual]');
+            if (title) {
+                heroTimeline.to(title, {
+                    autoAlpha: 1,
+                    y: 0,
+                    duration: 0.85,
+                }, 0.12);
+            }
 
-            if (heroVisual) {
-                gsap.fromTo(
-                    heroVisual,
-                    {
-                        autoAlpha: 0,
-                        scale: 0.97,
-                        y: 12,
-                    },
-                    {
-                        autoAlpha: 1,
-                        scale: 1,
-                        y: 0,
-                        duration: 1.1,
-                        ease: 'power2.out',
-                        delay: 0.25,
-                        clearProps: 'transform',
-                    }
-                );
+            if (description) {
+                heroTimeline.to(description, {
+                    autoAlpha: 1,
+                    y: 0,
+                    duration: 0.75,
+                }, 0.28);
+            }
+
+            if (visual) {
+                heroTimeline.to(visual, {
+                    autoAlpha: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 1.15,
+                    ease: 'power2.out',
+                }, 0.22);
+            }
+
+            if (actions) {
+                heroTimeline.to(actions, {
+                    autoAlpha: 1,
+                    y: 0,
+                    duration: 0.7,
+                }, 0.45);
+            }
+
+            if (trust) {
+                heroTimeline.to(trust, {
+                    autoAlpha: 1,
+                    y: 0,
+                    duration: 0.7,
+                }, 0.58);
             }
         }
 
@@ -296,17 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             gsap.to('[data-parallax="glow"]', {
                 y: -35,
-                ease: 'none',
-                scrollTrigger: {
-                    trigger: hero,
-                    start: 'top top',
-                    end: 'bottom top',
-                    scrub: 2,
-                },
-            });
-
-            gsap.to('[data-parallax="visual"]', {
-                y: -12,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: hero,

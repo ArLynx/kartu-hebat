@@ -6,22 +6,23 @@
     $masaSanggahStatus = $periode?->masaSanggahStatus() ?? MasaSanggahStatus::BELUM_DIJADWALKAN;
 
     $statusNoticeClass = match ($masaSanggahStatus) {
-        MasaSanggahStatus::BELUM_DIMULAI => 'border-blue-100 bg-blue-50/60 text-blue-800',
-        MasaSanggahStatus::SEDANG_BERLANGSUNG => 'border-emerald-100 bg-emerald-50/60 text-emerald-800',
+        MasaSanggahStatus::BELUM_DIMULAI => 'border-blue-100 bg-blue-50/70 text-blue-800',
+        MasaSanggahStatus::SEDANG_BERLANGSUNG => 'border-emerald-100 bg-emerald-50/70 text-emerald-800',
         default => 'border-slate-200 bg-slate-50/80 text-slate-600',
     };
 @endphp
 
 <section data-reveal class="w-full">
 
-    <div class="relative overflow-hidden rounded-[1.75rem] border border-amber-200/80 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.07)]">
+    <div
+        class="relative overflow-hidden rounded-[1.75rem] border border-blue-100 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.06)]">
 
         {{-- Top Accent --}}
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-300"></div>
+        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-700 via-blue-500 to-sky-300"></div>
 
         {{-- Ambient Decoration --}}
         <div aria-hidden="true"
-            class="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-amber-100/60 blur-[75px]">
+            class="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-blue-100/60 blur-[75px]">
         </div>
 
         <div class="relative p-4 sm:p-5 lg:p-5">
@@ -30,7 +31,7 @@
             <div class="flex items-start gap-3">
 
                 <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600">
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-700">
 
                     <x-icon name="file-warning" class="h-5 w-5" />
 
@@ -41,7 +42,7 @@
                     <div class="flex flex-wrap items-center gap-2">
 
                         <span
-                            class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[9px] font-extrabold uppercase tracking-[0.13em] text-amber-700">
+                            class="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[9px] font-extrabold uppercase tracking-[0.13em] text-blue-700">
                             Pemberitahuan Penting
                         </span>
 
@@ -83,9 +84,9 @@
                     <div class="grid grid-cols-2 gap-2.5">
 
                         {{-- Start Date --}}
-                        <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                        <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-3">
 
-                            <div class="flex items-center gap-1.5 text-slate-400">
+                            <div class="flex items-center gap-1.5 text-blue-600">
 
                                 <x-icon name="calendar-days" class="h-3.5 w-3.5" />
 
@@ -102,9 +103,9 @@
                         </div>
 
                         {{-- End Date --}}
-                        <div class="rounded-xl border border-red-100 bg-red-50/50 p-3">
+                        <div class="rounded-xl border border-rose-100 bg-rose-50/50 p-3">
 
-                            <div class="flex items-center gap-1.5 text-red-500">
+                            <div class="flex items-center gap-1.5 text-rose-600">
 
                                 <x-icon name="calendar-clock" class="h-3.5 w-3.5" />
 
@@ -137,12 +138,15 @@
                 </p>
             @endif
 
-            {{-- Rules --}}
-            <div class="mt-3 rounded-xl border border-amber-200/80 bg-amber-50/60 p-3">
+            {{-- Rules / Warning --}}
+            <div class="mt-3 rounded-xl border border-amber-200/80 bg-amber-50/50 p-3">
 
                 <div class="flex items-center gap-2">
 
-                    <x-icon name="alert-triangle" class="h-4 w-4 shrink-0 text-amber-600" />
+                    <div
+                        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100/80 text-amber-700">
+                        <x-icon name="alert-triangle" class="h-3.5 w-3.5" />
+                    </div>
 
                     <h3 class="text-[11px] font-extrabold text-amber-900">
                         Ketentuan dan Perhatian
@@ -150,7 +154,7 @@
 
                 </div>
 
-                <ul class="mt-2.5 grid gap-x-4 gap-y-2 text-[10px] leading-[1.55] text-amber-950/80 sm:grid-cols-2">
+                <ul class="mt-3 grid gap-x-4 gap-y-2.5 text-[10px] leading-[1.6] text-slate-700 sm:grid-cols-2">
 
                     <li class="flex items-start gap-2">
 
@@ -200,7 +204,7 @@
 
             {{-- Action Area --}}
             <div
-                class="mt-3 flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:justify-between">
+                class="mt-3 flex flex-col gap-2.5 rounded-xl border border-blue-100 bg-blue-50/40 p-3 sm:flex-row sm:items-center sm:justify-between">
 
                 <div class="min-w-0">
 
@@ -215,7 +219,7 @@
                 </div>
 
                 <a href="{{ route('login') }}"
-                    class="inline-flex min-h-[36px] shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-700 px-3.5 text-[9px] font-extrabold text-white transition hover:bg-blue-800">
+                    class="inline-flex min-h-[36px] shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-700 px-3.5 text-[9px] font-extrabold text-white shadow-sm shadow-blue-900/10 transition duration-300 hover:bg-blue-800 hover:shadow-md">
 
                     <x-icon name="user" class="h-3.5 w-3.5" />
 
