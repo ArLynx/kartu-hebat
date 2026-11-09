@@ -79,7 +79,7 @@ class PrestasiScoringServiceTest extends TestCase
         $this->assertSame(2, $kabupaten->selection()->firstOrFail()->rank);
     }
 
-    public function test_tingkat_internasional_mengalahkan_juara_3_kabupaten(): void
+    public function test_juara_3_kabupaten_mengalahkan_peserta_internasional(): void
     {
         $juara3Kabupaten = $this->application(
             profileOverrides: ['ipk' => 3.0],
@@ -97,8 +97,9 @@ class PrestasiScoringServiceTest extends TestCase
         $scoring->calculate($pesertaInternasional);
         $scoring->recalculateRanking();
 
-        $this->assertSame(1, $pesertaInternasional->selection()->firstOrFail()->rank);
-        $this->assertSame(2, $juara3Kabupaten->selection()->firstOrFail()->rank);
+        // Berdasarkan Perbup terbaru, juara (tier 2) selalu di atas peserta (tier 4) apa pun tingkat lombanya.
+        $this->assertSame(1, $juara3Kabupaten->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $pesertaInternasional->selection()->firstOrFail()->rank);
     }
 
     public function test_missing_prestasi_throws_validation_exception(): void

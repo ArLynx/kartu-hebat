@@ -212,8 +212,20 @@ class DemoDataSeeder extends Seeder
 
         Prestasi::query()->where('pendaftaran_id', $pendaftaran->id)->delete();
 
-        foreach ($payload['prestasis'] as $prestasi) {
-            Prestasi::query()->create(array_merge($prestasi, ['pendaftaran_id' => $pendaftaran->id]));
+        $prestasiDisk = Storage::disk(config('kartu_hebat.document_disk'));
+
+        foreach ($payload['prestasis'] as $index => $prestasi) {
+            $path = 'pendaftarans/'.$pendaftaran->id.'/prestasi/demo-'.($index + 1).'.pdf';
+            $contents = "%PDF-1.4\n% Dokumen demo prestasi {$pendaftaran->nomor_pendaftaran}\n";
+            $prestasiDisk->put($path, $contents);
+
+            Prestasi::query()->create(array_merge(
+                $prestasi,
+                [
+                    'pendaftaran_id' => $pendaftaran->id,
+                    'dokumen_prestasi' => $path,
+                ],
+            ));
         }
 
         $application = Application::query()->updateOrCreate(
@@ -738,6 +750,7 @@ class DemoDataSeeder extends Seeder
                 'prestasis' => [
                     [
                         'jenis' => 'non_akademik',
+                        'kategori_prestasi' => 'lomba',
                         'nama_prestasi' => 'Juara 1 Debat Bahasa Indonesia Tingkat Nasional',
                         'tingkat' => 'nasional',
                         'peringkat' => 'juara 1',
@@ -745,7 +758,6 @@ class DemoDataSeeder extends Seeder
                         'jabatan_ormawa' => null,
                         'penyelenggara' => 'Kementerian Pendidikan',
                         'tahun' => 2025,
-                        'dokumen_prestasi' => null,
                         'keterangan' => 'Final nasional debat mahasiswa.',
                     ],
                 ],
@@ -967,11 +979,12 @@ class DemoDataSeeder extends Seeder
                     'pekerjaan_wali' => null,
                     'jabatan_wali' => null,
                 ],
-                'prestasis' => $isPrestasi ? [
+                'prestasis' => $isPrestasi ? [array_merge(
                     [
                         'jenis' => 'non_akademik',
+                        'kategori_prestasi' => $isOrmawa ? 'organisasi' : 'lomba',
                         'nama_prestasi' => $isOrmawa
-                            ? fake()->randomElement(['Badan Eksekutif Mahasiswa', 'Himpunan Mahasiswa Jurusan', 'Unit Kegiatan Mahasiswa'])
+                            ? fake()->randomElement(['Badan Eksekutif Mahasiswa', 'Dewan Perwakilan Mahasiswa', 'Unit Kegiatan Mahasiswa', 'BEM Fakultas Teknik'])
                             : fake()->randomElement(['Juara Lomba Debat', 'Juara Lomba MTQ', 'Juara Lomba Futsal', 'Juara Lomba Karya Tulis']),
                         'tingkat' => $isOrmawa
                             ? 'kampus'
@@ -979,19 +992,44 @@ class DemoDataSeeder extends Seeder
                         'peringkat' => $isOrmawa
                             ? 'Pengurus Organisasi'
                             : fake()->randomElement(['juara 1', 'juara 2', 'juara 3', 'harapan', 'favorit', 'peserta']),
-                        'is_pengurus_inti_ormawa' => $isOrmawa,
-                        'jabatan_ormawa' => $isOrmawa
-                            ? fake()->randomElement(['Ketua', 'Sekretaris', 'Bendahara'])
-                            : null,
                         'penyelenggara' => $isOrmawa ? $universitas : 'Penyelenggara Demo',
                         'tahun' => 2025,
-                        'dokumen_prestasi' => null,
                         'keterangan' => null,
                     ],
-                ] : [],
+                    $isOrmawa
+                        ? $this->ormawaAttributes()
+                        : [
+                            'is_pengurus_inti_ormawa' => false,
+                            'tingkat_organisasi' => null,
+                            'posisi_organisasi' => null,
+                            'jabatan_ormawa' => null,
+                        ],
+                )] : [],
             ];
         }
 
         return $students;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function ormawaAttributes(): array
+    {
+        $posisi = fake()->randomElement(['ketua', 'wakil_ketua', 'sekretaris', 'bendahara', 'koordinator', 'anggota']);
+
+        return [
+            'tingkat_organisasi' => fake()->randomElement(['universitas', 'fakultas']),
+            'posisi_organisasi' => $posisi,
+            'is_pengurus_inti_ormawa' => $posisi !== 'anggota',
+            'jabatan_ormawa' => match ($posisi) {
+                'ketua' => 'Ketua',
+                'wakil_ketua' => 'Wakil Ketua',
+                'sekretaris' => 'Sekretaris',
+                'bendahara' => 'Bendahara',
+                'koordinator' => 'Koordinator Bidang',
+                default => 'Anggota Pengurus',
+            },
+        ];
     }
 }

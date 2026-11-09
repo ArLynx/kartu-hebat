@@ -7,13 +7,17 @@ use App\Enums\ApplicationType;
 use App\Models\Application;
 use App\Models\Criterion;
 use App\Models\Selection;
+use App\Services\Scoring\NonAcademicTierResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SelectionScoringService
 {
-    public function __construct(private readonly ScoringStrategyResolver $resolver) {}
+    public function __construct(
+        private readonly ScoringStrategyResolver $resolver,
+        private readonly NonAcademicTierResolver $tierResolver,
+    ) {}
 
     public function calculate(Application $application, ?int $scorerId = null): Selection
     {
@@ -217,21 +221,20 @@ class SelectionScoringService
                     ?: ($left->application_id <=> $right->application_id);
 
             case ApplicationType::NON_AKADEMIK:
-                // 1. tingkatan juara 1, 2, atau 3 kompetisi non akademik (DESC)
+                // Urutan Perbup (terbaru):
+                // 1. Pengurus inti ormawa universitas/fakultas (Ketua > Wakil Ketua > Sekretaris > Bendahara > Koordinator Bidang, Universitas > Fakultas)
+                // 2. Juara 1/2/3 lomba (Internasional > Nasional > Provinsi > Universitas > Kabupaten, lalu Juara 1 > 2 > 3 > Harapan > Favorit)
+                // 3. Anggota pengurus ormawa universitas/fakultas (Universitas > Fakultas)
+                // 4. Peserta lomba (Internasional > Nasional > Provinsi > Universitas > Kabupaten)
+                // 5. Tahun angkatan masuk perguruan tinggi yang lebih awal (ASC)
+                // 6. Akreditasi Perguruan Tinggi (DESC)
                 $prestasisL = $appL->pendaftaran?->prestasis ?? collect();
                 $prestasisR = $appR->pendaftaran?->prestasis ?? collect();
 
-                $lombaL = $this->getBestNonAcademicCompetitionScore($prestasisL);
-                $lombaR = $this->getBestNonAcademicCompetitionScore($prestasisR);
+                $tierL = $this->tierResolver->profile($prestasisL);
+                $tierR = $this->tierResolver->profile($prestasisR);
 
-                // 2. kepengurusan inti organisasi mahasiswa tingkat universitas (DESC)
-                $ormawaL = (int) $prestasisL->contains(fn ($p) => (bool) $p->is_pengurus_inti_ormawa);
-                $ormawaR = (int) $prestasisR->contains(fn ($p) => (bool) $p->is_pengurus_inti_ormawa);
-
-                // 3. tahun angkatan masuk perguruan tinggi yang lebih awal (ASC)
-                // 4. akreditasi Perguruan Tinggi (DESC)
-                return ($lombaR <=> $lombaL)
-                    ?: ($ormawaR <=> $ormawaL)
+                return $tierL->compareTo($tierR)
                     ?: ($tahunL <=> $tahunR)
                     ?: ($akreditasiR <=> $akreditasiL)
                     ?: ($left->application_id <=> $right->application_id);
@@ -293,60 +296,5 @@ class SelectionScoringService
         }
 
         return 1;
-    }
-
-    public function calculateTingkatScore(?string $tingkat): float
-    {
-        $key = strtolower(trim((string) $tingkat));
-
-        return match ($key) {
-            'internasional' => 100.0,
-            'nasional' => 80.0,
-            'provinsi' => 60.0,
-            'kabupaten', 'kabupaten/kota', 'kota' => 40.0,
-            'kampus', 'universitas' => 20.0,
-            default => 10.0,
-        };
-    }
-
-    public function calculatePeringkatScore(?string $peringkat): float
-    {
-        $normalized = strtolower(trim((string) $peringkat));
-        $normalized = preg_replace('/\s+/', '_', $normalized) ?? '';
-
-        if (str_contains($normalized, 'juara_1') || str_contains($normalized, 'juara_i') || str_contains($normalized, 'emas') || str_contains($normalized, 'pertama') || $normalized === '1') {
-            return 100.0;
-        }
-
-        if (str_contains($normalized, 'juara_2') || str_contains($normalized, 'juara_ii') || str_contains($normalized, 'perak') || str_contains($normalized, 'kedua') || $normalized === '2') {
-            return 85.0;
-        }
-
-        if (str_contains($normalized, 'juara_3') || str_contains($normalized, 'juara_iii') || str_contains($normalized, 'perunggu') || str_contains($normalized, 'ketiga') || $normalized === '3') {
-            return 70.0;
-        }
-
-        if (str_contains($normalized, 'favorit') || str_contains($normalized, 'harapan')) {
-            return 50.0;
-        }
-
-        return 20.0;
-    }
-
-    public function getBestNonAcademicCompetitionScore(Collection $prestasis): float
-    {
-        if ($prestasis->isEmpty()) {
-            return 0.0;
-        }
-
-        return (float) $prestasis
-            ->filter(fn ($p) => $p->jenis === 'non_akademik' || ! (bool) $p->is_pengurus_inti_ormawa)
-            ->map(function ($p) {
-                $tingkat = $this->calculateTingkatScore($p->tingkat);
-                $peringkat = $this->calculatePeringkatScore($p->peringkat);
-
-                return ($tingkat * 1000) + $peringkat;
-            })
-            ->max() ?? 0.0;
     }
 }

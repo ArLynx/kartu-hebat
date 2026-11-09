@@ -130,9 +130,22 @@ class CompleteStudentSeeder extends Seeder
         );
 
         Prestasi::query()->where('pendaftaran_id', $pendaftaran->id)->delete();
-        foreach ($payload['prestasis'] as $prestasi) {
+
+        $prestasiDisk = Storage::disk(config('kartu_hebat.document_disk'));
+
+        foreach ($payload['prestasis'] as $index => $prestasi) {
+            $path = 'pendaftarans/'.$pendaftaran->id.'/prestasi/demo-'.($index + 1).'.pdf';
+            $prestasiDisk->put(
+                $path,
+                "%PDF-1.4\n% Dokumen demo prestasi {$pendaftaran->nomor_pendaftaran}\n",
+            );
+
             Prestasi::query()->create(
-                array_merge(['pendaftaran_id' => $pendaftaran->id], $prestasi),
+                array_merge(
+                    ['pendaftaran_id' => $pendaftaran->id],
+                    $prestasi,
+                    ['dokumen_prestasi' => $path],
+                ),
             );
         }
 
@@ -351,7 +364,6 @@ class CompleteStudentSeeder extends Seeder
                     'peringkat' => 'juara_1',
                     'penyelenggara' => 'Universitas Palangka Raya',
                     'tahun' => 2024,
-                    'dokumen_prestasi' => null,
                     'keterangan' => 'Finalis nasional LKTI.',
                 ],
             ],
@@ -520,7 +532,6 @@ class CompleteStudentSeeder extends Seeder
                     'peringkat' => 'juara_2',
                     'penyelenggara' => 'LPTQ Kalimantan Tengah',
                     'tahun' => 2025,
-                    'dokumen_prestasi' => null,
                     'keterangan' => 'Cabang Tilawah Dewasa.',
                 ],
             ],
@@ -610,7 +621,6 @@ class CompleteStudentSeeder extends Seeder
                     'peringkat' => 'juara_1',
                     'penyelenggara' => 'Kementerian Pendidikan',
                     'tahun' => 2025,
-                    'dokumen_prestasi' => null,
                     'keterangan' => 'Finalis terbaik nasional.',
                 ],
                 [
@@ -620,7 +630,6 @@ class CompleteStudentSeeder extends Seeder
                     'peringkat' => 'juara_3',
                     'penyelenggara' => 'KONI Kalimantan Tengah',
                     'tahun' => 2024,
-                    'dokumen_prestasi' => null,
                     'keterangan' => 'Kategori tanding kelas B.',
                 ],
             ],

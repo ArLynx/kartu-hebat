@@ -3,13 +3,15 @@
 namespace App\Services\Scoring;
 
 use App\Enums\ApplicationType;
+use App\Enums\KategoriPrestasi;
 use App\Models\Application;
 use App\Models\MahasiswaProfile;
-use App\Models\Prestasi;
 use Illuminate\Validation\ValidationException;
 
 class PrestasiScoring implements ScoringStrategy
 {
+    public function __construct(private readonly NonAcademicTierResolver $tierResolver) {}
+
     public function type(): ApplicationType
     {
         return ApplicationType::NON_AKADEMIK;
@@ -25,11 +27,10 @@ class PrestasiScoring implements ScoringStrategy
             ]);
         }
 
-        $best = $prestasis
-            ->sortByDesc(fn (Prestasi $p) => $this->tingkatScore($p->tingkat))
-            ->sortByDesc(fn (Prestasi $p) => $this->peringkatScore($p->peringkat))
-            ->sortByDesc(fn (Prestasi $p) => (int) ($p->tahun ?? 0))
-            ->first();
+        // Skor hanya dihitung dari prestasi lomba; kepengurusan ormawa menentukan tier peringkat,
+        // bukan skor kriteria, agar tidak mencampur dua dasar penilaian yang berbeda.
+        $best = $this->tierResolver->bestRecordOfCategory($prestasis, KategoriPrestasi::LOMBA)
+            ?? $prestasis->first();
 
         $ipk = (float) ($profile?->ipk ?? 0);
 

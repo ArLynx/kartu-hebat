@@ -23,6 +23,7 @@ use App\Http\Controllers\Operator\ApplicationFormulirController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\DocumentVerificationController;
 use App\Http\Controllers\Operator\LpjController as OperatorLpjController;
+use App\Http\Controllers\Operator\PrestasiDocumentController;
 use App\Http\Controllers\Operator\ReconciliationController;
 use App\Http\Controllers\Operator\ReportController;
 use App\Http\Controllers\Operator\SanggahanController as OperatorSanggahanController;
@@ -210,6 +211,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                 Route::get('/pengajuan/{application}/formulir/{jenis}/unduh', [ApplicationFormulirController::class, 'download'])
                     ->name('applications.formulir.download')
                     ->whereIn('jenis', ['surat', 'pakta']);
+                Route::get('/pengajuan/{application}/prestasi/{prestasi}/lihat', [PrestasiDocumentController::class, 'preview'])
+                    ->name('applications.prestasi.lihat');
+                Route::get('/pengajuan/{application}/prestasi/{prestasi}/unduh', [PrestasiDocumentController::class, 'download'])
+                    ->name('applications.prestasi.unduh');
                 Route::post('/pengajuan/{application}/verifikasi', [VerificationController::class, 'store'])->name('applications.verify');
                 Route::post('/pengajuan/{application}/dokumen/{document}/penilaian', [DocumentVerificationController::class, 'store'])
                     ->name('applications.documents.verify');

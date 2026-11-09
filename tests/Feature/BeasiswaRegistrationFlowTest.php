@@ -836,6 +836,7 @@ class BeasiswaRegistrationFlowTest extends TestCase
                 'peringkat' => 'juara 1',
                 'penyelenggara' => 'LPTQ Kalteng',
                 'tahun' => 2025,
+                'dokumen' => UploadedFile::fake()->create('sertifikat-mtq.pdf', 100, 'application/pdf'),
             ])
             ->assertSessionHasNoErrors()
             ->assertRedirect();
@@ -845,16 +846,19 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $this->assertFalse((bool) $lomba->is_pengurus_inti_ormawa);
         $this->assertSame('non_akademik', $lomba->jenis);
         $this->assertSame('juara 1', $lomba->peringkat);
+        $this->assertNotNull($lomba->dokumen_prestasi);
 
         // 3. Tambah data kepengurusan organisasi mahasiswa
         $this->actingAs($user)
             ->post(route('mahasiswa.prestasi.store'), [
                 'kategori_bukti' => 'organisasi',
                 'nama_organisasi' => 'Badan Eksekutif Mahasiswa (BEM)',
-                'jabatan_ormawa' => 'Ketua Umum BEM',
+                'posisi_organisasi' => 'ketua',
+                'tingkat_organisasi' => 'universitas',
                 'penyelenggara' => 'Universitas Palangka Raya',
                 'tahun' => 2025,
                 'keterangan' => 'SK Rektor No. 12/2025',
+                'dokumen' => UploadedFile::fake()->create('sk-bem.pdf', 100, 'application/pdf'),
             ])
             ->assertSessionHasNoErrors()
             ->assertRedirect();
@@ -862,9 +866,12 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $ormawa = $pendaftaran->fresh()->prestasis()->where('is_pengurus_inti_ormawa', true)->first();
         $this->assertNotNull($ormawa);
         $this->assertSame('Badan Eksekutif Mahasiswa (BEM)', $ormawa->nama_prestasi);
-        $this->assertSame('Ketua Umum BEM', $ormawa->jabatan_ormawa);
+        $this->assertSame('ketua', $ormawa->posisi_organisasi);
+        $this->assertSame('universitas', $ormawa->tingkat_organisasi);
+        $this->assertSame('organisasi', $ormawa->kategori_prestasi);
         $this->assertSame('kampus', $ormawa->tingkat);
         $this->assertSame('non_akademik', $ormawa->jenis);
+        $this->assertNotNull($ormawa->dokumen_prestasi);
 
         // 4. Setelah ada data, konfirmasi berhasil dan lanjut ke data orang tua
         $this->actingAs($user)
@@ -874,5 +881,239 @@ class BeasiswaRegistrationFlowTest extends TestCase
 
         $service = app(MahasiswaPendaftaranService::class);
         $this->assertTrue($service->completion($pendaftaran->fresh())[3]);
+    }
+
+    public function test_tambah_prestasi_tanpa_dokumen_ditolak(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->draftNonAkademikFor($user);
+
+        $this->actingAs($user)
+            ->post(route('mahasiswa.prestasi.store'), [
+                'kategori_bukti' => 'lomba',
+                'nama_prestasi' => 'Juara 1 Lomba Debat',
+                'tingkat' => 'nasional',
+                'peringkat' => 'juara 1',
+                'penyelenggara' => 'Kemendikbud',
+                'tahun' => 2025,
+            ])
+            ->assertSessionHasErrors('dokumen');
+
+        $this->assertSame(0, $pendaftaran->fresh()->prestasis()->count());
+
+        $this->actingAs($user)
+            ->post(route('mahasiswa.prestasi.store'), [
+                'kategori_bukti' => 'organisasi',
+                'nama_organisasi' => 'Badan Eksekutif Mahasiswa (BEM)',
+                'posisi_organisasi' => 'ketua',
+                'penyelenggara' => 'Universitas Palangka Raya',
+                'tahun' => 2025,
+            ])
+            ->assertSessionHasErrors('dokumen');
+
+        $this->assertSame(0, $pendaftaran->fresh()->prestasis()->count());
+    }
+
+    public function test_konfirmasi_dan_kelengkapan_tahap_prestasi_menolak_data_tanpa_dokumen(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->draftNonAkademikFor($user);
+
+        $prestasi = $pendaftaran->prestasis()->create([
+            'jenis' => 'non_akademik',
+            'nama_prestasi' => 'Juara 1 Lomba Debat',
+            'tingkat' => 'nasional',
+            'peringkat' => 'juara 1',
+            'penyelenggara' => 'Kemendikbud',
+            'tahun' => 2025,
+            'dokumen_prestasi' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('mahasiswa.prestasi.confirm'))
+            ->assertSessionHas('error');
+
+        $service = app(MahasiswaPendaftaranService::class);
+        $this->assertFalse($service->completion($pendaftaran->fresh())[3]);
+
+        // Lengkapi dokumen lewat form ubah, lalu tahap prestasi dianggap selesai.
+        $this->actingAs($user)
+            ->put(route('mahasiswa.prestasi.update', $prestasi), [
+                'kategori_bukti' => 'lomba',
+                'nama_prestasi' => 'Juara 1 Lomba Debat',
+                'tingkat' => 'nasional',
+                'peringkat' => 'juara 1',
+                'penyelenggara' => 'Kemendikbud',
+                'tahun' => 2025,
+                'dokumen' => UploadedFile::fake()->create('sertifikat.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNotNull($prestasi->fresh()->dokumen_prestasi);
+
+        $this->actingAs($user)
+            ->post(route('mahasiswa.prestasi.confirm'))
+            ->assertRedirect(route('mahasiswa.orang-tua.index'))
+            ->assertSessionHas('success');
+
+        $this->assertTrue($service->completion($pendaftaran->fresh())[3]);
+    }
+
+    public function test_ubah_prestasi_lama_tanpa_dokumen_mewajibkan_unggah_berkas(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->draftNonAkademikFor($user);
+
+        $prestasi = $pendaftaran->prestasis()->create([
+            'jenis' => 'non_akademik',
+            'nama_prestasi' => 'Juara 1 Lomba Debat',
+            'tingkat' => 'nasional',
+            'peringkat' => 'juara 1',
+            'penyelenggara' => 'Kemendikbud',
+            'tahun' => 2025,
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('mahasiswa.prestasi.update', $prestasi), [
+                'kategori_bukti' => 'lomba',
+                'nama_prestasi' => 'Juara 1 Lomba Debat Nasional',
+                'tingkat' => 'nasional',
+                'peringkat' => 'juara 1',
+                'penyelenggara' => 'Kemendikbud',
+                'tahun' => 2025,
+            ])
+            ->assertSessionHasErrors('dokumen');
+
+        $this->assertSame('Juara 1 Lomba Debat', $prestasi->fresh()->nama_prestasi);
+    }
+
+    public function test_halaman_prestasi_menandai_data_lama_tanpa_dokumen(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->draftNonAkademikFor($user);
+
+        $pendaftaran->prestasis()->create([
+            'jenis' => 'non_akademik',
+            'nama_prestasi' => 'Juara 1 Lomba Debat',
+            'tingkat' => 'nasional',
+            'peringkat' => 'juara 1',
+            'penyelenggara' => 'Kemendikbud',
+            'tahun' => 2025,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('mahasiswa.prestasi.index'))
+            ->assertOk()
+            ->assertSee('Berkas bukti belum diunggah')
+            ->assertSee('Dokumen Sertifikat / Piagam Penghargaan');
+    }
+
+    public function test_pendaftaran_terkirim_dengan_data_lama_tanpa_dokumen_tetap_dianggap_lengkap(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->draftNonAkademikFor($user);
+
+        $pendaftaran->prestasis()->create([
+            'jenis' => 'non_akademik',
+            'nama_prestasi' => 'Juara 1 Lomba Debat',
+            'tingkat' => 'nasional',
+            'peringkat' => 'juara 1',
+            'penyelenggara' => 'Kemendikbud',
+            'tahun' => 2025,
+        ]);
+
+        $pendaftaran->forceFill([
+            'status' => 'verification',
+            'prestasi_dikonfirmasi_at' => now(),
+            'submitted_at' => now(),
+        ])->save();
+
+        $service = app(MahasiswaPendaftaranService::class);
+
+        $this->assertTrue($service->completion($pendaftaran->fresh())[3]);
+    }
+
+    public function test_tambah_prestasi_organisasi_mendukung_posisi_dan_tingkat_organisasi(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->draftNonAkademikFor($user);
+
+        // Anggota pengurus BEM universitas -> bukan pengurus inti (tier 3)
+        $this->actingAs($user)
+            ->post(route('mahasiswa.prestasi.store'), [
+                'kategori_bukti' => 'organisasi',
+                'nama_organisasi' => 'Badan Eksekutif Mahasiswa (BEM)',
+                'posisi_organisasi' => 'anggota',
+                'tingkat_organisasi' => 'universitas',
+                'penyelenggara' => 'Universitas Palangka Raya',
+                'tahun' => 2025,
+                'dokumen' => UploadedFile::fake()->create('sk-bem.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $anggota = $pendaftaran->fresh()->prestasis()->latest('id')->firstOrFail();
+        $this->assertSame('organisasi', $anggota->kategori_prestasi);
+        $this->assertSame('anggota', $anggota->posisi_organisasi);
+        $this->assertSame('universitas', $anggota->tingkat_organisasi);
+        $this->assertFalse($anggota->is_pengurus_inti_ormawa);
+
+        // Wakil Ketua BEM Fakultas -> pengurus inti (tier 1)
+        $this->actingAs($user)
+            ->post(route('mahasiswa.prestasi.store'), [
+                'kategori_bukti' => 'organisasi',
+                'nama_organisasi' => 'BEM Fakultas Teknik',
+                'posisi_organisasi' => 'wakil_ketua',
+                'tingkat_organisasi' => 'fakultas',
+                'penyelenggara' => 'Universitas Palangka Raya',
+                'tahun' => 2025,
+                'dokumen' => UploadedFile::fake()->create('sk-bem-fakultas.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $wakil = $pendaftaran->fresh()->prestasis()->latest('id')->firstOrFail();
+        $this->assertSame('wakil_ketua', $wakil->posisi_organisasi);
+        $this->assertSame('fakultas', $wakil->tingkat_organisasi);
+        $this->assertTrue($wakil->is_pengurus_inti_ormawa);
+    }
+
+    public function test_tambah_prestasi_organisasi_menolak_posisi_tidak_dikenal(): void
+    {
+        $user = User::factory()->create();
+        $pendaftaran = $this->draftNonAkademikFor($user);
+
+        $this->actingAs($user)
+            ->post(route('mahasiswa.prestasi.store'), [
+                'kategori_bukti' => 'organisasi',
+                'nama_organisasi' => 'Badan Eksekutif Mahasiswa (BEM)',
+                'posisi_organisasi' => 'raja',
+                'tingkat_organisasi' => 'galaksi',
+                'penyelenggara' => 'Universitas Palangka Raya',
+                'tahun' => 2025,
+                'dokumen' => UploadedFile::fake()->create('sk-bem.pdf', 100, 'application/pdf'),
+            ])
+            ->assertSessionHasErrors(['posisi_organisasi', 'tingkat_organisasi']);
+
+        $this->assertSame(0, $pendaftaran->fresh()->prestasis()->count());
+    }
+
+    private function draftNonAkademikFor(User $user): Pendaftaran
+    {
+        $periode = Periode::query()->firstOrFail();
+        $jalur = JalurBeasiswa::query()->firstOrCreate(
+            ['kode' => 'REGULER'],
+            ['nama' => 'Reguler', 'aktif' => true, 'urutan' => 1]
+        );
+        $kategori = KategoriBeasiswa::query()
+            ->where('application_type', ApplicationType::NON_AKADEMIK)
+            ->firstOrFail();
+
+        return Pendaftaran::query()->create([
+            'user_id' => $user->id,
+            'periode_id' => $periode->id,
+            'jalur_beasiswa_id' => $jalur->id,
+            'kategori_beasiswa_id' => $kategori->id,
+            'nomor_pendaftaran' => 'KHM-2026-DOC-'.str_pad((string) $user->id, 6, '0', STR_PAD_LEFT),
+            'status' => 'draft',
+        ]);
     }
 }

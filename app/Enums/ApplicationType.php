@@ -30,7 +30,7 @@ enum ApplicationType: string
             self::AKADEMIK => 'Seleksi berdasarkan IPK dan semester aktif.',
             self::TIDAK_MAMPU => 'Seleksi berdasarkan desil sosial ekonomi terverifikasi.',
             self::DISABILITAS => 'Seleksi afirmasi untuk mahasiswa penyandang disabilitas, dengan bobot IPK, semester, dan jenis disabilitas.',
-            self::NON_AKADEMIK => 'Seleksi afirmasi untuk mahasiswa berprestasi (MTQ, olahraga, seni, wirausaha, dsb.) berdasarkan tingkat dan peringkat kejuaraan.',
+            self::NON_AKADEMIK => 'Seleksi afirmasi untuk mahasiswa berprestasi (MTQ, olahraga, seni, wirausaha, dsb.) berdasarkan kepengurusan organisasi dan capaian kejuaraan.',
         };
     }
 

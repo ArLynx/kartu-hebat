@@ -85,11 +85,11 @@
 
                 <h1 data-hero-title
                     class="mt-7 max-w-xl bg-gradient-to-r from-slate-900 via-blue-900 to-slate-800 bg-clip-text text-4xl font-extrabold leading-[1.12] tracking-tight text-transparent sm:text-5xl lg:text-6xl">
-                    Bantuan Kartu Hebat Mahasiswa
+                    Beasiswa Kartu Hebat Mahasiswa
                 </h1>
 
                 <p data-hero-description class="mt-7 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
-                    Program bantuan pendidikan bagi mahasiswa berprestasi dan kurang mampu asal Kabupaten Murung Raya untuk
+                    Program beasiswa pendidikan bagi mahasiswa berprestasi dan kurang mampu asal Kabupaten Murung Raya untuk
                     mewujudkan sumber daya manusia berkualitas.
                 </p>
 
@@ -178,7 +178,7 @@
 
                     <div>
                         <p class="text-xs font-bold text-slate-800">
-                            Program Bantuan Pendidikan
+                            Program Beasiswa Pendidikan
                         </p>
                         <p class="mt-0.5 text-[11px] text-slate-500">
                             Kabupaten Murung Raya

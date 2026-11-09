@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\Enums\KategoriPrestasi;
+use App\Enums\PosisiOrganisasi;
+use App\Enums\TingkatOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Models\Pendaftaran;
 use App\Models\Prestasi;
 use App\Services\MahasiswaPendaftaranService;
+use App\Services\Scoring\NonAcademicTierResolver;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -84,7 +88,7 @@ class PrestasiController extends Controller
         $pendaftaran = $this->editablePendaftaran($request);
         $this->assertOwned($prestasi, $pendaftaran->id);
 
-        $validated = $this->validatedPrestasi($request, false);
+        $validated = $this->validatedPrestasi($request, blank($prestasi->dokumen_prestasi));
         $oldPath = $prestasi->dokumen_prestasi;
         $newPath = $this->storeCertificate($request, $pendaftaran->id);
 
@@ -125,7 +129,8 @@ class PrestasiController extends Controller
         DB::transaction(function () use ($prestasi, $pendaftaran): void {
             $prestasi->delete();
             $pendaftaran->forceFill([
-                'prestasi_dikonfirmasi_at' => $pendaftaran->prestasis()->count() > 0 ? now() : null,
+                'prestasi_dikonfirmasi_at' => $pendaftaran->prestasis()->count() > 0
+                    && ! $this->hasPrestasiWithoutDocument($pendaftaran) ? now() : null,
                 'review_dikonfirmasi_at' => null,
             ])->save();
         });
@@ -143,6 +148,10 @@ class PrestasiController extends Controller
 
         if ($pendaftaran->prestasis()->count() === 0) {
             return back()->with('error', 'Wajib menambahkan minimal 1 data prestasi lomba atau SK kepengurusan organisasi mahasiswa untuk melanjutkan.');
+        }
+
+        if ($this->hasPrestasiWithoutDocument($pendaftaran)) {
+            return back()->with('error', 'Lengkapi dokumen sertifikat / SK untuk semua data prestasi sebelum melanjutkan.');
         }
 
         $pendaftaran->forceFill([
@@ -182,35 +191,54 @@ class PrestasiController extends Controller
         return $pendaftaran;
     }
 
-    private function validatedPrestasi(Request $request, bool $isStore = false): array
+    private function validatedPrestasi(Request $request, bool $documentRequired): array
     {
         $isOrmawa = $request->input('kategori_bukti') === 'organisasi' || $request->boolean('is_pengurus_inti_ormawa');
+
+        $documentRules = [
+            $documentRequired ? 'required' : 'nullable',
+            File::types(self::CERTIFICATE_FORMATS)->max(2048),
+        ];
 
         if ($isOrmawa) {
             $validated = $request->validate([
                 'kategori_bukti' => ['nullable', 'string', 'in:lomba,organisasi'],
                 'nama_organisasi' => ['required_without:nama_prestasi', 'nullable', 'string', 'max:200'],
                 'nama_prestasi' => ['required_without:nama_organisasi', 'nullable', 'string', 'max:200'],
-                'jabatan_ormawa' => ['required', 'string', 'max:150'],
+                'posisi_organisasi' => ['nullable', Rule::in(array_column(PosisiOrganisasi::cases(), 'value'))],
+                'tingkat_organisasi' => ['nullable', Rule::in(array_column(TingkatOrganisasi::cases(), 'value'))],
+                'jabatan_ormawa' => ['nullable', 'string', 'max:150'],
                 'penyelenggara' => ['required', 'string', 'max:200'],
                 'tahun' => ['required', 'integer', 'digits:4', 'between:1990,'.now()->year],
-                'dokumen' => ['nullable', File::types(self::CERTIFICATE_FORMATS)->max(2048)],
+                'dokumen' => $documentRules,
                 'keterangan' => ['nullable', 'string', 'max:2000'],
             ], [
                 'nama_organisasi.required_without' => 'Nama organisasi mahasiswa wajib diisi.',
                 'nama_prestasi.required_without' => 'Nama organisasi mahasiswa wajib diisi.',
-                'jabatan_ormawa.required' => 'Jabatan dalam organisasi wajib diisi.',
+                'posisi_organisasi.in' => 'Posisi dalam organisasi tidak dikenal.',
+                'tingkat_organisasi.in' => 'Tingkat organisasi tidak dikenal.',
                 'penyelenggara.required' => 'Nama perguruan tinggi / penyelenggara wajib diisi.',
                 'tahun.required' => 'Tahun masa bakti / SK wajib diisi.',
+                'dokumen.required' => 'Dokumen Surat Keputusan (SK) wajib diunggah.',
+                'dokumen.max' => 'Ukuran dokumen Surat Keputusan (SK) maksimal 2 MB.',
             ]);
 
             $validated['nama_prestasi'] = $validated['nama_organisasi'] ?? $validated['nama_prestasi'];
             unset($validated['nama_organisasi'], $validated['kategori_bukti']);
 
+            $posisi = isset($validated['posisi_organisasi'])
+                ? PosisiOrganisasi::from($validated['posisi_organisasi'])
+                : NonAcademicTierResolver::posisiFromJabatan($validated['jabatan_ormawa'] ?? null);
+
             $validated['jenis'] = 'non_akademik';
-            $validated['tingkat'] = $request->input('tingkat') ?: 'kampus';
-            $validated['peringkat'] = $request->input('peringkat') ?: 'Pengurus Organisasi';
-            $validated['is_pengurus_inti_ormawa'] = true;
+            $validated['kategori_prestasi'] = KategoriPrestasi::ORGANISASI->value;
+            $validated['tingkat_organisasi'] = isset($validated['tingkat_organisasi'])
+                ? TingkatOrganisasi::from($validated['tingkat_organisasi'])->value
+                : NonAcademicTierResolver::tingkatOrganisasiFromNama($validated['nama_prestasi'])->value;
+            $validated['posisi_organisasi'] = $posisi->value;
+            $validated['tingkat'] = 'kampus';
+            $validated['peringkat'] = 'Pengurus Organisasi';
+            $validated['is_pengurus_inti_ormawa'] = $posisi->isInti();
         } else {
             $validated = $request->validate([
                 'kategori_bukti' => ['nullable', 'string', 'in:lomba,organisasi'],
@@ -222,7 +250,7 @@ class PrestasiController extends Controller
                 'peringkat' => ['required', 'string', 'max:100'],
                 'penyelenggara' => ['required', 'string', 'max:200'],
                 'tahun' => ['required', 'integer', 'digits:4', 'between:1990,'.now()->year],
-                'dokumen' => ['nullable', File::types(self::CERTIFICATE_FORMATS)->max(2048)],
+                'dokumen' => $documentRules,
                 'keterangan' => ['nullable', 'string', 'max:2000'],
             ], [
                 'nama_prestasi.required' => 'Nama kompetisi / kegiatan wajib diisi.',
@@ -230,11 +258,16 @@ class PrestasiController extends Controller
                 'peringkat.required' => 'Peringkat / capaian kejuaraan wajib dipilih.',
                 'penyelenggara.required' => 'Penyelenggara kompetisi / kegiatan wajib diisi.',
                 'tahun.required' => 'Tahun perolehan prestasi wajib diisi.',
+                'dokumen.required' => 'Dokumen sertifikat / piagam penghargaan wajib diunggah.',
+                'dokumen.max' => 'Ukuran dokumen sertifikat / piagam maksimal 2 MB.',
             ]);
 
             unset($validated['kategori_bukti']);
 
             $validated['jenis'] = 'non_akademik';
+            $validated['kategori_prestasi'] = KategoriPrestasi::LOMBA->value;
+            $validated['tingkat_organisasi'] = null;
+            $validated['posisi_organisasi'] = null;
             $validated['is_pengurus_inti_ormawa'] = false;
             $validated['jabatan_ormawa'] = null;
         }
@@ -269,6 +302,16 @@ class PrestasiController extends Controller
         abort_unless($path, 500, 'Dokumen prestasi gagal disimpan.');
 
         return $path;
+    }
+
+    private function hasPrestasiWithoutDocument(Pendaftaran $pendaftaran): bool
+    {
+        return $pendaftaran->prestasis()
+            ->where(function ($query): void {
+                $query->whereNull('dokumen_prestasi')
+                    ->orWhere('dokumen_prestasi', '');
+            })
+            ->exists();
     }
 
     private function assertOwned(Prestasi $prestasi, int $pendaftaranId): void

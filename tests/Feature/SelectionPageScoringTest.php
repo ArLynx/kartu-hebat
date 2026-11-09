@@ -6,7 +6,10 @@ use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Enums\UserRole;
 use App\Models\Application;
+use App\Models\KategoriBeasiswa;
 use App\Models\MahasiswaProfile;
+use App\Models\Pendaftaran;
+use App\Models\Periode;
 use App\Models\Selection;
 use App\Models\User;
 use App\Models\Village;
@@ -91,6 +94,61 @@ class SelectionPageScoringTest extends TestCase
         // Pastikan kedua kandidat tampil, halaman tidak error
         $response->assertSee($first->nomor_pengajuan);
         $response->assertSee($second->nomor_pengajuan);
+    }
+
+    public function test_operator_selection_page_renders_non_academic_tier_and_criteria(): void
+    {
+        $operator = $this->kabupatenOperator();
+        $village = Village::query()->with('kecamatan')->where('kabupaten_id', $operator->kabupaten_id)->firstOrFail();
+
+        $candidate = $this->candidate($village, ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], withSelection: true, finalScore: 37.0, rank: 1);
+
+        $periode = Periode::query()->firstOrCreate(
+            ['nama' => config('kartu_hebat.current_period')],
+            [
+                'tahun' => 2026,
+                'tanggal_mulai' => '2026-07-01',
+                'tanggal_selesai' => '2026-12-31',
+                'status' => 'aktif',
+            ],
+        );
+
+        $pendaftaran = Pendaftaran::query()->create([
+            'user_id' => $candidate->mahasiswa_id,
+            'periode_id' => $periode->id,
+            'nomor_pendaftaran' => 'REG-TIER-'.$candidate->id,
+            'kategori_beasiswa_id' => KategoriBeasiswa::query()->create([
+                'periode_id' => $periode->id,
+                'kode' => 'NON-AKADEMIK-TIER',
+                'application_type' => ApplicationType::NON_AKADEMIK->value,
+                'nama' => 'Beasiswa Prestasi Non-Akademik',
+                'aktif' => true,
+            ])->id,
+            'status' => 'submitted',
+        ]);
+        $candidate->forceFill(['pendaftaran_id' => $pendaftaran->id])->save();
+
+        $pendaftaran->prestasis()->create([
+            'jenis' => 'non_akademik',
+            'kategori_prestasi' => 'organisasi',
+            'nama_prestasi' => 'Badan Eksekutif Mahasiswa',
+            'tingkat' => 'kampus',
+            'peringkat' => 'Pengurus Organisasi',
+            'tingkat_organisasi' => 'universitas',
+            'posisi_organisasi' => 'ketua',
+            'is_pengurus_inti_ormawa' => true,
+            'jabatan_ormawa' => 'Ketua',
+            'penyelenggara' => 'Universitas Pengujian',
+            'tahun' => 2025,
+        ]);
+
+        $this->actingAs($operator)
+            ->get(route('operator.selection', ['application_type' => ApplicationType::NON_AKADEMIK->value]))
+            ->assertOk()
+            ->assertSee('Pengurus inti organisasi mahasiswa universitas/fakultas')
+            ->assertSee('Tier 1')
+            ->assertSee('Ketua')
+            ->assertSee('Universitas');
     }
 
     private function kabupatenOperator(): User

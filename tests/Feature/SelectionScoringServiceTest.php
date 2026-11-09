@@ -16,7 +16,9 @@ use App\Models\User;
 use App\Models\Village;
 use App\Services\SelectionScoringService;
 use Database\Seeders\BeasiswaMasterSeeder;
+use Database\Seeders\DisabilityTrackSeeder;
 use Database\Seeders\MasterDataSeeder;
+use Database\Seeders\PrestasiTrackSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -282,48 +284,189 @@ class SelectionScoringServiceTest extends TestCase
 
     public function test_non_academic_track_orders_strictly_by_perbup_criteria(): void
     {
-        $this->seed(\Database\Seeders\PrestasiTrackSeeder::class);
+        $this->seed(PrestasiTrackSeeder::class);
 
-        // 1: Juara 1 Internasional, non-ormawa
+        // 1: Ketua BEM Universitas (pengurus inti) -> Tier 1
         $app1 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
             'tahun_masuk' => 2023,
             'akreditasi_perguruan_tinggi' => 'B',
         ], [
-            ['tingkat' => 'internasional', 'peringkat' => 'Juara 1', 'is_pengurus_inti_ormawa' => false],
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'universitas', 'posisi_organisasi' => 'ketua', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Ketua BEM', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
         ]);
 
-        // 2: Juara 1 Nasional, ormawa (Kalah dari 1 karena tingkat lomba, tapi menang dari 3 karena Ormawa)
+        // 2: Juara 1 Internasional (non-ormawa) -> Tier 2, menang dari Juara 1 Nasional
         $app2 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
             'tahun_masuk' => 2021,
             'akreditasi_perguruan_tinggi' => 'B',
         ], [
-            ['tingkat' => 'nasional', 'peringkat' => 'Juara 1', 'is_pengurus_inti_ormawa' => false],
-            ['tingkat' => 'kampus', 'peringkat' => 'Ketua', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Ketua BEM'],
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'internasional', 'peringkat' => 'juara 1', 'is_pengurus_inti_ormawa' => false],
         ]);
 
-        // 3: Juara 1 Nasional, non-ormawa
+        // 3: Juara 1 Nasional (non-ormawa) -> Tier 2, kalah tingkat dari app2
         $app3 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
             'tahun_masuk' => 2021,
             'akreditasi_perguruan_tinggi' => 'B',
         ], [
-            ['tingkat' => 'nasional', 'peringkat' => 'Juara 1', 'is_pengurus_inti_ormawa' => false],
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'nasional', 'peringkat' => 'juara 1', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        // 4: Anggota BEM Universitas -> Tier 3, kalah dari semua juara
+        $app4 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
+            'tahun_masuk' => 2021,
+            'akreditasi_perguruan_tinggi' => 'B',
+        ], [
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'universitas', 'posisi_organisasi' => 'anggota', 'is_pengurus_inti_ormawa' => false, 'jabatan_ormawa' => 'Anggota', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+        ]);
+
+        // 5: Peserta lomba internasional -> Tier 4, paling bawah
+        $app5 = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [
+            'tahun_masuk' => 2021,
+            'akreditasi_perguruan_tinggi' => 'B',
+        ], [
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'internasional', 'peringkat' => 'peserta', 'is_pengurus_inti_ormawa' => false],
         ]);
 
         $scoring = app(SelectionScoringService::class);
         $scoring->calculate($app1);
         $scoring->calculate($app2);
         $scoring->calculate($app3);
+        $scoring->calculate($app4);
+        $scoring->calculate($app5);
 
         $scoring->recalculateRanking();
 
         $this->assertSame(1, $app1->selection()->firstOrFail()->rank);
         $this->assertSame(2, $app2->selection()->firstOrFail()->rank);
         $this->assertSame(3, $app3->selection()->firstOrFail()->rank);
+        $this->assertSame(4, $app4->selection()->firstOrFail()->rank);
+        $this->assertSame(5, $app5->selection()->firstOrFail()->rank);
+    }
+
+    public function test_non_academic_pengurus_inti_orders_position_then_organisation_level(): void
+    {
+        $this->seed(PrestasiTrackSeeder::class);
+
+        // 1: Ketua BEM Fakultas (Ketua > tingkat Universitas)
+        $ketuaFakultas = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'fakultas', 'posisi_organisasi' => 'ketua', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Ketua BEM Fakultas', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+        ]);
+
+        // 2: Koordinator BEM Universitas (jabatan di bawah Ketua)
+        $koordinatorUniversitas = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'universitas', 'posisi_organisasi' => 'koordinator', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Koordinator Bidang', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+        ]);
+
+        // 3: Sekretaris BEM Universitas
+        $sekretarisUniversitas = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'universitas', 'posisi_organisasi' => 'sekretaris', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Sekretaris', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($ketuaFakultas);
+        $scoring->calculate($koordinatorUniversitas);
+        $scoring->calculate($sekretarisUniversitas);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $ketuaFakultas->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $sekretarisUniversitas->selection()->firstOrFail()->rank);
+        $this->assertSame(3, $koordinatorUniversitas->selection()->firstOrFail()->rank);
+    }
+
+    public function test_non_academic_uses_best_record_instead_of_stacking(): void
+    {
+        $this->seed(PrestasiTrackSeeder::class);
+
+        // Punya 3 SK ormawa tetapi hanya satu yang dihitung (Ketua Universitas).
+        $banyakSertifikat = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'fakultas', 'posisi_organisasi' => 'anggota', 'is_pengurus_inti_ormawa' => false, 'jabatan_ormawa' => 'Anggota', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'fakultas', 'posisi_organisasi' => 'koordinator', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Koordinator Bidang', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'universitas', 'posisi_organisasi' => 'ketua', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Ketua BEM', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+        ]);
+
+        $juara3Nasional = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'nasional', 'peringkat' => 'juara 3', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($banyakSertifikat);
+        $scoring->calculate($juara3Nasional);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $banyakSertifikat->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $juara3Nasional->selection()->firstOrFail()->rank);
+    }
+
+    public function test_non_academic_peserta_kabupaten_ranks_last(): void
+    {
+        $this->seed(PrestasiTrackSeeder::class);
+
+        $peserta = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'kabupaten', 'peringkat' => 'peserta', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        $koordinatorFakultas = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'fakultas', 'posisi_organisasi' => 'koordinator', 'is_pengurus_inti_ormawa' => true, 'jabatan_ormawa' => 'Koordinator Bidang', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($peserta);
+        $scoring->calculate($koordinatorFakultas);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $koordinatorFakultas->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $peserta->selection()->firstOrFail()->rank);
+    }
+
+    public function test_non_academic_anggota_ormawa_outranks_peserta_lomba(): void
+    {
+        $this->seed(PrestasiTrackSeeder::class);
+
+        $anggotaFakultas = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'organisasi', 'tingkat_organisasi' => 'fakultas', 'posisi_organisasi' => 'anggota', 'is_pengurus_inti_ormawa' => false, 'jabatan_ormawa' => 'Anggota', 'tingkat' => 'kampus', 'peringkat' => 'Pengurus Organisasi'],
+        ]);
+
+        $pesertaInternasional = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'internasional', 'peringkat' => 'peserta', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($anggotaFakultas);
+        $scoring->calculate($pesertaInternasional);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $anggotaFakultas->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $pesertaInternasional->selection()->firstOrFail()->rank);
+    }
+
+    public function test_non_academic_juara_3_kabupaten_outranks_peserta_internasional(): void
+    {
+        $this->seed(PrestasiTrackSeeder::class);
+
+        $juara3Kabupaten = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'kabupaten', 'peringkat' => 'juara 3', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        $pesertaInternasional = $this->application(ApplicationType::NON_AKADEMIK, ['ipk' => 3.50], null, [], [
+            ['kategori_prestasi' => 'lomba', 'tingkat' => 'internasional', 'peringkat' => 'peserta', 'is_pengurus_inti_ormawa' => false],
+        ]);
+
+        $scoring = app(SelectionScoringService::class);
+        $scoring->calculate($juara3Kabupaten);
+        $scoring->calculate($pesertaInternasional);
+
+        $scoring->recalculateRanking();
+
+        $this->assertSame(1, $juara3Kabupaten->selection()->firstOrFail()->rank);
+        $this->assertSame(2, $pesertaInternasional->selection()->firstOrFail()->rank);
     }
 
     public function test_disability_track_orders_strictly_by_perbup_criteria(): void
     {
-        $this->seed(\Database\Seeders\DisabilityTrackSeeder::class);
+        $this->seed(DisabilityTrackSeeder::class);
 
         // 1: Masuk 2020, Akr Unggul
         $app1 = $this->application(ApplicationType::DISABILITAS, [

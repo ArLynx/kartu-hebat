@@ -103,7 +103,16 @@ class MahasiswaPendaftaranService
             ]);
 
         $prestasiComplete = ! $this->requiresPrestasi($pendaftaran)
-            || ($pendaftaran->prestasi_dikonfirmasi_at !== null && $pendaftaran->prestasis->isNotEmpty());
+            || (
+                $pendaftaran->prestasi_dikonfirmasi_at !== null
+                && $pendaftaran->prestasis->isNotEmpty()
+                && (
+                    ! $this->isEditable($pendaftaran)
+                    || $pendaftaran->prestasis->every(
+                        fn ($prestasi): bool => filled($prestasi->dokumen_prestasi)
+                    )
+                )
+            );
 
         $ayahFields = ['nama_ayah', 'status_ayah'];
         if ($orangTua?->status_ayah === 'hidup') {

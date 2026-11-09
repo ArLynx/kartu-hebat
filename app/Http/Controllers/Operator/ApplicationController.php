@@ -8,9 +8,11 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\JalurBeasiswa;
+use App\Models\Prestasi;
 use App\Services\AgencyVerificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
 {
@@ -160,7 +162,34 @@ class ApplicationController extends Controller
             'canEditChecklist' => $canEditChecklist,
             'docVerificationRound' => $currentRound,
             'siblingApplications' => $siblingApplications,
+            'prestasiDocumentMimes' => $this->prestasiDocumentMimes($application),
         ]);
+    }
+
+    /**
+     * @return array<int, string|null>
+     */
+    private function prestasiDocumentMimes(Application $application): array
+    {
+        $prestasis = $application->pendaftaran?->prestasis;
+
+        if (! $prestasis) {
+            return [];
+        }
+
+        $disk = Storage::disk(config('kartu_hebat.document_disk'));
+
+        return $prestasis
+            ->mapWithKeys(function (Prestasi $prestasi) use ($disk): array {
+                $path = $prestasi->dokumen_prestasi;
+
+                if (blank($path) || ! $disk->exists($path)) {
+                    return [$prestasi->id => null];
+                }
+
+                return [$prestasi->id => $disk->mimeType($path)];
+            })
+            ->all();
     }
 
     private function defaultQueueStatuses(UserRole $role): array

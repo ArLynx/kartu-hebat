@@ -461,18 +461,30 @@
                                 </p>
 
                                 <p class="mt-1 text-sm text-slate-500">
-                                    @if($prestasi->is_pengurus_inti_ormawa)
-                                        Pengurus Ormawa ({{ $prestasi->jabatan_ormawa ?? 'Pengurus' }})
+                                    @if($prestasi->kategoriEnum() === \App\Enums\KategoriPrestasi::ORGANISASI)
+                                        Pengurus Ormawa ({{ $prestasi->posisiEnum()?->label() ?? $prestasi->jabatan_ormawa ?? 'Pengurus' }} · {{ $prestasi->tingkatOrganisasiEnum()?->label() ?? 'Universitas' }})
                                     @else
                                         {{ $prestasi->peringkat_label }}
                                     @endif
                                     ·
-                                    {{ ucfirst($prestasi->tingkat) }}
+                                    {{ \App\Models\Prestasi::TINGKAT_OPTIONS[$prestasi->tingkat] ?? ucfirst($prestasi->tingkat) }}
                                     ·
                                     {{ $prestasi->penyelenggara }}
                                     ·
                                     Tahun {{ $prestasi->tahun }}
                                 </p>
+
+                                @if($prestasi->dokumen_prestasi)
+                                    <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                        <x-icon name="check" class="h-3 w-3" />
+                                        Berkas bukti sudah diunggah
+                                    </p>
+                                @else
+                                    <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                                        <x-icon name="x" class="h-3 w-3" />
+                                        Berkas bukti belum diunggah
+                                    </p>
+                                @endif
 
                             </div>
 

@@ -4,7 +4,9 @@ namespace App\Exports;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\KategoriPrestasi;
 use App\Models\Application;
+use App\Services\Scoring\NonAcademicTierResolver;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -72,7 +74,8 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             'UKT',
             'Tahun Masuk (Angkatan)',
             'Akreditasi PT',
-            'Pengurus Ormawa Univ',
+            'Pengurus Ormawa',
+            'Tier Prestasi Non-Akademik',
             'Desil Sosial',
             'Kecamatan',
             'Desa/Kelurahan',
@@ -85,7 +88,10 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
     public function map($application): array
     {
         $pendidikan = $application->pendaftaran?->pendidikan;
-        $hasOrmawa = $application->pendaftaran?->prestasis?->contains(fn ($p) => (bool) $p->is_pengurus_inti_ormawa);
+        $prestasis = $application->pendaftaran?->prestasis ?? collect();
+        $tierResolver = app(NonAcademicTierResolver::class);
+        $ormawa = $tierResolver->bestRecordOfCategory($prestasis, KategoriPrestasi::ORGANISASI);
+        $tierProfile = $tierResolver->profile($prestasis);
 
         return [
             $application->application_type?->label(),
@@ -102,7 +108,16 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             $pendidikan?->nominal_ukt !== null ? (float) $pendidikan->nominal_ukt : '-',
             $pendidikan?->tahun_masuk ?? '-',
             $pendidikan?->akreditasi_perguruan_tinggi ?? '-',
-            $hasOrmawa ? 'Ya' : 'Tidak',
+            $ormawa !== null
+                ? $ormawa->posisiEnum()?->label().' · '.($ormawa->tingkatOrganisasiEnum()?->label() ?? 'Universitas')
+                : 'Tidak',
+            match ($tierProfile->tier) {
+                NonAcademicTierResolver::TIER_PENGURUS_INTI => 'Tier 1 - Pengurus Inti',
+                NonAcademicTierResolver::TIER_JUARA => 'Tier 2 - Juara Lomba',
+                NonAcademicTierResolver::TIER_ANGGOTA_ORGANISASI => 'Tier 3 - Anggota Pengurus',
+                NonAcademicTierResolver::TIER_PESERTA => 'Tier 4 - Peserta Lomba',
+                default => 'Tanpa Prestasi',
+            },
             $application->mahasiswa->profile?->desil_sosial,
             $application->mahasiswa->profile?->village?->kecamatan?->name,
             $application->mahasiswa->profile?->village?->display_name,

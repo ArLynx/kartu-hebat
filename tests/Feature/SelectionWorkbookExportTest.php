@@ -154,8 +154,9 @@ class SelectionWorkbookExportTest extends TestCase
 
         $export = new CandidatesExport($this->operator->kabupaten_id, ApplicationType::AKADEMIK);
         $row = $export->map($export->collection()->first());
+        $decisionIndex = array_search('Keputusan', $export->headings(), true);
 
-        $this->assertSame(ApplicationStatus::DITERIMA->value, $row[19]);
+        $this->assertSame(ApplicationStatus::DITERIMA->value, $row[$decisionIndex]);
     }
 
     private function candidate(ApplicationType $type, JalurBeasiswa $jalur, int $rank): Application

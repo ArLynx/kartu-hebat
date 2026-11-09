@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\KategoriPrestasi;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
 use App\Models\Application;
@@ -166,12 +167,21 @@ class ApplicationWorkflowService
         $income = 0;
 
         $achievements = $pendaftaran->prestasis
-            ->map(fn ($achievement): string => implode(' — ', array_filter([
-                $achievement->nama_prestasi,
-                $achievement->tingkat,
-                $achievement->peringkat,
-                $achievement->tahun,
-            ])))
+            ->map(fn ($achievement): string => implode(' — ', array_filter(
+                $achievement->kategoriEnum() === KategoriPrestasi::ORGANISASI
+                    ? [
+                        $achievement->nama_prestasi,
+                        $achievement->posisiEnum()?->label(),
+                        $achievement->tingkatOrganisasiEnum()?->label(),
+                        $achievement->tahun,
+                    ]
+                    : [
+                        $achievement->nama_prestasi,
+                        $achievement->tingkat,
+                        $achievement->peringkat,
+                        $achievement->tahun,
+                    ],
+            )))
             ->implode("\n");
 
         MahasiswaProfile::query()->updateOrCreate(

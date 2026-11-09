@@ -8,7 +8,7 @@
 
         @include('mahasiswa.partials.flow-header', [
             'title' => 'Prestasi & Keunggulan Non-Akademik',
-            'description' => 'Calon penerima Beasiswa Prestasi Non-Akademik wajib memiliki keunggulan berupa sertifikat kompetisi/lomba atau SK penunjukan kepengurusan organisasi mahasiswa (Ormawa) di perguruan tinggi.',
+            'description' => 'Calon penerima Beasiswa Prestasi Non-Akademik wajib memiliki keunggulan berupa sertifikat kompetisi/lomba atau SK penunjukan kepengurusan organisasi mahasiswa (Ormawa) di perguruan tinggi, disertai dokumen bukti yang sah.',
             'currentStep' => 3,
         ])
 
@@ -34,7 +34,7 @@
                     </h2>
 
                     <p class="mt-1 text-sm text-slate-500">
-                        Tambahkan sertifikat kompetisi/lomba atau SK kepengurusan organisasi mahasiswa yang diperoleh selama masa perkuliahan. Anda dapat menambahkan lebih dari satu data.
+                        Tambahkan sertifikat kompetisi/lomba atau SK kepengurusan organisasi mahasiswa yang diperoleh selama masa perkuliahan, beserta dokumen bukti yang wajib diunggah. Anda dapat menambahkan lebih dari satu data.
                     </p>
 
                 </div>
@@ -76,7 +76,7 @@
                                 </span>
                                 <div>
                                     <p class="text-sm font-bold">Pengurus Organisasi Mahasiswa</p>
-                                    <p class="text-xs text-slate-500 mt-0.5">SK penunjukan pengurus Ormawa (BEM, DPM, HMJ, UKM, dll.) di kampus</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">SK penunjukan pengurus Ormawa tingkat universitas/fakultas (BEM, DPM, UKM, BEM Fakultas, dll.)</p>
                                 </div>
                             </label>
                         </div>
@@ -199,14 +199,17 @@
                             <div class="md:col-span-2">
                                 <label class="form-label">
                                     Dokumen Sertifikat / Piagam Penghargaan
-                                    <span class="font-normal text-slate-400">(opsional / PDF, JPG, PNG maks 2 MB)</span>
+                                    <span class="text-red-500">*</span>
+                                    <span class="font-normal text-slate-400">(PDF, JPG, PNG maks 2 MB)</span>
                                 </label>
                                 <input
                                     class="form-input"
                                     type="file"
                                     name="dokumen"
                                     accept=".pdf,.jpg,.jpeg,.png"
+                                    required
                                 >
+                                <p class="mt-1 text-xs text-slate-500">Wajib diunggah sebagai bukti keabsahan prestasi.</p>
                                 @error('dokumen')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
@@ -255,21 +258,51 @@
                                 @enderror
                             </div>
 
-                            {{-- JABATAN DALAM ORMAWA --}}
+                            {{-- TINGKAT ORGANISASI --}}
                             <div>
                                 <label class="form-label">
-                                    Jabatan dalam Kepengurusan
+                                    Tingkat Organisasi
                                     <span class="text-red-500">*</span>
                                 </label>
-                                <input
+                                <select
                                     class="form-input"
-                                    type="text"
-                                    name="jabatan_ormawa"
-                                    value="{{ old('jabatan_ormawa') }}"
-                                    placeholder="Contoh: Ketua Umum / Sekretaris / Bendahara / Koordinator Divisi"
+                                    name="tingkat_organisasi"
                                     required
                                 >
-                                @error('jabatan_ormawa')
+                                    <option value="">Pilih tingkat organisasi</option>
+                                    @foreach(\App\Enums\TingkatOrganisasi::cases() as $tingkatOrganisasi)
+                                        <option value="{{ $tingkatOrganisasi->value }}" @selected(old('tingkat_organisasi') === $tingkatOrganisasi->value)>
+                                            {{ $tingkatOrganisasi->label() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('tingkat_organisasi')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- POSISI DALAM ORMAWA --}}
+                            <div>
+                                <label class="form-label">
+                                    Posisi dalam Kepengurusan
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    class="form-input"
+                                    name="posisi_organisasi"
+                                    required
+                                >
+                                    <option value="">Pilih posisi</option>
+                                    @foreach(\App\Enums\PosisiOrganisasi::cases() as $posisiOrganisasi)
+                                        <option value="{{ $posisiOrganisasi->value }}" @selected(old('posisi_organisasi') === $posisiOrganisasi->value)>
+                                            {{ $posisiOrganisasi->label() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Ketua sampai Koordinator Bidang dihitung sebagai pengurus inti; Anggota Pengurus berada satu tingkat di bawah Juara 3.
+                                </p>
+                                @error('posisi_organisasi')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -318,14 +351,17 @@
                             <div>
                                 <label class="form-label">
                                     Dokumen Surat Keputusan (SK)
-                                    <span class="font-normal text-slate-400">(opsional / PDF, JPG, PNG maks 2 MB)</span>
+                                    <span class="text-red-500">*</span>
+                                    <span class="font-normal text-slate-400">(PDF, JPG, PNG maks 2 MB)</span>
                                 </label>
                                 <input
                                     class="form-input"
                                     type="file"
                                     name="dokumen"
                                     accept=".pdf,.jpg,.jpeg,.png"
+                                    required
                                 >
+                                <p class="mt-1 text-xs text-slate-500">Wajib diunggah sebagai bukti keabsahan SK kepengurusan.</p>
                                 @error('dokumen')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
@@ -397,21 +433,22 @@
 
                                 <div class="flex flex-wrap gap-2">
 
-                                    @if($prestasi->is_pengurus_inti_ormawa)
+                                    @if($prestasi->kategoriEnum() === \App\Enums\KategoriPrestasi::ORGANISASI)
                                         <span class="status-chip bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold">
-                                            🏛️ Pengurus Ormawa
+                                            🏛️ {{ $prestasi->isPengurusInti() ? 'Pengurus Inti' : 'Anggota Pengurus' }}
                                         </span>
-                                        @if($prestasi->jabatan_ormawa)
-                                            <span class="status-chip bg-blue-100 text-blue-800 border-blue-300 font-semibold">
-                                                {{ $prestasi->jabatan_ormawa }}
-                                            </span>
-                                        @endif
+                                        <span class="status-chip bg-blue-100 text-blue-800 border-blue-300 font-semibold">
+                                            {{ $prestasi->posisiEnum()?->label() ?? $prestasi->jabatan_ormawa ?? 'Pengurus' }}
+                                        </span>
+                                        <span class="status-chip status-neutral">
+                                            {{ $prestasi->tingkatOrganisasiEnum()?->label() ?? 'Universitas' }}
+                                        </span>
                                     @else
                                         <span class="status-chip status-info">
                                             🏆 {{ $prestasi->peringkat_label }}
                                         </span>
                                         <span class="status-chip status-neutral">
-                                            Tingkat {{ ucfirst($prestasi->tingkat) }}
+                                            Tingkat {{ \App\Models\Prestasi::TINGKAT_OPTIONS[$prestasi->tingkat] ?? ucfirst($prestasi->tingkat) }}
                                         </span>
                                     @endif
 
@@ -424,10 +461,16 @@
 
 
                                 <p class="mt-1 text-sm text-slate-600">
-                                    @if($prestasi->is_pengurus_inti_ormawa)
-                                        {{ $prestasi->jabatan_ormawa }}
+                                    @if($prestasi->kategoriEnum() === \App\Enums\KategoriPrestasi::ORGANISASI)
+                                        {{ $prestasi->posisiEnum()?->label() ?? $prestasi->jabatan_ormawa ?? 'Pengurus' }}
+                                        ·
+                                        {{ $prestasi->tingkatOrganisasiEnum()?->label() ?? 'Universitas' }}
+                                        ·
+                                        {{ $prestasi->isPengurusInti() ? 'Pengurus Inti' : 'Anggota Pengurus' }}
                                     @else
                                         {{ $prestasi->peringkat_label }}
+                                        ·
+                                        Tingkat {{ \App\Models\Prestasi::TINGKAT_OPTIONS[$prestasi->tingkat] ?? ucfirst($prestasi->tingkat) }}
                                     @endif
                                     ·
                                     {{ $prestasi->penyelenggara }}
@@ -451,6 +494,10 @@
                                         <x-icon name="document-arrow-down" class="h-4 w-4" />
                                         Unduh berkas bukti
                                     </a>
+                                @else
+                                    <p class="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                                        ⚠️ Berkas bukti belum diunggah — unggah melalui tombol "Ubah data ini" agar dapat melanjutkan.
+                                    </p>
                                 @endif
 
                             </div>
@@ -497,7 +544,7 @@
                                     @csrf
                                     @method('PUT')
 
-                                    @if($prestasi->is_pengurus_inti_ormawa)
+                                    @if($prestasi->kategoriEnum() === \App\Enums\KategoriPrestasi::ORGANISASI)
                                         <input type="hidden" name="kategori_bukti" value="organisasi">
 
                                         {{-- NAMA ORGANISASI --}}
@@ -512,16 +559,34 @@
                                             >
                                         </div>
 
-                                        {{-- JABATAN --}}
+                                        {{-- TINGKAT ORGANISASI --}}
                                         <div>
-                                            <label class="form-label">Jabatan dalam Kepengurusan</label>
-                                            <input
-                                                class="form-input"
-                                                type="text"
-                                                name="jabatan_ormawa"
-                                                value="{{ $prestasi->jabatan_ormawa }}"
-                                                required
-                                            >
+                                            <label class="form-label">Tingkat Organisasi</label>
+                                            <select class="form-input" name="tingkat_organisasi" required>
+                                                @foreach(\App\Enums\TingkatOrganisasi::cases() as $tingkatOrganisasi)
+                                                    <option
+                                                        value="{{ $tingkatOrganisasi->value }}"
+                                                        @selected($prestasi->tingkatOrganisasiEnum() === $tingkatOrganisasi)
+                                                    >
+                                                        {{ $tingkatOrganisasi->label() }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        {{-- POSISI --}}
+                                        <div>
+                                            <label class="form-label">Posisi dalam Kepengurusan</label>
+                                            <select class="form-input" name="posisi_organisasi" required>
+                                                @foreach(\App\Enums\PosisiOrganisasi::cases() as $posisiOrganisasi)
+                                                    <option
+                                                        value="{{ $posisiOrganisasi->value }}"
+                                                        @selected($prestasi->posisiEnum() === $posisiOrganisasi)
+                                                    >
+                                                        {{ $posisiOrganisasi->label() }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
 
                                         {{-- KAMPUS --}}
@@ -552,13 +617,21 @@
 
                                         {{-- DOKUMEN --}}
                                         <div>
-                                            <label class="form-label">Ganti Dokumen SK <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                            @if($prestasi->dokumen_prestasi)
+                                                <label class="form-label">Ganti Dokumen SK <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                            @else
+                                                <label class="form-label">Dokumen SK <span class="text-red-500">*</span> <span class="text-xs text-slate-400 font-normal">(wajib, PDF, JPG, PNG maks 2 MB)</span></label>
+                                            @endif
                                             <input
                                                 class="form-input"
                                                 type="file"
                                                 name="dokumen"
                                                 accept=".pdf,.jpg,.jpeg,.png"
+                                                @if(! $prestasi->dokumen_prestasi) required @endif
                                             >
+                                            @error('dokumen')
+                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
                                         </div>
 
                                         {{-- KETERANGAN --}}
@@ -652,13 +725,21 @@
 
                                         {{-- DOKUMEN --}}
                                         <div class="md:col-span-2">
-                                            <label class="form-label">Ganti Dokumen Sertifikat <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                            @if($prestasi->dokumen_prestasi)
+                                                <label class="form-label">Ganti Dokumen Sertifikat <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                            @else
+                                                <label class="form-label">Dokumen Sertifikat <span class="text-red-500">*</span> <span class="text-xs text-slate-400 font-normal">(wajib, PDF, JPG, PNG maks 2 MB)</span></label>
+                                            @endif
                                             <input
                                                 class="form-input"
                                                 type="file"
                                                 name="dokumen"
                                                 accept=".pdf,.jpg,.jpeg,.png"
+                                                @if(! $prestasi->dokumen_prestasi) required @endif
                                             >
+                                            @error('dokumen')
+                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
                                         </div>
 
                                         {{-- KETERANGAN --}}

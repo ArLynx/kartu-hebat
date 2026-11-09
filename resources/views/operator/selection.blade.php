@@ -301,7 +301,7 @@
                 <p>1. Nilai IPK total/kumulatif &bull; 2. Tahun angkatan masuk PT lebih awal &bull; 3. Akreditasi Perguruan Tinggi.</p>
             @elseif($selectedType === \App\Enums\ApplicationType::NON_AKADEMIK)
                 <p class="font-bold">Dasar Urutan Seleksi Beasiswa Prestasi Non Akademik (Peraturan Bupati):</p>
-                <p>1. Tingkatan Juara 1, 2, atau 3 kompetisi non akademik &bull; 2. Kepengurusan inti ormawa tingkat universitas (BEM/DPM) &bull; 3. Tahun angkatan masuk PT lebih awal &bull; 4. Akreditasi Perguruan Tinggi.</p>
+                <p>1. Pengurus inti organisasi mahasiswa universitas/fakultas (Ketua &gt; Wakil Ketua &gt; Sekretaris &gt; Bendahara &gt; Koordinator Bidang; Universitas &gt; Fakultas) &bull; 2. Juara 1, 2, 3 perlombaan (Internasional &gt; Nasional &gt; Provinsi &gt; Universitas &gt; Kabupaten; Juara 1 &gt; 2 &gt; 3 &gt; Harapan &gt; Favorit) &bull; 3. Anggota pengurus organisasi mahasiswa universitas/fakultas &bull; 4. Peserta perlombaan (bukan juara) &bull; 5. Tahun angkatan masuk PT lebih awal &bull; 6. Akreditasi Perguruan Tinggi.</p>
             @elseif($selectedType === \App\Enums\ApplicationType::DISABILITAS)
                 <p class="font-bold">Dasar Urutan Seleksi Beasiswa Penyandang Disabilitas (Peraturan Bupati):</p>
                 <p>1. Tahun angkatan masuk PT lebih awal &bull; 2. Akreditasi Perguruan Tinggi.</p>
@@ -418,14 +418,30 @@
                                 <p class="mt-1 text-xs text-slate-500">Angkatan {{ $tahunMasukVal }} · Akreditasi {{ $akreditasiVal }}</p>
                             @elseif($selectedType === \App\Enums\ApplicationType::NON_AKADEMIK)
                                 @php
-                                    $bestPrestasi = $application->pendaftaran?->prestasis?->first(fn ($p) => ! (bool) $p->is_pengurus_inti_ormawa);
-                                    $ormawaPrestasi = $application->pendaftaran?->prestasis?->first(fn ($p) => (bool) $p->is_pengurus_inti_ormawa);
+                                    $tierResolver = app(\App\Services\Scoring\NonAcademicTierResolver::class);
+                                    $prestasis = $application->pendaftaran?->prestasis ?? collect();
+                                    $tierProfile = $tierResolver->profile($prestasis);
+                                    $bestPrestasi = $tierResolver->bestRecordOfCategory($prestasis, \App\Enums\KategoriPrestasi::LOMBA);
+                                    $ormawaPrestasi = $tierResolver->bestRecordOfCategory($prestasis, \App\Enums\KategoriPrestasi::ORGANISASI);
+                                    $tierLabel = match ($tierProfile->tier) {
+                                        \App\Services\Scoring\NonAcademicTierResolver::TIER_PENGURUS_INTI => 'Tier 1 · Pengurus Inti',
+                                        \App\Services\Scoring\NonAcademicTierResolver::TIER_JUARA => 'Tier 2 · Juara Lomba',
+                                        \App\Services\Scoring\NonAcademicTierResolver::TIER_ANGGOTA_ORGANISASI => 'Tier 3 · Anggota Pengurus',
+                                        \App\Services\Scoring\NonAcademicTierResolver::TIER_PESERTA => 'Tier 4 · Peserta Lomba',
+                                        default => 'Tanpa Prestasi',
+                                    };
                                 @endphp
-                                <p class="font-semibold text-slate-900">
-                                    {{ $bestPrestasi ? ($bestPrestasi->peringkat.' ('.ucfirst($bestPrestasi->tingkat).')') : 'Tanpa Lomba' }}
-                                </p>
+                                <p class="font-semibold text-slate-900">{{ $tierLabel }}</p>
                                 <p class="mt-1 text-xs text-slate-500">
-                                    Ormawa: <span class="font-medium text-slate-700">{{ $ormawaPrestasi ? ($ormawaPrestasi->jabatan_ormawa ?: 'Pengurus Inti') : '-' }}</span> · Angkatan {{ $tahunMasukVal }} · Akr. {{ $akreditasiVal }}
+                                    @if($ormawaPrestasi)
+                                        Ormawa: {{ $ormawaPrestasi->posisiEnum()?->label() ?? 'Pengurus' }} ({{ $ormawaPrestasi->tingkatOrganisasiEnum()?->label() ?? 'Universitas' }})
+                                    @else
+                                        Ormawa: -
+                                    @endif
+                                    @if($bestPrestasi)
+                                        · Lomba: {{ $bestPrestasi->peringkat }} ({{ \App\Models\Prestasi::TINGKAT_OPTIONS[$bestPrestasi->tingkat] ?? ucfirst($bestPrestasi->tingkat) }})
+                                    @endif
+                                    · Angkatan {{ $tahunMasukVal }} · Akr. {{ $akreditasiVal }}
                                 </p>
                             @else
                                 <p class="font-semibold text-slate-900">Angkatan {{ $tahunMasukVal }}</p>
