@@ -456,7 +456,6 @@ class ApplicationWorkflowService
         User $operator,
         VerificationDecision $decision,
         ?string $notes = null,
-        ?float $score = null,
         ?int $desil = null,
     ): Application {
         return $this->agencyVerification->submitDecision(
@@ -464,7 +463,6 @@ class ApplicationWorkflowService
             $operator,
             $decision,
             $notes,
-            $score,
             $desil,
         );
     }

@@ -43,7 +43,7 @@ class AgencyVerificationServiceTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = AgencyVerificationService::documentsAssessableBy($application, $dukcapil)->firstOrFail();
 
         $verification = $this->service->assessDocument(
             $application,
@@ -86,16 +86,9 @@ class AgencyVerificationServiceTest extends TestCase
         $pendidikan = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
         $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
-        // Nilai semua dokumen untuk keempat dinas
+        // Nilai dokumen sesuai kewenangan masing-masing dinas
         foreach ([$dukcapil, $sosial, $pendidikan, $bkpsdm] as $op) {
-            foreach ($application->documents as $doc) {
-                $this->service->assessDocument(
-                    $application,
-                    $doc,
-                    $op,
-                    DocumentVerificationResult::MEMENUHI,
-                );
-            }
+            $this->assessDocumentsFor($application, $op);
         }
 
         // 1. Dukcapil MS -> status kependudukan sesuai, tetap VERIFIKASI_DINAS
@@ -128,14 +121,7 @@ class AgencyVerificationServiceTest extends TestCase
         $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
         foreach ([$dukcapil, $sosial, $pendidikan, $bkpsdm] as $op) {
-            foreach ($application->documents as $doc) {
-                $this->service->assessDocument(
-                    $application,
-                    $doc,
-                    $op,
-                    DocumentVerificationResult::MEMENUHI,
-                );
-            }
+            $this->assessDocumentsFor($application, $op);
         }
 
         // 1. Dukcapil MS
@@ -178,14 +164,7 @@ class AgencyVerificationServiceTest extends TestCase
         ]);
 
         foreach ([$dukcapil, $pendidikan, $bkpsdm] as $operator) {
-            foreach ($application->documents as $document) {
-                $this->service->assessDocument(
-                    $application,
-                    $document,
-                    $operator,
-                    DocumentVerificationResult::MEMENUHI,
-                );
-            }
+            $this->assessDocumentsFor($application, $operator);
         }
 
         $application = $this->service->submitDecision($application, $dukcapil, VerificationDecision::MS);
@@ -295,5 +274,17 @@ class AgencyVerificationServiceTest extends TestCase
         $operator->forceFill(['two_factor_confirmed_at' => now()])->save();
 
         return $operator;
+    }
+
+    private function assessDocumentsFor(Application $application, User $operator): void
+    {
+        foreach (AgencyVerificationService::documentsAssessableBy($application, $operator) as $document) {
+            $this->service->assessDocument(
+                $application,
+                $document,
+                $operator,
+                DocumentVerificationResult::MEMENUHI,
+            );
+        }
     }
 }

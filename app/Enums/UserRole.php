@@ -73,6 +73,49 @@ enum UserRole: string
         };
     }
 
+    /**
+     * Kode dokumen persyaratan yang tampil pada checklist verifikasi dinas.
+     * Null berarti semua dokumen ditampilkan (role non-dinas/tinjauan kabupaten).
+     *
+     * @return array<int, string>|null
+     */
+    public function visibleDocumentCodes(): ?array
+    {
+        return match ($this) {
+            self::OPERATOR_DUKCAPIL => ['KTP', 'KK'],
+            self::OPERATOR_SOSIAL => ['KTP'],
+            self::OPERATOR_PENDIDIKAN => [
+                'KTM',
+                'SERTIFIKAT-AKREDITASI',
+                'SURAT-AKTIF',
+                'SCREENSHOT-PDDIKTI',
+                'KHS',
+                'TAGIHAN-UKT',
+            ],
+            self::OPERATOR_BKPSDM => ['KK'],
+            self::OPERATOR_DINKES => ['SURAT-DISABILITAS'],
+            self::OPERATOR_PARSEPOR => [],
+            default => null,
+        };
+    }
+
+    /**
+     * Kode dokumen yang wajib dinilai MS/TMS oleh role ini sebelum keputusan
+     * disimpan. Dinas yang hanya meninjau (Sosial, BKPSDM, Parsepor)
+     * mengembalikan array kosong. Buku Rekening BPDK sengaja tidak masuk
+     * daftar mana pun karena dianggap langsung memenuhi syarat.
+     *
+     * @return array<int, string>
+     */
+    public function assessableDocumentCodes(): array
+    {
+        return match ($this) {
+            self::OPERATOR_DUKCAPIL, self::OPERATOR_PENDIDIKAN => $this->visibleDocumentCodes() ?? [],
+            self::OPERATOR_DINKES => ['SURAT-DISABILITAS'],
+            default => [],
+        };
+    }
+
     public static function operatorValues(): array
     {
         return array_values(array_map(

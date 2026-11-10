@@ -16,7 +16,11 @@ class SecurityHeaders
         // Pratinjau dokumen dan formulir dirender di dalam <iframe> milik
         // aplikasi sendiri, jadi hanya respons pratinjau itu yang boleh
         // di-frame same-origin.
-        $framed = $request->routeIs('documents.preview', 'operator.applications.formulir.lihat');
+        $framed = $request->routeIs(
+            'documents.preview',
+            'operator.applications.formulir.lihat',
+            'operator.applications.prestasi.lihat',
+        );
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', $framed ? 'SAMEORIGIN' : 'DENY');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

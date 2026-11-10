@@ -744,7 +744,6 @@ class MasaSanggahDemoSeeder extends Seeder
             [
                 'verifier_id' => $operator->id,
                 'decision' => $decision,
-                'score' => $decision === VerificationDecision::MS ? 85.00 : null,
                 'notes' => $notes,
                 'verified_at' => now()->subDays(20),
             ],
@@ -783,7 +782,12 @@ class MasaSanggahDemoSeeder extends Seeder
             return;
         }
 
-        $documents = $application->documents()->with('type')->get();
+        $documents = $application->documents()->with('type')->get()
+            ->filter(fn (Document $document): bool => in_array(
+                $document->type?->code,
+                $agency->assessableDocumentCodes(),
+                true,
+            ));
 
         foreach ($documents as $document) {
             $isRejected = $rejectedDocumentCode !== null
@@ -873,6 +877,7 @@ class MasaSanggahDemoSeeder extends Seeder
 
         if ($existing) {
             $existing->update(['metadata' => $metadata]);
+
             return;
         }
 

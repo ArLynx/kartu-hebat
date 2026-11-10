@@ -51,7 +51,8 @@ class OperatorPrestasiDocumentTest extends TestCase
             ->get(route('operator.applications.prestasi.lihat', [$application, $prestasi]))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf')
-            ->assertHeader('x-content-type-options', 'nosniff');
+            ->assertHeader('x-content-type-options', 'nosniff')
+            ->assertHeader('x-frame-options', 'SAMEORIGIN');
     }
 
     public function test_operator_can_download_prestasi_document(): void

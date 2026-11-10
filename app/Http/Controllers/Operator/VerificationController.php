@@ -23,7 +23,6 @@ class VerificationController extends Controller
             $request->user(),
             VerificationDecision::from($data['decision']),
             $data['notes'] ?? null,
-            isset($data['score']) ? (float) $data['score'] : null,
             isset($data['desil']) ? (int) $data['desil'] : null,
         );
 

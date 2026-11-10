@@ -19,11 +19,15 @@ class ApplicationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $agencyCode = $user->role->agencyCode();
         $query = Application::query()
             ->visibleTo($user)
             ->whereOpenForVerification()
             ->when($user->role->isAgency(), fn (Builder $query) => $query->whereNotAwaitingReverification())
             ->with(['mahasiswa.profile.village.kecamatan', 'selection', 'pendaftaran.jalurBeasiswa'])
+            ->when($agencyCode, fn (Builder $query) => $query->with([
+                'agencyVerifications' => fn ($relation) => $relation->where('agency', $agencyCode),
+            ]))
             ->whereNot('status', ApplicationStatus::DRAFT->value);
 
         if ($track = $user->role->verifiedTrack()) {
@@ -123,12 +127,16 @@ class ApplicationController extends Controller
         ]);
 
         $verifications = $application->documentVerifications;
+        $verificationDocuments = AgencyVerificationService::documentsVisibleTo($application, $user);
+        $canAssessDocuments = $user->role->isAgency()
+            && $user->role->assessableDocumentCodes() !== [];
         $stage = null;
         $canEditChecklist = false;
 
         if ($user->role->isAgency()) {
             $stage = AgencyVerificationService::stageFor($user);
-            $canEditChecklist = AgencyVerificationService::canVerifyStage($application, $stage);
+            $canEditChecklist = $canAssessDocuments
+                && AgencyVerificationService::canVerifyStage($application, $stage);
         }
 
         $siblingApplications = collect();
@@ -158,6 +166,8 @@ class ApplicationController extends Controller
             'application' => $application,
             'canVerify' => $user->can('verify', $application),
             'docVerifications' => $verifications,
+            'verificationDocuments' => $verificationDocuments,
+            'canAssessDocuments' => $canAssessDocuments,
             'docVerificationStage' => $stage,
             'canEditChecklist' => $canEditChecklist,
             'docVerificationRound' => $currentRound,
