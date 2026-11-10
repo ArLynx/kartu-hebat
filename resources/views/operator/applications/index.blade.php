@@ -4,6 +4,9 @@
 @section('header', 'Antrean Pengajuan')
 
 @section('content')
+@php
+    $isAgencyOperator = auth()->user()?->role?->isAgency() ?? false;
+@endphp
 @if (($sanggahanQueueCount ?? 0) > 0)
     <a href="{{ route('operator.sanggahan-queue.index') }}"
        class="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 transition hover:border-amber-300 sm:flex-row sm:items-center sm:justify-between">
@@ -89,6 +92,9 @@
                     <th>Data Seleksi</th>
                     <th>Wilayah</th>
                     <th>Status</th>
+                    @if($isAgencyOperator)
+                        <th>Status Verifikasi</th>
+                    @endif
                     <th>Waktu Kirim</th>
                     <th>Aksi</th>
                 </tr>
@@ -128,6 +134,15 @@
                             <p class="mt-1 text-xs text-slate-500">Kec. {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</p>
                         </td>
                         <td><x-status-badge :status="$application->status" /></td>
+                        @if($isAgencyOperator)
+                            <td>
+                                @if($application->agencyVerifications->isNotEmpty())
+                                    <span class="status-chip status-success">Sudah diverifikasi</span>
+                                @else
+                                    <span class="status-chip status-neutral">Belum diverifikasi</span>
+                                @endif
+                            </td>
+                        @endif
                         <td>
                             @if($application->submitted_at)
                                 <p class="font-medium text-slate-800">{{ $application->submitted_at->translatedFormat('d M Y') }}</p>
@@ -146,7 +161,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="py-14 text-center text-slate-500">Tidak ada pengajuan pada filter ini.</td></tr>
+                    <tr><td colspan="{{ $isAgencyOperator ? 8 : 7 }}" class="py-14 text-center text-slate-500">Tidak ada pengajuan pada filter ini.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -90,7 +90,7 @@ class BkpsdmVerificationTest extends TestCase
         $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
         foreach ([$dukcapil, $pendidikan, $bkpsdm] as $operator) {
-            foreach ($application->documents as $document) {
+            foreach (AgencyVerificationService::documentsAssessableBy($application, $operator) as $document) {
                 $service->assessDocument(
                     $application,
                     $document,

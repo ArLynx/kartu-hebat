@@ -57,11 +57,8 @@ class ParseporPrestasiWorkflowTest extends TestCase
 
         $application = $workflow->submit($application, $student);
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $parsepor, DocumentVerificationResult::MEMENUHI);
+        foreach ([$dukcapil, $education, $bkpsdm, $parsepor] as $operator) {
+            $this->assessDocumentsFor($documentService, $application, $operator, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -96,11 +93,8 @@ class ParseporPrestasiWorkflowTest extends TestCase
 
         $application = $workflow->submit($application, $student);
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $parsepor, DocumentVerificationResult::MEMENUHI);
+        foreach ([$dukcapil, $education, $bkpsdm, $parsepor] as $operator) {
+            $this->assessDocumentsFor($documentService, $application, $operator, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -129,9 +123,7 @@ class ParseporPrestasiWorkflowTest extends TestCase
         $this->assertFalse($parsepor->can('verify', $application));
         $this->assertFalse(AgencyVerificationService::canVerifyStage($application, 'parsepor'));
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-        }
+        $this->assessDocumentsFor($documentService, $application, $dukcapil, DocumentVerificationResult::MEMENUHI);
 
         try {
             $workflow->verify($application, $parsepor, VerificationDecision::MS);
@@ -157,10 +149,8 @@ class ParseporPrestasiWorkflowTest extends TestCase
 
         $application = $workflow->submit($application, $student);
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
+        foreach ([$dukcapil, $education, $bkpsdm] as $operator) {
+            $this->assessDocumentsFor($documentService, $application, $operator, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -170,6 +160,34 @@ class ParseporPrestasiWorkflowTest extends TestCase
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->status);
         $this->assertCount(3, $application->agencyVerifications);
         $this->assertFalse($application->agencyVerifications->contains('agency', 'parsepor'));
+    }
+
+    public function test_parsepor_does_not_see_administration_documents_and_focuses_on_prestasi(): void
+    {
+        [$student, $village, $registration] = $this->studentWithPendaftaran();
+        $application = $this->draftApplication($student, $registration);
+        $application->update(['application_type' => ApplicationType::NON_AKADEMIK]);
+
+        $this->seedDocuments($application, $student);
+
+        $parsepor = $this->operator(UserRole::OPERATOR_PARSEPOR, $village);
+        $application = app(ApplicationWorkflowService::class)->submit($application, $student);
+
+        $this->actingAs($parsepor)
+            ->get(route('operator.applications.show', $application))
+            ->assertOk()
+            ->assertSee('Dokumen Prestasi')
+            ->assertSee('Juara 1 Debat')
+            ->assertDontSee('Dokumen Persyaratan')
+            ->assertDontSee('Kartu Tanda Penduduk')
+            ->assertDontSee('✓ MS');
+
+        $this->actingAs($parsepor)
+            ->post(route('operator.applications.verify', $application), [
+                'decision' => VerificationDecision::MS->value,
+            ])
+            ->assertRedirect(route('operator.applications.index'))
+            ->assertSessionHas('success');
     }
 
     private function seedDocuments(Application $application, User $student): void
@@ -274,11 +292,25 @@ class ParseporPrestasiWorkflowTest extends TestCase
 
     private function operator(UserRole $role, Village $village): User
     {
-        return User::factory()->create([
+        $operator = User::factory()->create([
             'role' => $role,
             'village_id' => $role === UserRole::OPERATOR_DESA ? $village->id : null,
             'kecamatan_id' => $role === UserRole::OPERATOR_KECAMATAN ? $village->kecamatan_id : null,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
+        $operator->forceFill(['two_factor_confirmed_at' => now()])->save();
+
+        return $operator;
+    }
+
+    private function assessDocumentsFor(
+        AgencyVerificationService $service,
+        Application $application,
+        User $operator,
+        DocumentVerificationResult $result,
+    ): void {
+        foreach (AgencyVerificationService::documentsAssessableBy($application, $operator) as $document) {
+            $service->assessDocument($application, $document, $operator, $result);
+        }
     }
 }

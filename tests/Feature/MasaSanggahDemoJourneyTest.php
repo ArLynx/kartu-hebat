@@ -126,7 +126,7 @@ class MasaSanggahDemoJourneyTest extends TestCase
 
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        foreach ($application->documents()->get() as $document) {
+        foreach (AgencyVerificationService::documentsAssessableBy($application, $dukcapil) as $document) {
             $this->actingAs($dukcapil)
                 ->post(route('operator.applications.documents.verify', [$application, $document]), [
                     'result' => DocumentVerificationResult::MEMENUHI->value,
@@ -135,7 +135,7 @@ class MasaSanggahDemoJourneyTest extends TestCase
         }
 
         $this->assertSame(
-            $application->documents()->count(),
+            AgencyVerificationService::documentsAssessableBy($application, $dukcapil)->count(),
             DocumentVerification::query()
                 ->where('application_id', $application->id)
                 ->where('stage', 'dukcapil')

@@ -18,7 +18,6 @@ class VerificationRequest extends FormRequest
 
     public function rules(): array
     {
-        $isAgency = $this->user()?->role->isAgency() ?? false;
         $isDesilAgency = $this->user()?->hasRole('operator_sosial') ?? false;
         $application = $this->route('application');
         $isUnableTrack = $application?->application_type === ApplicationType::TIDAK_MAMPU;
@@ -29,9 +28,6 @@ class VerificationRequest extends FormRequest
         return [
             'decision' => ['required', Rule::enum(VerificationDecision::class)],
             'notes' => ['nullable', 'required_unless:decision,MS', 'string', 'max:3000'],
-            'score' => $isAgency
-                ? ['nullable', 'numeric', 'min:0', 'max:100']
-                : ['prohibited'],
             'desil' => $isDesilAgency && $isUnableTrack
                 ? ['nullable', Rule::requiredIf($requiresDesil), 'prohibited_unless:decision,MS', 'integer', 'min:1', 'max:10']
                 : ['prohibited'],
@@ -55,16 +51,19 @@ class VerificationRequest extends FormRequest
             }
 
             $application = $this->route('application');
-            if (! $application) {
+            $user = $this->user();
+
+            if (! $application || ! $user || ! $user->role->isAgency()) {
                 return;
             }
 
-            $stage = AgencyVerificationService::stageFor($this->user());
+            $stage = AgencyVerificationService::stageFor($user);
             $round = AgencyVerificationService::currentRound($application);
             $application->load([
+                'documents.type',
                 'documents.verifications' => fn ($q) => $q->where('stage', $stage)->where('round', $round),
             ]);
-            $documents = $application->documents;
+            $documents = AgencyVerificationService::documentsAssessableBy($application, $user);
 
             if ($documents->isEmpty()) {
                 return;

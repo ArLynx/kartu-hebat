@@ -170,10 +170,10 @@ class BeasiswaRegistrationFlowTest extends TestCase
 
         $documentVerifier = app(AgencyVerificationService::class);
         $documentVerifier->assessDocument($application, $documentsByCode['KTP'], $operator, DocumentVerificationResult::TIDAK_MEMENUHI, 'KTP buram');
-        $documentVerifier->assessDocument($application, $documentsByCode['KHS'], $operator, DocumentVerificationResult::MEMENUHI);
+        $documentVerifier->assessDocument($application, $documentsByCode['KK'], $operator, DocumentVerificationResult::MEMENUHI);
 
         $this->assertSame(1, $documentsByCode['KTP']->verifications()->count());
-        $this->assertSame(1, $documentsByCode['KHS']->verifications()->count());
+        $this->assertSame(1, $documentsByCode['KK']->verifications()->count());
 
         // Kembalikan ke draf agar dokumen dapat diubah oleh mahasiswa.
         $application->update(['status' => ApplicationStatus::DRAFT]);
@@ -194,7 +194,7 @@ class BeasiswaRegistrationFlowTest extends TestCase
         );
         $this->assertSame(
             1,
-            $documentsByCode['KHS']->fresh()->verifications()->count(),
+            $documentsByCode['KK']->fresh()->verifications()->count(),
             'Verifikasi dokumen lain tidak boleh ikut terreset.',
         );
     }

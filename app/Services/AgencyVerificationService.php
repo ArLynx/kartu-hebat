@@ -13,6 +13,7 @@ use App\Models\DocumentVerification;
 use App\Models\User;
 use App\Models\VerificationLog;
 use App\Notifications\ApplicationStatusChanged;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -29,6 +30,13 @@ class AgencyVerificationService
     public const STAGE_KESEHATAN = 'kesehatan';
 
     public const STAGE_PARSEPOR = 'parsepor';
+
+    /**
+     * Dokumen yang langsung dianggap memenuhi syarat tanpa penilaian dinas.
+     *
+     * @var array<int, string>
+     */
+    public const AUTO_MEMENUHI_DOCUMENT_CODES = ['BUKU-REKENING-BPDK'];
 
     public function __construct(
         private readonly SelectionScoringService $scoring,
@@ -107,6 +115,47 @@ class AgencyVerificationService
     }
 
     /**
+     * Dokumen yang relevan untuk ditampilkan pada halaman verifikasi user.
+     * Role non-dinas (kabupaten/desa/kecamatan) melihat semua dokumen.
+     *
+     * @return Collection<int, Document>
+     */
+    public static function documentsVisibleTo(Application $application, User $user): Collection
+    {
+        $application->loadMissing('documents.type');
+
+        $codes = $user->role->visibleDocumentCodes();
+
+        if ($codes === null) {
+            return $application->documents;
+        }
+
+        return $application->documents
+            ->filter(fn (Document $document): bool => in_array($document->type?->code, $codes, true))
+            ->values();
+    }
+
+    /**
+     * Dokumen yang menjadi tanggung jawab penilaian MS/TMS role tersebut.
+     *
+     * @return Collection<int, Document>
+     */
+    public static function documentsAssessableBy(Application $application, User $user): Collection
+    {
+        $application->loadMissing('documents.type');
+
+        $codes = $user->role->assessableDocumentCodes();
+
+        if ($codes === []) {
+            return collect();
+        }
+
+        return $application->documents
+            ->filter(fn (Document $document): bool => in_array($document->type?->code, $codes, true))
+            ->values();
+    }
+
+    /**
      * Simpan hasil penilaian satu dokumen (autosave per klik).
      */
     public function assessDocument(
@@ -118,6 +167,7 @@ class AgencyVerificationService
     ): DocumentVerification {
         $stage = self::stageFor($verifier);
         $this->assertCanVerifyStage($application, $stage);
+        $this->assertDocumentAssessable($application, $document, $verifier);
 
         if (
             $result === DocumentVerificationResult::TIDAK_MEMENUHI
@@ -156,6 +206,7 @@ class AgencyVerificationService
     ): void {
         $stage = self::stageFor($verifier);
         $this->assertCanVerifyStage($application, $stage);
+        $this->assertDocumentAssessable($application, $document, $verifier);
 
         DocumentVerification::query()
             ->where('document_id', $document->id)
@@ -179,7 +230,9 @@ class AgencyVerificationService
     }
 
     /**
-     * Validasi bahwa seluruh berkas wajib telah dinilai sebelum dinas membuat keputusan MS / TMS.
+     * Validasi bahwa seluruh berkas yang menjadi kewenangan dinas telah
+     * dinilai sebelum dinas membuat keputusan MS / TMS. Dinas yang hanya
+     * meninjau (Sosial, BKPSDM, Parsepor) tidak memiliki checklist wajib.
      */
     public function assertAllDocumentsVerified(
         Application $application,
@@ -189,9 +242,7 @@ class AgencyVerificationService
         $stage = self::stageFor($operator);
         $round = self::currentRound($application);
 
-        $documentIds = Document::query()
-            ->where('application_id', $application->id)
-            ->pluck('id');
+        $documentIds = self::documentsAssessableBy($application, $operator)->pluck('id');
 
         if ($documentIds->isEmpty()) {
             return;
@@ -229,7 +280,6 @@ class AgencyVerificationService
         User $operator,
         VerificationDecision $decision,
         ?string $notes = null,
-        ?float $score = null,
         ?int $desil = null,
     ): Application {
         if (! $application->isVerificationWindowOpen()) {
@@ -252,14 +302,13 @@ class AgencyVerificationService
             $this->assertAllDocumentsVerified($application, $operator, $decision);
         }
 
-        return DB::transaction(function () use ($application, $operator, $decision, $notes, $score, $desil): Application {
+        return DB::transaction(function () use ($application, $operator, $decision, $notes, $desil): Application {
             $from = $application->status;
             $target = $this->storeVerificationAndResolveTarget(
                 $application,
                 $operator,
                 $decision,
                 $notes,
-                $score,
                 $desil,
             );
 
@@ -316,7 +365,6 @@ class AgencyVerificationService
         User $operator,
         VerificationDecision $decision,
         ?string $notes,
-        ?float $score,
         ?int $desil,
     ): ?ApplicationStatus {
         if (
@@ -334,7 +382,6 @@ class AgencyVerificationService
             [
                 'verifier_id' => $operator->id,
                 'decision' => $decision,
-                'score' => $score,
                 'notes' => $notes,
                 'metadata' => array_filter(['desil' => $desil], fn ($value) => $value !== null),
                 'verified_at' => now(),
@@ -381,6 +428,20 @@ class AgencyVerificationService
         if (! self::canVerifyStage($application, $stage)) {
             throw ValidationException::withMessages([
                 'document_verification' => 'Penilaian dokumen hanya dapat diubah saat aplikasi berada pada tahap penilaian ini.',
+            ]);
+        }
+    }
+
+    private function assertDocumentAssessable(
+        Application $application,
+        Document $document,
+        User $verifier,
+    ): void {
+        $assessableIds = self::documentsAssessableBy($application, $verifier)->pluck('id');
+
+        if (! in_array($document->id, $assessableIds->all(), true)) {
+            throw ValidationException::withMessages([
+                'document_verification' => 'Dokumen ini bukan kewenangan penilaian instansi Anda.',
             ]);
         }
     }

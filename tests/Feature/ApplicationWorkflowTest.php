@@ -8,6 +8,7 @@ use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
 use App\Models\Application;
+use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\JenisDokumen;
 use App\Models\KategoriBeasiswa;
@@ -42,11 +43,9 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerificationService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
-        $documents = [];
         foreach (DocumentType::query()
             ->where('is_required', true)
             ->where(function ($query): void {
@@ -56,7 +55,7 @@ class ApplicationWorkflowTest extends TestCase
             ->get() as $type) {
             $path = 'applications/'.$application->id.'/'.$type->code.'/test.pdf';
             Storage::disk('local')->put($path, 'test');
-            $documents[] = $application->documents()->create([
+            $application->documents()->create([
                 'document_type_id' => $type->id,
                 'uploaded_by' => $student->id,
                 'path' => $path,
@@ -75,19 +74,17 @@ class ApplicationWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        foreach ($documents as $document) {
-            $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
-        }
+        $this->assessDocumentsFor($application, $dukcapil, DocumentVerificationResult::MEMENUHI);
+        $this->assessDocumentsFor($application, $education, DocumentVerificationResult::MEMENUHI);
+        $this->assessDocumentsFor($application, $bkpsdm, DocumentVerificationResult::MEMENUHI);
 
-        $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS, score: 90);
+        $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        $application = $workflow->verify($application, $education, VerificationDecision::MS, score: 88);
+        $application = $workflow->verify($application, $education, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        $application = $workflow->verify($application, $bkpsdm, VerificationDecision::MS, score: 87);
+        $application = $workflow->verify($application, $bkpsdm, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->status);
         $this->assertNotNull($application->selection);
         $this->assertCount(2, $application->scores);
@@ -99,7 +96,6 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerificationService = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
@@ -129,11 +125,9 @@ class ApplicationWorkflowTest extends TestCase
 
         $application = $workflow->submit($application, $student);
 
-        foreach ($application->documents as $document) {
-            $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::TIDAK_MEMENUHI, 'Data tidak sesuai');
-            $documentVerificationService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
-        }
+        $this->assessDocumentsFor($application, $dukcapil, DocumentVerificationResult::MEMENUHI);
+        $this->assessDocumentsFor($application, $education, DocumentVerificationResult::TIDAK_MEMENUHI, 'Data tidak sesuai');
+        $this->assessDocumentsFor($application, $bkpsdm, DocumentVerificationResult::MEMENUHI);
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
@@ -293,11 +287,9 @@ class ApplicationWorkflowTest extends TestCase
     {
         [$student, $village] = $this->studentWithCompleteProfile();
         $workflow = app(ApplicationWorkflowService::class);
-        $documentVerification = app(AgencyVerificationService::class);
         $application = $this->draftApplication($student);
         $application->update(['application_type' => ApplicationType::AKADEMIK]);
 
-        $documents = [];
         foreach (DocumentType::query()
             ->where('is_required', true)
             ->where(function ($query): void {
@@ -307,7 +299,7 @@ class ApplicationWorkflowTest extends TestCase
             ->get() as $type) {
             $path = 'applications/'.$application->id.'/'.$type->code.'/test.pdf';
             Storage::disk('local')->put($path, 'test');
-            $documents[] = $application->documents()->create([
+            $application->documents()->create([
                 'document_type_id' => $type->id,
                 'uploaded_by' => $student->id,
                 'path' => $path,
@@ -323,12 +315,29 @@ class ApplicationWorkflowTest extends TestCase
         $application = $workflow->submit($application, $student);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
 
-        foreach ($documents as $document) {
-            $documentVerification->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-        }
+        $this->assessDocumentsFor($application, $dukcapil, DocumentVerificationResult::MEMENUHI);
 
         $application = $workflow->verify($application, $dukcapil, VerificationDecision::MS);
         $this->assertSame(ApplicationStatus::VERIFIKASI_DINAS, $application->status);
+    }
+
+    /**
+     * @return array<int, Document>
+     */
+    private function assessDocumentsFor(
+        Application $application,
+        User $operator,
+        DocumentVerificationResult $result,
+        ?string $notes = null,
+    ): array {
+        $service = app(AgencyVerificationService::class);
+        $documents = AgencyVerificationService::documentsAssessableBy($application, $operator)->all();
+
+        foreach ($documents as $document) {
+            $service->assessDocument($application, $document, $operator, $result, $notes);
+        }
+
+        return $documents;
     }
 
     private function draftApplication(User $student): Application

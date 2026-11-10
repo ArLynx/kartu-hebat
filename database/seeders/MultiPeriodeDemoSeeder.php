@@ -14,6 +14,7 @@ use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\Dokumen;
 use App\Models\FormulirPendaftaran;
+use App\Models\JalurBeasiswa;
 use App\Models\JenisDokumen;
 use App\Models\Kabupaten;
 use App\Models\KategoriBeasiswa;
@@ -305,7 +306,7 @@ class MultiPeriodeDemoSeeder extends Seeder
     }
 
     /**
-     * @param array<string, User> $operators
+     * @param  array<string, User>  $operators
      */
     private function seedRizkyPratama2026(Periode $periode, KategoriBeasiswa $kategori, Village $village, array $operators): void
     {
@@ -518,10 +519,8 @@ class MultiPeriodeDemoSeeder extends Seeder
         );
     }
 
-    
-
     /**
-     * @param array<string, User> $operators
+     * @param  array<string, User>  $operators
      */
     private function seedAhmadFauzi2026(Periode $periode, KategoriBeasiswa $kategori, Village $village, array $operators): void
     {
@@ -656,10 +655,8 @@ class MultiPeriodeDemoSeeder extends Seeder
         );
     }
 
-    
-
     /**
-     * @param array<string, User> $operators
+     * @param  array<string, User>  $operators
      */
     private function seedDimasPratama2027(Periode $periode, KategoriBeasiswa $kategori, Village $village, array $operators): void
     {
@@ -822,7 +819,6 @@ class MultiPeriodeDemoSeeder extends Seeder
                     [
                         'verifier_id' => $operator->id,
                         'decision' => VerificationDecision::MS,
-                        'score' => 90.00,
                         'notes' => 'Verifikasi berkas persyaratan instansi telah memenuhi syarat.',
                         'verified_at' => '2027-07-18 10:00:00',
                     ],
@@ -842,10 +838,8 @@ class MultiPeriodeDemoSeeder extends Seeder
         );
     }
 
-    
-
     /**
-     * @param array<string, User> $operators
+     * @param  array<string, User>  $operators
      */
     private function seedSitiAisyah2027(Periode $periode, KategoriBeasiswa $kategori, Village $village, array $operators): void
     {
@@ -1000,7 +994,6 @@ class MultiPeriodeDemoSeeder extends Seeder
                 [
                     'verifier_id' => $dukcapil->id,
                     'decision' => VerificationDecision::MS,
-                    'score' => 95.00,
                     'notes' => 'Data KTP dan Kartu Keluarga terverifikasi valid di database Dukcapil.',
                     'verified_at' => '2027-07-21 09:00:00',
                 ],
@@ -1009,7 +1002,7 @@ class MultiPeriodeDemoSeeder extends Seeder
     }
 
     /**
-     * @param array<string, User> $operators
+     * @param  array<string, User>  $operators
      */
     private function seedFajarRamadhan2026Block(Periode $periode, KategoriBeasiswa $kategori, Village $village, array $operators): void
     {
@@ -1162,7 +1155,7 @@ class MultiPeriodeDemoSeeder extends Seeder
     }
 
     /**
-     * @param array<string, User> $operators
+     * @param  array<string, User>  $operators
      */
     private function seedPutriHandayani2027(Periode $periode, KategoriBeasiswa $kategori, Village $village, array $operators): void
     {
@@ -1298,10 +1291,8 @@ class MultiPeriodeDemoSeeder extends Seeder
         );
     }
 
-    
-
     /**
-     * @param array<string, User> $operators
+     * @param  array<string, User>  $operators
      */
     private function seedHendraWijaya2027(Periode $periode, KategoriBeasiswa $kategori, Village $village, array $operators): void
     {
@@ -1437,8 +1428,6 @@ class MultiPeriodeDemoSeeder extends Seeder
         );
     }
 
-    
-
     /**
      * Membuat berkas PDF dummy valid single-page ke storage lokal
      */
@@ -1456,8 +1445,8 @@ class MultiPeriodeDemoSeeder extends Seeder
     }
 
     /**
-     * @param array<string, KategoriBeasiswa> $categories2026
-     * @param array<string, User> $operators
+     * @param  array<string, KategoriBeasiswa>  $categories2026
+     * @param  array<string, User>  $operators
      */
     private function syncDemoRecipientsToPendaftaran(Periode $periode2026, array $categories2026, Village $village, array $operators): void
     {
@@ -1497,7 +1486,7 @@ class MultiPeriodeDemoSeeder extends Seeder
                 [
                     'nomor_pendaftaran' => $app->nomor_pengajuan,
                     'kategori_beasiswa_id' => $cat->id,
-                    'jalur_beasiswa_id' => $cat->jalur_beasiswa_id ?? \App\Models\JalurBeasiswa::query()->value('id'),
+                    'jalur_beasiswa_id' => $cat->jalur_beasiswa_id ?? JalurBeasiswa::query()->value('id'),
                     'status' => 'approved',
                     'submitted_at' => $app->submitted_at ?? now()->subMonths(5),
                 ]

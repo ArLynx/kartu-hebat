@@ -8,6 +8,7 @@ use App\Enums\DocumentVerificationResult;
 use App\Enums\UserRole;
 use App\Enums\VerificationDecision;
 use App\Models\Application;
+use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\MahasiswaProfile;
 use App\Models\User;
@@ -38,7 +39,7 @@ class DocumentVerificationTest extends TestCase
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
 
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         $this->actingAs($operator)->post(
             route('operator.applications.documents.verify', [$application, $document]),
@@ -56,7 +57,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         $response = $this->actingAs($operator)
             ->from(route('operator.applications.show', $application))
@@ -73,7 +74,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         app(AgencyVerificationService::class)->assessDocument(
             $application,
@@ -93,7 +94,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         app(AgencyVerificationService::class)->assessDocument(
             $application,
@@ -118,33 +119,54 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::TIDAK_MAMPU);
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
+        $education = $this->operator(UserRole::OPERATOR_PENDIDIKAN, $village);
 
-        $document = $application->documents->first();
+        $ktp = $this->documentByCode($application, 'KTP');
+        $ktm = $this->documentByCode($application, 'KTM');
 
         $this->actingAs($dukcapil)
             ->post(
-                route('operator.applications.documents.verify', [$application, $document]),
+                route('operator.applications.documents.verify', [$application, $ktp]),
                 ['result' => DocumentVerificationResult::MEMENUHI->value],
             )
             ->assertRedirect();
 
-        $this->actingAs($social)
+        $this->actingAs($education)
             ->post(
-                route('operator.applications.documents.verify', [$application, $document]),
+                route('operator.applications.documents.verify', [$application, $ktm]),
                 ['result' => DocumentVerificationResult::MEMENUHI->value],
             )
             ->assertRedirect();
 
         $this->assertDatabaseHas('document_verifications', [
-            'document_id' => $document->id,
+            'document_id' => $ktp->id,
             'stage' => 'dukcapil',
             'result' => 'memenuhi',
         ]);
         $this->assertDatabaseHas('document_verifications', [
-            'document_id' => $document->id,
-            'stage' => 'sosial',
+            'document_id' => $ktm->id,
+            'stage' => 'pendidikan',
             'result' => 'memenuhi',
+        ]);
+    }
+
+    public function test_review_only_agency_cannot_assess_documents(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::TIDAK_MAMPU);
+        $social = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
+        $ktp = $this->documentByCode($application, 'KTP');
+
+        $this->actingAs($social)
+            ->from(route('operator.applications.show', $application))
+            ->post(
+                route('operator.applications.documents.verify', [$application, $ktp]),
+                ['result' => DocumentVerificationResult::MEMENUHI->value],
+            )
+            ->assertSessionHasErrors('document_verification');
+
+        $this->assertDatabaseMissing('document_verifications', [
+            'document_id' => $ktp->id,
+            'stage' => 'sosial',
         ]);
     }
 
@@ -156,10 +178,10 @@ class DocumentVerificationTest extends TestCase
         $bkpsdm = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
 
         $documentVerificationService = app(AgencyVerificationService::class);
-        foreach ($application->documents as $document) {
-            $documentVerificationService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentVerificationService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
+        foreach ([$dukcapil, $education, $bkpsdm] as $operator) {
+            foreach (AgencyVerificationService::documentsAssessableBy($application, $operator) as $document) {
+                $documentVerificationService->assessDocument($application, $document, $operator, DocumentVerificationResult::MEMENUHI);
+            }
         }
 
         $workflow = app(ApplicationWorkflowService::class);
@@ -171,7 +193,7 @@ class DocumentVerificationTest extends TestCase
 
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->fresh()->status);
 
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         $this->actingAs($dukcapil)
             ->from(route('operator.applications.show', $application))
@@ -186,7 +208,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         $workflow = app(ApplicationWorkflowService::class);
 
@@ -210,7 +232,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         app(AgencyVerificationService::class)->assessDocument(
             $application,
@@ -246,7 +268,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         $this->actingAs($operator)
             ->postJson(
@@ -271,7 +293,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         app(AgencyVerificationService::class)->assessDocument(
             $application,
@@ -296,7 +318,7 @@ class DocumentVerificationTest extends TestCase
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
         $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
-        $document = $application->documents->first();
+        $document = $this->documentByCode($application, 'KTP');
 
         $this->actingAs($operator)
             ->post(
@@ -311,6 +333,131 @@ class DocumentVerificationTest extends TestCase
             'result' => 'memenuhi',
             'notes' => null,
         ]);
+    }
+
+    public function test_dukcapil_only_sees_ktp_and_kk_on_verification_page(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+
+        $this->actingAs($operator)
+            ->get(route('operator.applications.show', $application))
+            ->assertOk()
+            ->assertSee('Kartu Tanda Penduduk')
+            ->assertSee('Kartu Keluarga')
+            ->assertDontSee('Kartu Tanda Mahasiswa')
+            ->assertDontSee('Kartu Hasil Studi')
+            ->assertSee('✓ MS');
+    }
+
+    public function test_dinsos_sees_ktp_read_only_and_can_decide_without_document_assessment(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue(ApplicationType::TIDAK_MAMPU);
+        $operator = $this->operator(UserRole::OPERATOR_SOSIAL, $village);
+
+        $this->actingAs($operator)
+            ->get(route('operator.applications.show', $application))
+            ->assertOk()
+            ->assertSee('Kartu Tanda Penduduk')
+            ->assertDontSee('Kartu Keluarga')
+            ->assertSee('Hanya tinjau')
+            ->assertDontSee('✓ MS')
+            ->assertDontSee('✕ TMS');
+
+        $this->actingAs($operator)
+            ->post(route('operator.applications.verify', $application), [
+                'decision' => VerificationDecision::MS->value,
+                'desil' => 3,
+            ])
+            ->assertRedirect(route('operator.applications.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('agency_verifications', [
+            'application_id' => $application->id,
+            'agency' => 'sosial',
+            'decision' => VerificationDecision::MS->value,
+        ]);
+    }
+
+    public function test_bkpsdm_sees_kk_read_only_and_can_decide_without_document_assessment(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_BKPSDM, $village);
+
+        $this->actingAs($operator)
+            ->get(route('operator.applications.show', $application))
+            ->assertOk()
+            ->assertSee('Kartu Keluarga')
+            ->assertDontSee('Kartu Tanda Penduduk')
+            ->assertSee('Hanya tinjau')
+            ->assertDontSee('✓ MS')
+            ->assertDontSee('✕ TMS');
+
+        $this->actingAs($operator)
+            ->post(route('operator.applications.verify', $application), [
+                'decision' => VerificationDecision::MS->value,
+            ])
+            ->assertRedirect(route('operator.applications.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('agency_verifications', [
+            'application_id' => $application->id,
+            'agency' => 'bkpsdm',
+            'decision' => VerificationDecision::MS->value,
+        ]);
+    }
+
+    public function test_dukcapil_cannot_assess_documents_outside_its_scope(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $ktm = $this->documentByCode($application, 'KTM');
+
+        $this->actingAs($operator)
+            ->from(route('operator.applications.show', $application))
+            ->post(
+                route('operator.applications.documents.verify', [$application, $ktm]),
+                ['result' => DocumentVerificationResult::MEMENUHI->value],
+            )
+            ->assertSessionHasErrors('document_verification');
+
+        $this->assertDatabaseMissing('document_verifications', [
+            'document_id' => $ktm->id,
+            'stage' => 'dukcapil',
+        ]);
+    }
+
+    public function test_buku_rekening_bpdk_is_not_required_for_agency_decisions(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $dukcapil = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+
+        $this->assessDocumentsFor($application, $dukcapil, DocumentVerificationResult::MEMENUHI);
+
+        $this->actingAs($dukcapil)
+            ->post(route('operator.applications.verify', $application), [
+                'decision' => VerificationDecision::MS->value,
+            ])
+            ->assertRedirect(route('operator.applications.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('document_verifications', [
+            'application_id' => $application->id,
+            'stage' => 'dukcapil',
+            'document_id' => $this->documentByCode($application, 'BUKU-REKENING-BPDK')->id,
+        ]);
+    }
+
+    private function assessDocumentsFor(
+        Application $application,
+        User $operator,
+        DocumentVerificationResult $result,
+    ): void {
+        $service = app(AgencyVerificationService::class);
+
+        foreach (AgencyVerificationService::documentsAssessableBy($application, $operator) as $document) {
+            $service->assessDocument($application, $document, $operator, $result);
+        }
     }
 
     private function applicationInAgencyQueue(ApplicationType $applicationType = ApplicationType::AKADEMIK): array
@@ -342,7 +489,14 @@ class DocumentVerificationTest extends TestCase
 
         $application = $workflow->submit($application->fresh(), $student);
 
-        return [$student, $village, $application->fresh(['documents'])];
+        return [$student, $village, $application->fresh(['documents.type'])];
+    }
+
+    private function documentByCode(Application $application, string $code): Document
+    {
+        return $application->documents->firstOrFail(
+            fn (Document $document): bool => $document->type?->code === $code,
+        );
     }
 
     private function draftApplication(User $student): Application

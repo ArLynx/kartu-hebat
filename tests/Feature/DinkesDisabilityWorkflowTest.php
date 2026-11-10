@@ -53,11 +53,8 @@ class DinkesDisabilityWorkflowTest extends TestCase
 
         $application = $workflow->submit($application, $student);
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
+        foreach ([$dukcapil, $education, $bkpsdm, $dinkes] as $operator) {
+            $this->assessDocumentsFor($documentService, $application, $operator, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -92,11 +89,8 @@ class DinkesDisabilityWorkflowTest extends TestCase
 
         $application = $workflow->submit($application, $student);
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $dinkes, DocumentVerificationResult::MEMENUHI);
+        foreach ([$dukcapil, $education, $bkpsdm, $dinkes] as $operator) {
+            $this->assessDocumentsFor($documentService, $application, $operator, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -125,9 +119,7 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $this->assertFalse($dinkes->can('verify', $application));
         $this->assertFalse(AgencyVerificationService::canVerifyStage($application, 'kesehatan'));
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-        }
+        $this->assessDocumentsFor($documentService, $application, $dukcapil, DocumentVerificationResult::MEMENUHI);
 
         try {
             $workflow->verify($application, $dinkes, VerificationDecision::MS);
@@ -153,10 +145,8 @@ class DinkesDisabilityWorkflowTest extends TestCase
 
         $application = $workflow->submit($application, $student);
 
-        foreach ($application->documents as $document) {
-            $documentService->assessDocument($application, $document, $dukcapil, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $education, DocumentVerificationResult::MEMENUHI);
-            $documentService->assessDocument($application, $document, $bkpsdm, DocumentVerificationResult::MEMENUHI);
+        foreach ([$dukcapil, $education, $bkpsdm] as $operator) {
+            $this->assessDocumentsFor($documentService, $application, $operator, DocumentVerificationResult::MEMENUHI);
         }
 
         $workflow->verify($application, $dukcapil, VerificationDecision::MS);
@@ -166,6 +156,26 @@ class DinkesDisabilityWorkflowTest extends TestCase
         $this->assertSame(ApplicationStatus::SELEKSI_KABUPATEN, $application->status);
         $this->assertCount(3, $application->agencyVerifications);
         $this->assertFalse($application->agencyVerifications->contains('agency', 'kesehatan'));
+    }
+
+    public function test_dinkes_only_sees_disability_letter_on_verification_page(): void
+    {
+        [$student, $village] = $this->studentWithCompleteProfile();
+        $application = $this->draftApplication($student);
+        $application->update(['application_type' => ApplicationType::DISABILITAS]);
+
+        $this->seedDocuments($application, $student);
+
+        $dinkes = $this->operator(UserRole::OPERATOR_DINKES, $village);
+        $application = app(ApplicationWorkflowService::class)->submit($application, $student);
+
+        $this->actingAs($dinkes)
+            ->get(route('operator.applications.show', $application))
+            ->assertOk()
+            ->assertSee('Surat Keterangan Disabilitas')
+            ->assertDontSee('Kartu Tanda Penduduk')
+            ->assertDontSee('Kartu Keluarga')
+            ->assertSee('✓ MS');
     }
 
     private function seedDocuments(Application $application, User $student): void
@@ -236,11 +246,25 @@ class DinkesDisabilityWorkflowTest extends TestCase
 
     private function operator(UserRole $role, Village $village): User
     {
-        return User::factory()->create([
+        $operator = User::factory()->create([
             'role' => $role,
             'village_id' => $role === UserRole::OPERATOR_DESA ? $village->id : null,
             'kecamatan_id' => $role === UserRole::OPERATOR_KECAMATAN ? $village->kecamatan_id : null,
             'kabupaten_id' => $village->kabupaten_id,
         ]);
+        $operator->forceFill(['two_factor_confirmed_at' => now()])->save();
+
+        return $operator;
+    }
+
+    private function assessDocumentsFor(
+        AgencyVerificationService $service,
+        Application $application,
+        User $operator,
+        DocumentVerificationResult $result,
+    ): void {
+        foreach (AgencyVerificationService::documentsAssessableBy($application, $operator) as $document) {
+            $service->assessDocument($application, $document, $operator, $result);
+        }
     }
 }

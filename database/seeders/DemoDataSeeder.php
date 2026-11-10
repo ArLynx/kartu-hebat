@@ -399,7 +399,7 @@ class DemoDataSeeder extends Seeder
     {
         $round = AgencyVerificationService::currentRound($application);
 
-        foreach ($application->documents as $document) {
+        foreach (AgencyVerificationService::documentsAssessableBy($application, $operator) as $document) {
             DocumentVerification::query()->updateOrCreate(
                 [
                     'document_id' => $document->id,
@@ -432,7 +432,6 @@ class DemoDataSeeder extends Seeder
             [
                 'verifier_id' => $operator->id,
                 'decision' => $decision,
-                'score' => $decision === VerificationDecision::MS ? fake()->numberBetween(70, 95) : null,
                 'notes' => $decision === VerificationDecision::MS
                     ? 'Hasil verifikasi instansi sesuai.'
                     : 'Data tidak sesuai dengan dokumen yang diajukan.',

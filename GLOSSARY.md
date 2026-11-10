@@ -17,7 +17,7 @@ Kategori seleksi yang menentukan kriteria dan strategi skoring: AKADEMIK, TIDAK_
 _Avoid_: Tipe pengajuan, track
 
 **Keputusan Verifikasi (MS/TMS)**:
-Hasil tunggal seorang operator dinas terhadap sebuah application — MS (Memenuhi Syarat) meneruskan, TMS (Tidak Memenuhi Syarat) final menolak. Tidak ada keputusan BTL. Seluruh dokumen wajib dinilai pada checklist berkas sebelum keputusan dapat dikirimkan.
+Hasil tunggal seorang operator dinas terhadap sebuah application — MS (Memenuhi Syarat) meneruskan, TMS (Tidak Memenuhi Syarat) final menolak. Tidak ada keputusan BTL. Checklist dokumen dibatasi sesuai kewenangan tiap dinas: Dukcapil menilai KTP/KK, Disdik menilai KTM/akreditasi/surat aktif/PDDIKTI/KHS/UKT, Dinkes menilai surat disabilitas; Dinsos (KTP), BKPSDM (KK), dan Parsepor (sertifikat prestasi) hanya meninjau tanpa MS/TMS per dokumen. Buku Rekening BPDK otomatis memenuhi syarat.
 
 **Masa Sanggah**:
 Jendela waktu milik sebuah periode untuk mengajukan sanggahan atas keputusan TMS. Satu periode memiliki paling banyak satu jendela, yang boleh belum dijadwalkan.

@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Models\VerificationLog;
 use App\Models\Village;
 use App\Notifications\ApplicationStatusChanged;
+use App\Services\AgencyVerificationService;
 use Database\Seeders\MasterDataSeeder;
 use Database\Seeders\RegionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -628,7 +629,7 @@ class OperatorSanggahanDecisionTest extends TestCase
         DocumentVerificationResult $result,
         ?string $notes = null,
     ): void {
-        foreach ($application->documents as $document) {
+        foreach (AgencyVerificationService::documentsAssessableBy($application, $verifier) as $document) {
             $this->actingAs($verifier)
                 ->post(route('operator.applications.documents.verify', [$application, $document]), [
                     'result' => $result->value,

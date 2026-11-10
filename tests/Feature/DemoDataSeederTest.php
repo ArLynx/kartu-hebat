@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\UserRole;
 use App\Models\AgencyVerification;
 use App\Models\Application;
 use App\Models\DocumentVerification;
@@ -186,13 +187,31 @@ class DemoDataSeederTest extends TestCase
         $this->assertGreaterThan(0, $applications->count(), 'Tidak ada pengajuan yang sudah selesai diverifikasi dinas.');
 
         foreach ($applications as $application) {
-            $stages = $application->documentVerifications->pluck('stage')->unique()->all();
             $documentCount = $application->documents()->count();
 
             $this->assertGreaterThan(0, $documentCount, "Pengajuan {$application->nomor_pengajuan} tidak memiliki dokumen.");
 
-            foreach (AgencyVerificationService::requiredAgencies($application) as $stage) {
-                $this->assertContains($stage, $stages, "Pengajuan {$application->nomor_pengajuan} belum dinilai tahap {$stage}.");
+            foreach (AgencyVerificationService::requiredAgencies($application) as $agency) {
+                $role = collect(UserRole::cases())
+                    ->first(fn (UserRole $role): bool => $role->agencyCode() === $agency);
+
+                $assessableIds = $application->documents()
+                    ->whereHas('type', fn ($query) => $query->whereIn('code', $role->assessableDocumentCodes()))
+                    ->pluck('id');
+
+                if ($assessableIds->isEmpty()) {
+                    continue;
+                }
+
+                $assessedIds = $application->documentVerifications
+                    ->where('stage', $agency)
+                    ->pluck('document_id');
+
+                $this->assertSame(
+                    [],
+                    $assessableIds->diff($assessedIds)->values()->all(),
+                    "Pengajuan {$application->nomor_pengajuan} belum dinilai lengkap tahap {$agency}.",
+                );
             }
         }
     }

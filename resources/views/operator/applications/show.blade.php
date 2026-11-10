@@ -41,7 +41,7 @@
 @endif
 
 @php
-    $documentStageVerifications = $application->documents->mapWithKeys(
+    $documentStageVerifications = $verificationDocuments->mapWithKeys(
         fn ($document) => [$document->id => $document->verifications->where('stage', $docVerificationStage)->first()]
     );
 
@@ -59,15 +59,24 @@
             : '')
         ->all();
 
-    $documentNames = $application->documents->pluck('type.name', 'id')->all();
+    $documentNames = $verificationDocuments->pluck('type.name', 'id')->all();
 
-    $documentVerifyUrls = $application->documents
+    $autoMemenuhiDocumentIds = $verificationDocuments
+        ->filter(fn ($document) => in_array(
+            $document->type?->code,
+            \App\Services\AgencyVerificationService::AUTO_MEMENUHI_DOCUMENT_CODES,
+            true,
+        ))
+        ->pluck('id')
+        ->all();
+
+    $documentVerifyUrls = $verificationDocuments
         ->mapWithKeys(fn ($document) => [
             $document->id => route('operator.applications.documents.verify', [$application, $document]),
         ])
         ->all();
 
-    $documentDestroyUrls = $application->documents
+    $documentDestroyUrls = $verificationDocuments
         ->mapWithKeys(fn ($document) => [
             $document->id => route('operator.applications.documents.verify.destroy', [$application, $document]),
         ])
@@ -104,9 +113,14 @@
             documentNames: {{ Js::from($documentNames, JSON_FORCE_OBJECT) }},
             verifyUrls: {{ Js::from($documentVerifyUrls, JSON_FORCE_OBJECT) }},
             destroyUrls: {{ Js::from($documentDestroyUrls, JSON_FORCE_OBJECT) }},
+            canAssessDocuments: {{ Js::from($canAssessDocuments) }},
             saving: {},
             errorMessage: '',
             get unverifiedDocuments() {
+                if (! this.canAssessDocuments) {
+                    return [];
+                }
+
                 return Object.keys(this.assessments)
                     .filter((documentId) => ! this.assessments[documentId] || this.assessments[documentId] === 'belum_dinilai')
                     .map((documentId) => this.documentNames[documentId]);
@@ -398,53 +412,8 @@
                 @if($application->application_type === \App\Enums\ApplicationType::NON_AKADEMIK)
                     <div class="sm:col-span-2 lg:col-span-3">
                         <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Daftar Prestasi</dt>
-                        <dd class="mt-2 space-y-2">
-                            @forelse($application->pendaftaran?->prestasis ?? [] as $p)
-                                @php
-                                    $prestasiMime = $prestasiDocumentMimes[$p->id] ?? null;
-                                    $isPrestasiPreviewable = in_array($prestasiMime, ['application/pdf', 'image/jpeg', 'image/png'], true);
-                                @endphp
-                                <div class="rounded border border-slate-200 p-2 text-sm">
-                                    <div class="font-semibold text-slate-900">{{ $p->nama_prestasi }} ({{ $p->tahun ?? '-' }})</div>
-                                    <div class="text-xs text-slate-500">
-                                        @if($p->kategoriEnum() === \App\Enums\KategoriPrestasi::ORGANISASI)
-                                            Organisasi · {{ $p->posisiEnum()?->label() ?? 'Pengurus' }} · {{ $p->tingkatOrganisasiEnum()?->label() ?? 'Universitas' }}
-                                        @else
-                                            Lomba · Tingkat {{ \App\Models\Prestasi::TINGKAT_OPTIONS[$p->tingkat] ?? $p->tingkat }} · Peringkat {{ $p->peringkat }}
-                                        @endif
-                                    </div>
-                                    <div class="text-xs text-slate-500">Penyelenggara: {{ $p->penyelenggara ?? '-' }}</div>
-                                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                                        @if(filled($p->dokumen_prestasi) && $prestasiMime !== null)
-                                            @if($isPrestasiPreviewable)
-                                                <button
-                                                    type="button"
-                                                    class="btn-secondary !px-3 !py-1.5 text-xs"
-                                                    @click="openPreview(
-                                                        {{ Js::from(route('operator.applications.prestasi.lihat', [$application, $p])) }},
-                                                        {{ Js::from(route('operator.applications.prestasi.unduh', [$application, $p])) }},
-                                        {{ Js::from($p->kategoriEnum() === \App\Enums\KategoriPrestasi::ORGANISASI ? 'SK Organisasi' : 'Sertifikat Prestasi') }},
-                                                        {{ Js::from($prestasiMime) }}
-                                                    )"
-                                                >
-                                                    <x-icon name="eye" class="h-3.5 w-3.5" />
-                                                    Lihat
-                                                </button>
-                                            @endif
-                                            <a href="{{ route('operator.applications.prestasi.unduh', [$application, $p]) }}" class="btn-secondary !px-3 !py-1.5 text-xs">
-                                                <x-icon name="download" class="h-3.5 w-3.5" />
-                                                Unduh
-                                            </a>
-                                        @else
-                                            <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700">
-                                                <x-icon name="x" class="h-3 w-3" /> Berkas bukti belum diunggah
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            @empty
-                                <span class="text-sm text-slate-500">Belum ada data prestasi.</span>
-                            @endforelse
+                        <dd class="mt-2">
+                            <x-operator.prestasi-list :application="$application" :prestasi-document-mimes="$prestasiDocumentMimes" />
                         </dd>
                     </div>
                 @endif
@@ -505,13 +474,27 @@
             </div>
         </section>
 
+            @if($verificationDocuments->isNotEmpty())
             <section class="card overflow-hidden">
                 <div class="border-b border-slate-200 px-6 py-5">
-                    <h2 class="text-xl font-bold">Dokumen Persyaratan</h2>
-                    <p class="mt-1 text-sm text-slate-500">PDF dan gambar dapat diperiksa langsung tanpa diunduh. Dokumen tetap dilindungi oleh otorisasi pengguna.</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-xl font-bold">Dokumen Persyaratan</h2>
+                        @if(auth()->user()->role->isAgency() && ! $canAssessDocuments)
+                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 uppercase tracking-wide">
+                                <x-icon name="eye" class="h-3 w-3" /> Hanya tinjau
+                            </span>
+                        @endif
+                    </div>
+                    <p class="mt-1 text-sm text-slate-500">
+                        @if(auth()->user()->role->isAgency() && ! $canAssessDocuments)
+                            Dokumen ditampilkan sebagai referensi. Instansi Anda tidak menilai MS/TMS per dokumen; keputusan langsung disimpan pada panel keputusan.
+                        @else
+                            PDF dan gambar dapat diperiksa langsung tanpa diunduh. Dokumen tetap dilindungi oleh otorisasi pengguna.
+                        @endif
+                    </p>
                 </div>
                 <div class="divide-y divide-slate-100">
-                    @forelse($application->documents as $document)
+                    @forelse($verificationDocuments as $document)
                         @php
                             $isPreviewable = $document->mime_type === 'application/pdf'
                                 || in_array($document->mime_type, ['image/jpeg', 'image/png'], true);
@@ -524,6 +507,11 @@
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <p class="text-sm font-bold text-slate-900">{{ $document->type->name }}</p>
+                                        @if(in_array($document->id, $autoMemenuhiDocumentIds, true))
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                                <x-icon name="check" class="h-3 w-3" /> Memenuhi otomatis
+                                            </span>
+                                        @else
                                         <span
                                             @class([
                                                 'inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700',
@@ -545,12 +533,17 @@
                                         <span
                                             @class([
                                                 'inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500',
-                                                'hidden' => ! in_array($documentAssessmentStates[$document->id] ?? null, [null, 'belum_dinilai'], true),
+                                                'hidden' => $canAssessDocuments && ! in_array($documentAssessmentStates[$document->id] ?? null, [null, 'belum_dinilai'], true),
                                             ])
-                                            x-bind:class="{ 'hidden': assessments[{{ $document->id }}] !== null && assessments[{{ $document->id }}] !== 'belum_dinilai' }"
+                                            x-bind:class="{ 'hidden': canAssessDocuments && assessments[{{ $document->id }}] !== null && assessments[{{ $document->id }}] !== 'belum_dinilai' }"
                                         >
-                                            Belum Dinilai
+                                            @if($canAssessDocuments)
+                                                Belum Dinilai
+                                            @else
+                                                Tinjau saja
+                                            @endif
                                         </span>
+                                        @endif
                                     </div>
                                     <p class="mt-1 truncate text-xs text-slate-500">{{ $document->original_name }} · {{ $document->human_size }}</p>
                                     <p
@@ -654,6 +647,7 @@
                     @endforelse
                 </div>
             </section>
+            @endif
 
             <div
                 x-cloak
@@ -767,6 +761,14 @@
     </div>
 
     <aside class="space-y-6">
+        @if(auth()->user()->role === \App\Enums\UserRole::OPERATOR_PARSEPOR && $application->application_type === \App\Enums\ApplicationType::NON_AKADEMIK)
+            <section class="card p-6">
+                <h2 class="text-xl font-bold">Dokumen Prestasi</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Sertifikat lomba atau SK organisasi menjadi dasar keputusan Parsepor. Periksa setiap berkas bukti sebelum menyimpan keputusan.</p>
+                <x-operator.prestasi-list :application="$application" :prestasi-document-mimes="$prestasiDocumentMimes" class="mt-4" />
+            </section>
+        @endif
+
         @if($canVerify)
             <section class="card sticky top-24 p-6">
                 <h2 class="text-xl font-bold">Keputusan Verifikasi</h2>
@@ -793,14 +795,6 @@
                             @endforeach
                         </div>
                     </div>
-
-                    @if(auth()->user()->role->isAgency())
-                        <div>
-                            <label class="form-label">Nilai Verifikasi Instansi (opsional)</label>
-                            <input type="number" name="score" min="0" max="100" step="0.01" value="{{ old('score') }}" class="form-input" placeholder="0–100">
-                            <p class="mt-1 text-xs leading-5 text-slate-500">Nilai ini hanya catatan instansi dan tidak masuk rumus seleksi otomatis.</p>
-                        </div>
-                    @endif
 
                     @if(auth()->user()->hasRole('operator_sosial') && $application->application_type === \App\Enums\ApplicationType::TIDAK_MAMPU)
                         <div>
