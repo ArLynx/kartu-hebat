@@ -679,20 +679,20 @@
                                 aria-controls="persyaratan-panel-{{ $category->id }}"
                                 tabindex="{{ $isActiveTab ? '0' : '-1' }}" data-requirement-tab="{{ $category->id }}"
                                 class="group relative flex items-center gap-3.5 rounded-xl border px-4 py-3.5 text-left
-                   transition-all duration-300 ease-out
-                   focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2
-                   {{ $isActiveTab
-                       ? 'border-blue-200/90 bg-white text-blue-800 shadow-[0_4px_14px_rgba(37,99,235,0.09),inset_0_0_0_1px_rgba(37,99,235,0.025)]'
-                       : 'border-transparent bg-transparent text-slate-600 hover:-translate-y-px hover:border-slate-200 hover:bg-white hover:text-slate-900 hover:shadow-[0_4px_12px_rgba(15,23,42,0.045)]' }}">
+                                        transition-all duration-300 ease-out
+                                        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2
+                                        {{ $isActiveTab
+                                            ? 'border-blue-200/90 bg-white text-blue-800 shadow-[0_4px_14px_rgba(37,99,235,0.09),inset_0_0_0_1px_rgba(37,99,235,0.025)]'
+                                            : 'border-transparent bg-transparent text-slate-600 hover:-translate-y-px hover:border-slate-200 hover:bg-white hover:text-slate-900 hover:shadow-[0_4px_12px_rgba(15,23,42,0.045)]' }}">
 
                                 <span data-tab-icon
                                     class="relative flex h-10 w-10 shrink-0 items-center justify-center
-           rounded-xl border border-blue-100/90
-           bg-gradient-to-br from-white to-blue-50
-           text-blue-700
-           shadow-[0_2px_6px_rgba(15,23,42,0.04)]
-           transition-colors duration-300
-           {{ $isActiveTab ? 'border-blue-600 bg-blue-600 text-white shadow-[0_3px_8px_rgba(37,99,235,0.22)]' : '' }}">
+                                    rounded-xl border
+                                    shadow-[0_2px_6px_rgba(15,23,42,0.04)]
+                                    transition-colors duration-300
+                                    {{ $isActiveTab
+                                        ? 'border-blue-600 bg-none bg-blue-600 text-white shadow-[0_3px_8px_rgba(37,99,235,0.22)]'
+                                        : 'border-blue-100/90 bg-gradient-to-br from-white to-blue-50 text-blue-700' }}">
 
                                     @if ($appTypeValue === 'AKADEMIK')
                                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
@@ -721,17 +721,13 @@
 
                                 <span class="min-w-0 flex-1">
                                     <span data-tab-title
-                                        class="block truncate text-xs font-bold leading-snug tracking-[0.01em] sm:text-sm
-                           {{ $isActiveTab ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900' }}">
+                                        class="block truncate text-xs font-bold leading-snug tracking-[0.01em] text-slate-800 sm:text-sm">
                                         {{ $category->nama }}
                                     </span>
 
                                     <span data-tab-badge
-                                        class="mt-1.5 inline-flex items-center rounded-md px-2 py-0.5
-                           text-[10px] font-semibold tracking-wide
-                           {{ $isActiveTab
-                               ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100'
-                               : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-700' }}">
+                                        class="mt-1.5 inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5
+                                            text-[10px] font-semibold tracking-wide text-slate-600">
                                         {{ $docCount }} berkas wajib
                                     </span>
                                 </span>
@@ -1056,6 +1052,7 @@
 
             const tabs = Array.from(container.querySelectorAll('[data-requirement-tab]'));
             const panels = Array.from(container.querySelectorAll('[data-requirement-panel]'));
+
             if (!tabs.length || !panels.length) return;
 
             const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1072,44 +1069,53 @@
                     tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
                     tab.setAttribute('tabindex', isActive ? '0' : '-1');
 
+                    // Tab container: samakan dengan kelas awal Blade.
                     tab.className = [
-                        'group flex items-center gap-3.5 rounded-xl border px-4 py-3.5 text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40',
+                        'group relative flex items-center gap-3.5 rounded-xl border px-4 py-3.5 text-left',
+                        'transition-all duration-300 ease-out',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2',
                         isActive ?
-                        'border-blue-200 bg-white text-blue-800 shadow-[0_8px_24px_rgba(37,99,235,0.09)]' :
-                        'border-transparent bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900',
+                        'border-blue-200/90 bg-white text-blue-800 shadow-[0_4px_14px_rgba(37,99,235,0.09),inset_0_0_0_1px_rgba(37,99,235,0.025)]' :
+                        'border-transparent bg-transparent text-slate-600 hover:-translate-y-px hover:border-slate-200 hover:bg-white hover:shadow-[0_4px_12px_rgba(15,23,42,0.045)]',
                     ].join(' ');
 
+                    // Icon: pertahankan perbedaan visual status aktif.
                     if (iconBox) {
                         iconBox.className = [
-                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200',
+                            'relative flex h-10 w-10 shrink-0 items-center justify-center',
+                            'rounded-xl border shadow-[0_2px_6px_rgba(15,23,42,0.04)]',
+                            'transition-colors duration-300',
                             isActive ?
-                            'bg-blue-600 text-white shadow-sm shadow-blue-600/25' :
-                            'border border-slate-200/80 bg-white text-slate-500 group-hover:border-blue-200 group-hover:text-blue-600',
+                            'border-blue-600 bg-none bg-blue-600 text-white shadow-[0_3px_8px_rgba(37,99,235,0.22)]' :
+                            'border-blue-100/90 bg-gradient-to-br from-white to-blue-50 text-blue-700',
                         ].join(' ');
                     }
 
+                    // Judul: tipografi dan warna selalu sama.
                     if (title) {
-                        title.className = [
-                            'block truncate text-xs font-extrabold leading-snug sm:text-sm',
-                            isActive ? 'text-slate-900' :
-                            'text-slate-700 group-hover:text-slate-900',
-                        ].join(' ');
+                        title.className =
+                            'block truncate text-xs font-bold leading-snug tracking-[0.01em] text-slate-800 sm:text-sm';
                     }
 
+                    // Badge: tipografi, warna, dan jarak selalu sama.
                     if (badge) {
-                        badge.className = [
-                            'mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold',
-                            isActive ? 'bg-blue-50 text-blue-700' :
-                            'bg-slate-200/70 text-slate-600',
-                        ].join(' ');
+                        badge.className =
+                            'mt-1.5 inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-slate-600';
                     }
                 });
 
+                // Tampilkan panel sesuai kategori yang dipilih.
                 panels.forEach((panel) => {
-                    const isTarget = panel.getAttribute('data-requirement-panel') === targetId;
+                    const isTarget =
+                        panel.getAttribute('data-requirement-panel') === targetId;
+
                     panel.classList.toggle('hidden', !isTarget);
 
-                    if (isTarget && !prefersReducedMotion && typeof panel.animate === 'function') {
+                    if (
+                        isTarget &&
+                        !prefersReducedMotion &&
+                        typeof panel.animate === 'function'
+                    ) {
                         panel.animate(
                             [{
                                     opacity: 0,
@@ -1122,7 +1128,7 @@
                             ], {
                                 duration: 220,
                                 easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
-                            },
+                            }
                         );
                     }
                 });
