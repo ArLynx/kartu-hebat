@@ -240,7 +240,7 @@
                             >
 
                             <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Masukkan Indeks Prestasi Total / Kumulatif terakhir sesuai transkrip nilai atau KHS resmi, bukan Indeks Prestasi Semester (IPS).
+                                Masukkan Indeks Prestasi Total / Kumulatif terakhir sesuai transkrip nilai atau KHS resmi, bukan Indeks Prestasi Semester (IPS) menggunakan titik bukan koma contoh 3.25.
                             </p>
                         </div>
 
@@ -336,7 +336,7 @@
                 {{-- STATUS VERIFIKASI PDDIKTI --}}
                 {{-- ========================================================= --}}
 
-                <section
+                {{-- <section
                     class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600"
                 >
                     Status verifikasi PDDikti:
@@ -345,7 +345,7 @@
                             ? 'Terverifikasi pada ' . $pendidikan->pddikti_verified_at->format('d/m/Y H:i')
                             : 'Belum diverifikasi' }}
                     </strong>
-                </section>
+                </section> --}}
 
             </fieldset>
 
