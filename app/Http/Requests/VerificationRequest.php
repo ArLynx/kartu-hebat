@@ -46,7 +46,9 @@ class VerificationRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
-            if ($this->input('decision') !== VerificationDecision::TMS->value) {
+            $decision = $this->input('decision');
+
+            if (! in_array($decision, [VerificationDecision::MS->value, VerificationDecision::TMS->value], true)) {
                 return;
             }
 
@@ -69,12 +71,29 @@ class VerificationRequest extends FormRequest
                 return;
             }
 
-            $allMs = $documents->every(function ($doc) use ($stage, $round) {
-                return $doc->verifications
-                    ->where('stage', $stage)
-                    ->where('round', $round)
-                    ->contains('result', DocumentVerificationResult::MEMENUHI);
-            });
+            $rejectedDocuments = $documents->filter(fn ($document): bool => $document->verifications
+                ->where('stage', $stage)
+                ->where('round', $round)
+                ->contains('result', DocumentVerificationResult::TIDAK_MEMENUHI));
+
+            if ($decision === VerificationDecision::MS->value && $rejectedDocuments->isNotEmpty()) {
+                $validator->errors()->add(
+                    'decision',
+                    'Keputusan Memenuhi Syarat (MS) tidak dapat dipilih karena masih ada dokumen yang dinilai Tidak Memenuhi Syarat (TMS): '
+                    .$rejectedDocuments->pluck('type.name')->implode(', ').'.'
+                );
+
+                return;
+            }
+
+            if ($decision !== VerificationDecision::TMS->value) {
+                return;
+            }
+
+            $allMs = $documents->every(fn ($document): bool => $document->verifications
+                ->where('stage', $stage)
+                ->where('round', $round)
+                ->contains('result', DocumentVerificationResult::MEMENUHI));
 
             if ($allMs) {
                 $validator->errors()->add(

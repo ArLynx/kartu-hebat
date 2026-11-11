@@ -136,6 +136,21 @@
 
                 return results.length > 0 && results.every((result) => result === 'memenuhi');
             },
+            get canChooseMs() {
+                return ! this.hasUnverifiedDocuments && ! this.hasRejectedDocuments;
+            },
+            get canChooseTms() {
+                return ! this.hasUnverifiedDocuments && ! this.allDocumentsMeet;
+            },
+            clearUnavailableDecision() {
+                document.querySelectorAll('input[name=decision]').forEach((input) => {
+                    const unavailable = input.value === 'MS' ? ! this.canChooseMs : ! this.canChooseTms;
+
+                    if (unavailable) {
+                        input.checked = false;
+                    }
+                });
+            },
             async assessDocument(documentId, result, notes = null) {
                 const url = this.verifyUrls[documentId];
 
@@ -171,6 +186,8 @@
                     if (payload.result === 'tidak_memenuhi') {
                         this.tmsDrafts[documentId] = payload.notes ?? '';
                     }
+
+                    this.clearUnavailableDecision();
 
                     return true;
                 } catch (error) {
@@ -211,6 +228,8 @@
                     this.notes[documentId] = '';
                     this.tmsDrafts[documentId] = '';
 
+                    this.clearUnavailableDecision();
+
                     return true;
                 } catch (error) {
                     this.errorMessage = 'Tidak dapat membatalkan penilaian. Periksa koneksi lalu coba lagi.';
@@ -238,6 +257,12 @@
 
                 if (decision.value === 'TMS' && this.hasUnverifiedDocuments) {
                     alert('Semua dokumen harus dinilai terlebih dahulu sebelum mengajukan keputusan Tidak Memenuhi Syarat (TMS).');
+
+                    return false;
+                }
+
+                if (decision.value === 'MS' && this.hasRejectedDocuments) {
+                    alert('Keputusan Memenuhi Syarat (MS) tidak dapat dipilih karena masih ada dokumen yang dinilai Tidak Memenuhi Syarat (TMS).');
 
                     return false;
                 }
@@ -862,12 +887,41 @@
                         <label class="form-label">Keputusan</label>
                         <div class="space-y-3">
                             @foreach([
-                                ['MS', 'Memenuhi Syarat', 'emerald'],
-                                ['TMS', 'Tidak Memenuhi Syarat', 'red'],
-                            ] as [$value, $label, $tone])
-                                <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50">
-                                    <input type="radio" name="decision" value="{{ $value }}" class="text-brand-600 focus:ring-brand-500" required>
-                                    <span class="text-sm font-semibold text-slate-800">{{ $label }}</span>
+                                [
+                                    'MS',
+                                    'Memenuhi Syarat',
+                                    '! canChooseMs',
+                                    'Tidak dapat dipilih karena masih ada dokumen yang belum dinilai atau dinilai TMS.',
+                                ],
+                                [
+                                    'TMS',
+                                    'Tidak Memenuhi Syarat',
+                                    '! canChooseTms',
+                                    'Tidak dapat dipilih karena masih ada dokumen yang belum dinilai atau seluruh dokumen sudah dinilai MS.',
+                                ],
+                            ] as [$value, $label, $disabledExpression, $disabledHint])
+                                <label
+                                    class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
+                                    x-bind:class="{ 'cursor-not-allowed opacity-60 hover:bg-transparent': {{ $disabledExpression }} }"
+                                >
+                                    <input
+                                        type="radio"
+                                        name="decision"
+                                        value="{{ $value }}"
+                                        class="mt-0.5 text-brand-600 focus:ring-brand-500"
+                                        required
+                                        x-bind:disabled="{{ $disabledExpression }}"
+                                    >
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-semibold text-slate-800">{{ $label }}</span>
+                                        <span
+                                            x-cloak
+                                            x-show="{{ $disabledExpression }}"
+                                            class="mt-1 block text-xs leading-5 text-slate-500"
+                                        >
+                                            {{ $disabledHint }}
+                                        </span>
+                                    </span>
                                 </label>
                             @endforeach
                         </div>

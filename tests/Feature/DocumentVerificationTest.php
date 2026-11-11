@@ -264,6 +264,80 @@ class DocumentVerificationTest extends TestCase
             ->assertDontSee('Konfirmasi Memenuhi Syarat');
     }
 
+    public function test_ms_decision_is_blocked_when_a_document_is_rejected(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+        $service = app(AgencyVerificationService::class);
+
+        $service->assessDocument(
+            $application,
+            $this->documentByCode($application, 'KTP'),
+            $operator,
+            DocumentVerificationResult::TIDAK_MEMENUHI,
+            'KTP tidak terbaca.',
+        );
+        $service->assessDocument(
+            $application,
+            $this->documentByCode($application, 'KK'),
+            $operator,
+            DocumentVerificationResult::MEMENUHI,
+        );
+
+        $this->actingAs($operator)
+            ->from(route('operator.applications.show', $application))
+            ->post(route('operator.applications.verify', $application), [
+                'decision' => VerificationDecision::MS->value,
+            ])
+            ->assertRedirect(route('operator.applications.show', $application))
+            ->assertSessionHasErrors([
+                'decision' => 'Keputusan Memenuhi Syarat (MS) tidak dapat dipilih karena masih ada dokumen yang dinilai Tidak Memenuhi Syarat (TMS): Kartu Tanda Penduduk.',
+            ]);
+
+        $this->assertDatabaseMissing('agency_verifications', [
+            'application_id' => $application->id,
+            'agency' => 'dukcapil',
+        ]);
+    }
+
+    public function test_tms_decision_is_blocked_when_all_documents_meet(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+
+        $this->assessDocumentsFor($application, $operator, DocumentVerificationResult::MEMENUHI);
+
+        $this->actingAs($operator)
+            ->from(route('operator.applications.show', $application))
+            ->post(route('operator.applications.verify', $application), [
+                'decision' => VerificationDecision::TMS->value,
+                'notes' => 'Dokumen tetap tidak sesuai.',
+            ])
+            ->assertRedirect(route('operator.applications.show', $application))
+            ->assertSessionHasErrors([
+                'decision' => 'Keputusan Tidak Memenuhi Syarat (TMS) tidak dapat dipilih karena seluruh dokumen sudah dinilai Memenuhi Syarat (MS).',
+            ]);
+
+        $this->assertDatabaseMissing('agency_verifications', [
+            'application_id' => $application->id,
+            'agency' => 'dukcapil',
+        ]);
+    }
+
+    public function test_operator_show_page_disables_decisions_that_contradict_assessments(): void
+    {
+        [$student, $village, $application] = $this->applicationInAgencyQueue();
+        $operator = $this->operator(UserRole::OPERATOR_DUKCAPIL, $village);
+
+        $this->actingAs($operator)
+            ->get(route('operator.applications.show', $application))
+            ->assertOk()
+            ->assertSee('x-bind:disabled="! canChooseMs"', false)
+            ->assertSee('x-bind:disabled="! canChooseTms"', false)
+            ->assertSee('Tidak dapat dipilih karena masih ada dokumen yang belum dinilai atau dinilai TMS.')
+            ->assertSee('Tidak dapat dipilih karena masih ada dokumen yang belum dinilai atau seluruh dokumen sudah dinilai MS.');
+    }
+
     public function test_document_assessment_endpoint_returns_json_for_ajax_requests(): void
     {
         [$student, $village, $application] = $this->applicationInAgencyQueue();
