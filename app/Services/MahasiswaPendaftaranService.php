@@ -118,23 +118,32 @@ class MahasiswaPendaftaranService
         if ($orangTua?->status_ayah === 'hidup') {
             $ayahFields[] = 'nik_ayah';
             $ayahFields[] = 'pekerjaan_ayah';
-        }
-        if ($orangTua?->pekerjaan_ayah === 'ASN') {
-            $ayahFields[] = 'jabatan_ayah';
+            if ($orangTua->pekerjaan_ayah === 'ASN') {
+                $ayahFields[] = 'jabatan_ayah';
+                if ($this->isEditable($pendaftaran)) {
+                    $ayahFields[] = 'sk_jabatan_ayah';
+                }
+            }
         }
 
         $ibuFields = ['nama_ibu', 'status_ibu'];
         if ($orangTua?->status_ibu === 'hidup') {
             $ibuFields[] = 'nik_ibu';
             $ibuFields[] = 'pekerjaan_ibu';
-        }
-        if ($orangTua?->pekerjaan_ibu === 'ASN') {
-            $ibuFields[] = 'jabatan_ibu';
+            if ($orangTua->pekerjaan_ibu === 'ASN') {
+                $ibuFields[] = 'jabatan_ibu';
+                if ($this->isEditable($pendaftaran)) {
+                    $ibuFields[] = 'sk_jabatan_ibu';
+                }
+            }
         }
 
         $waliFields = ['nama_wali', 'nik_wali', 'pekerjaan_wali'];
         if ($orangTua?->pekerjaan_wali === 'ASN') {
             $waliFields[] = 'jabatan_wali';
+            if ($this->isEditable($pendaftaran)) {
+                $waliFields[] = 'sk_jabatan_wali';
+            }
         }
 
         $orangTuaComplete = $orangTua

@@ -152,7 +152,7 @@
             <x-icon name="check-circle" class="h-5 w-5 {{ $activeTab === 'lolos' ? 'text-white' : 'text-emerald-600' }}" />
             <span>Calon Penerima Lolos (Siap Ditetapkan)</span>
             <span class="rounded-full px-2.5 py-0.5 text-xs font-bold {{ $activeTab === 'lolos' ? 'bg-white/20 text-white' : 'bg-white text-slate-700 shadow-xs' }}">
-                {{ number_format($totalCurrentTypeCount) }}
+                {{ number_format($lolosCurrentTrackCount ?? $totalCurrentTypeCount) }}
             </span>
         </a>
 

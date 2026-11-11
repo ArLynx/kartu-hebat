@@ -205,18 +205,42 @@ class DemoDataSeeder extends Seeder
             array_merge($payload['pendidikan'], ['pendaftaran_id' => $pendaftaran->id]),
         );
 
+        $prestasiDisk = Storage::disk(config('kartu_hebat.document_disk'));
+
+        $orangTuaData = array_merge($payload['orang_tua'], ['pendaftaran_id' => $pendaftaran->id]);
+
+        foreach (['ayah', 'ibu', 'wali'] as $peran) {
+            $pekerjaanKey = 'pekerjaan_'.$peran;
+            $jabatanKey = 'jabatan_'.$peran;
+            $namaKey = 'nama_'.$peran;
+            $skKey = 'sk_jabatan_'.$peran;
+
+            if (($orangTuaData[$pekerjaanKey] ?? null) === 'ASN') {
+                $skPath = 'pendaftarans/'.$pendaftaran->id.'/orang-tua/demo-sk-'.$peran.'.pdf';
+                $skContents = $this->buildDemoPdf(
+                    'SK JABATAN TERAKHIR '.strtoupper($peran),
+                    'Nama: '.($orangTuaData[$namaKey] ?? '-').' | Jabatan: '.($orangTuaData[$jabatanKey] ?? '-')
+                );
+                $prestasiDisk->put($skPath, $skContents);
+                $orangTuaData[$skKey] = $skPath;
+            } else {
+                $orangTuaData[$skKey] = null;
+            }
+        }
+
         OrangTua::query()->updateOrCreate(
             ['pendaftaran_id' => $pendaftaran->id],
-            array_merge($payload['orang_tua'], ['pendaftaran_id' => $pendaftaran->id]),
+            $orangTuaData,
         );
 
         Prestasi::query()->where('pendaftaran_id', $pendaftaran->id)->delete();
 
-        $prestasiDisk = Storage::disk(config('kartu_hebat.document_disk'));
-
         foreach ($payload['prestasis'] as $index => $prestasi) {
             $path = 'pendaftarans/'.$pendaftaran->id.'/prestasi/demo-'.($index + 1).'.pdf';
-            $contents = "%PDF-1.4\n% Dokumen demo prestasi {$pendaftaran->nomor_pendaftaran}\n";
+            $contents = $this->buildDemoPdf(
+                'DOKUMEN PRESTASI MAHASISWA',
+                ($prestasi['nama_prestasi'] ?? 'Prestasi').' - '.$pendaftaran->nomor_pendaftaran
+            );
             $prestasiDisk->put($path, $contents);
 
             Prestasi::query()->create(array_merge(
@@ -292,7 +316,10 @@ class DemoDataSeeder extends Seeder
             }
 
             $path = 'applications/'.$application->id.'/'.$code.'/demo-'.$code.'.pdf';
-            $contents = "%PDF-1.4\n% Dokumen demo {$type->name}\n";
+            $contents = $this->buildDemoPdf(
+                'DOKUMEN PERSYARATAN: '.$type->name,
+                'Pemohon: '.$student->name.' ('.$pendaftaran->nomor_pendaftaran.')'
+            );
             $disk->put($path, $contents);
 
             $application->documents()->updateOrCreate(
@@ -740,8 +767,8 @@ class DemoDataSeeder extends Seeder
                     'nama_ibu' => 'Sumiati',
                     'status_ibu' => 'hidup',
                     'nik_ibu' => '6212014101720002',
-                    'pekerjaan_ibu' => 'Ibu Rumah Tangga',
-                    'jabatan_ibu' => null,
+                    'pekerjaan_ibu' => 'ASN',
+                    'jabatan_ibu' => 'Guru Ahli Muda',
                     'memiliki_wali' => false,
                     'pekerjaan_wali' => null,
                     'jabatan_wali' => null,
@@ -1030,5 +1057,50 @@ class DemoDataSeeder extends Seeder
                 default => 'Anggota Pengurus',
             },
         ];
+    }
+
+    private function buildDemoPdf(string $title, string $subtitle): string
+    {
+        $cleanTitle = preg_replace('/[^A-Za-z0-9 \-_:\/.()|]/', '', $title) ?: 'Dokumen Demo';
+        $cleanSubtitle = preg_replace('/[^A-Za-z0-9 \-_:\/.()|]/', '', $subtitle) ?: 'Kartu Hebat Murung Raya';
+
+        $stream = "BT\n"
+            ."/F1 16 Tf\n"
+            ."50 760 Td\n"
+            ."({$cleanTitle}) Tj\n"
+            ."/F1 11 Tf\n"
+            ."0 -26 Td\n"
+            ."({$cleanSubtitle}) Tj\n"
+            ."0 -22 Td\n"
+            ."(Sistem Beasiswa Kartu Hebat - Pemerintah Kabupaten Murung Raya) Tj\n"
+            ."ET";
+
+        $objects = [
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+            4 => "<< /Length ".strlen($stream)." >>\nstream\n{$stream}\nendstream",
+            5 => "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        ];
+
+        $pdf = "%PDF-1.4\n";
+        $offsets = [];
+
+        foreach ($objects as $id => $body) {
+            $offsets[$id] = strlen($pdf);
+            $pdf .= "{$id} 0 obj\n{$body}\nendobj\n";
+        }
+
+        $xrefOffset = strlen($pdf);
+        $count = count($objects) + 1;
+        $pdf .= "xref\n0 {$count}\n0000000000 65535 f \n";
+
+        foreach ($offsets as $offset) {
+            $pdf .= sprintf("%010d 00000 n \n", $offset);
+        }
+
+        $pdf .= "trailer\n<< /Size {$count} /Root 1 0 R >>\nstartxref\n{$xrefOffset}\n%%EOF\n";
+
+        return $pdf;
     }
 }

@@ -594,10 +594,11 @@ class BeasiswaRegistrationFlowTest extends TestCase
 
     public function test_pekerjaan_asn_wajib_jabatan_dan_lainnya_wajib_sebutkan_pekerjaan(): void
     {
+        Storage::fake(config('kartu_hebat.document_disk'));
         $user = User::factory()->create();
         $pendaftaran = $this->draftFor($user);
 
-        // 1. Pilih ASN tapi jabatan kosong -> error
+        // 1. Pilih ASN tapi jabatan & SK jabatan kosong -> error
         $this->actingAs($user)
             ->put(route('mahasiswa.orang-tua.update'), [
                 'nama_ayah' => 'Ayah ASN',
@@ -612,9 +613,9 @@ class BeasiswaRegistrationFlowTest extends TestCase
                 'pekerjaan_ibu_lainnya' => '',
                 'memiliki_wali' => false,
             ])
-            ->assertSessionHasErrors(['jabatan_ayah', 'pekerjaan_ibu_lainnya']);
+            ->assertSessionHasErrors(['jabatan_ayah', 'sk_jabatan_ayah', 'pekerjaan_ibu_lainnya']);
 
-        // 2. Pilih ASN dengan jabatan & Lainnya dengan sebutkan pekerjaan -> sukses
+        // 2. Pilih ASN dengan jabatan + SK Jabatan & Lainnya dengan sebutkan pekerjaan -> sukses
         $this->actingAs($user)
             ->put(route('mahasiswa.orang-tua.update'), [
                 'nama_ayah' => 'Ayah ASN',
@@ -622,6 +623,7 @@ class BeasiswaRegistrationFlowTest extends TestCase
                 'nik_ayah' => '6212123456789013',
                 'pekerjaan_ayah' => 'ASN',
                 'jabatan_ayah' => 'Kepala Bidang Pendidikan',
+                'sk_jabatan_ayah' => UploadedFile::fake()->create('sk-jabatan-ayah.pdf', 250, 'application/pdf'),
                 'nama_ibu' => 'Ibu Lainnya',
                 'status_ibu' => 'hidup',
                 'nik_ibu' => '6212123456789014',
@@ -635,26 +637,25 @@ class BeasiswaRegistrationFlowTest extends TestCase
         $orangTua = $pendaftaran->fresh()->orangTua;
         $this->assertSame('ASN', $orangTua->pekerjaan_ayah);
         $this->assertSame('Kepala Bidang Pendidikan', $orangTua->jabatan_ayah);
+        $this->assertNotNull($orangTua->sk_jabatan_ayah);
+        Storage::disk(config('kartu_hebat.document_disk'))->assertExists($orangTua->sk_jabatan_ayah);
         $this->assertSame('Ibu Rumah Tangga', $orangTua->pekerjaan_ibu);
         $this->assertNull($orangTua->jabatan_ibu);
+        $this->assertNull($orangTua->sk_jabatan_ibu);
     }
 
     public function test_nik_wali_wajib_jika_memiliki_wali(): void
     {
         $user = User::factory()->create();
-        $this->draftFor($user);
+        $pendaftaran = $this->draftFor($user);
 
-        // Memiliki wali tapi NIK wali kosong
+        // 1. Kedua ortu meninggal dunia, memilih wali tapi NIK wali kosong -> error
         $this->actingAs($user)
             ->put(route('mahasiswa.orang-tua.update'), [
                 'nama_ayah' => 'Ayah Tes',
-                'status_ayah' => 'hidup',
-                'nik_ayah' => '6212123456789013',
-                'pekerjaan_ayah' => 'Wirausaha',
+                'status_ayah' => 'meninggal_dunia',
                 'nama_ibu' => 'Ibu Tes',
-                'status_ibu' => 'hidup',
-                'nik_ibu' => '6212123456789014',
-                'pekerjaan_ibu' => 'Wirausaha',
+                'status_ibu' => 'meninggal_dunia',
                 'memiliki_wali' => true,
                 'nama_wali' => 'Wali Tes',
                 'nik_wali' => '',
@@ -662,17 +663,13 @@ class BeasiswaRegistrationFlowTest extends TestCase
             ])
             ->assertSessionHasErrors(['nik_wali']);
 
-        // Memiliki wali dan NIK wali 16 digit
+        // 2. Kedua ortu meninggal dunia, memiliki wali dan NIK wali 16 digit -> sukses
         $this->actingAs($user)
             ->put(route('mahasiswa.orang-tua.update'), [
                 'nama_ayah' => 'Ayah Tes',
-                'status_ayah' => 'hidup',
-                'nik_ayah' => '6212123456789013',
-                'pekerjaan_ayah' => 'Wirausaha',
+                'status_ayah' => 'meninggal_dunia',
                 'nama_ibu' => 'Ibu Tes',
-                'status_ibu' => 'hidup',
-                'nik_ibu' => '6212123456789014',
-                'pekerjaan_ibu' => 'Wirausaha',
+                'status_ibu' => 'meninggal_dunia',
                 'memiliki_wali' => true,
                 'nama_wali' => 'Wali Tes',
                 'nik_wali' => '6212123456789015',
@@ -680,6 +677,29 @@ class BeasiswaRegistrationFlowTest extends TestCase
             ])
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('mahasiswa.dokumen.index'));
+
+        $this->assertTrue($pendaftaran->fresh()->orangTua->memiliki_wali);
+
+        // 3. Jika salah satu ortu hidup, memiliki_wali otomatis dinonaktifkan (false)
+        $this->actingAs($user)
+            ->put(route('mahasiswa.orang-tua.update'), [
+                'nama_ayah' => 'Ayah Tes',
+                'status_ayah' => 'hidup',
+                'nik_ayah' => '6212123456789013',
+                'pekerjaan_ayah' => 'Wirausaha',
+                'nama_ibu' => 'Ibu Tes',
+                'status_ibu' => 'meninggal_dunia',
+                'memiliki_wali' => true,
+                'nama_wali' => 'Wali Tes',
+                'nik_wali' => '6212123456789015',
+                'pekerjaan_wali' => 'Wirausaha',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('mahasiswa.dokumen.index'));
+
+        $orangTuaAfter = $pendaftaran->fresh()->orangTua;
+        $this->assertFalse($orangTuaAfter->memiliki_wali);
+        $this->assertNull($orangTuaAfter->nama_wali);
     }
 
     public function test_completion_step_orang_tua_depends_on_status_ayah_dan_ibu_dan_wali(): void

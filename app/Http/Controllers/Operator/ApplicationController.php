@@ -173,7 +173,32 @@ class ApplicationController extends Controller
             'docVerificationRound' => $currentRound,
             'siblingApplications' => $siblingApplications,
             'prestasiDocumentMimes' => $this->prestasiDocumentMimes($application),
+            'orangTuaSkMimes' => $this->orangTuaSkMimes($application),
         ]);
+    }
+
+    /**
+     * @return array<string, string|null>
+     */
+    private function orangTuaSkMimes(Application $application): array
+    {
+        $orangTua = $application->pendaftaran?->orangTua;
+
+        if (! $orangTua) {
+            return [];
+        }
+
+        $disk = Storage::disk(config('kartu_hebat.document_disk'));
+        $mimes = [];
+
+        foreach (['ayah', 'ibu', 'wali'] as $peran) {
+            $path = $orangTua->{'sk_jabatan_'.$peran};
+            $mimes[$peran] = filled($path) && $disk->exists($path)
+                ? $disk->mimeType($path)
+                : null;
+        }
+
+        return $mimes;
     }
 
     /**

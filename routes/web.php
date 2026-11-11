@@ -23,6 +23,7 @@ use App\Http\Controllers\Operator\ApplicationFormulirController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\DocumentVerificationController;
 use App\Http\Controllers\Operator\LpjController as OperatorLpjController;
+use App\Http\Controllers\Operator\OrangTuaSkDocumentController;
 use App\Http\Controllers\Operator\PrestasiDocumentController;
 use App\Http\Controllers\Operator\ReconciliationController;
 use App\Http\Controllers\Operator\ReportController;
@@ -118,6 +119,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
 
                 Route::get('/orang-tua', [OrangTuaController::class, 'index'])->name('orang-tua.index');
                 Route::put('/orang-tua', [OrangTuaController::class, 'update'])->name('orang-tua.update');
+                Route::get('/orang-tua/sk/{peran}/lihat', [OrangTuaController::class, 'previewSk'])
+                    ->whereIn('peran', ['ayah', 'ibu', 'wali'])
+                    ->name('orang-tua.sk.preview');
+                Route::get('/orang-tua/sk/{peran}/unduh', [OrangTuaController::class, 'downloadSk'])
+                    ->whereIn('peran', ['ayah', 'ibu', 'wali'])
+                    ->name('orang-tua.sk.download');
+                Route::delete('/orang-tua/sk/{peran}', [OrangTuaController::class, 'destroySk'])
+                    ->whereIn('peran', ['ayah', 'ibu', 'wali'])
+                    ->name('orang-tua.sk.destroy');
 
                 Route::get('/dokumen', [DokumenController::class, 'index'])->name('dokumen.index');
                 Route::post('/dokumen', [DokumenController::class, 'store'])->name('dokumen.store');
@@ -215,6 +225,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'nocache'])
                     ->name('applications.prestasi.lihat');
                 Route::get('/pengajuan/{application}/prestasi/{prestasi}/unduh', [PrestasiDocumentController::class, 'download'])
                     ->name('applications.prestasi.unduh');
+                Route::get('/pengajuan/{application}/orang-tua-sk/{peran}/lihat', [OrangTuaSkDocumentController::class, 'preview'])
+                    ->whereIn('peran', ['ayah', 'ibu', 'wali'])
+                    ->name('applications.orang-tua-sk.lihat');
+                Route::get('/pengajuan/{application}/orang-tua-sk/{peran}/unduh', [OrangTuaSkDocumentController::class, 'download'])
+                    ->whereIn('peran', ['ayah', 'ibu', 'wali'])
+                    ->name('applications.orang-tua-sk.unduh');
                 Route::post('/pengajuan/{application}/verifikasi', [VerificationController::class, 'store'])->name('applications.verify');
                 Route::post('/pengajuan/{application}/dokumen/{document}/penilaian', [DocumentVerificationController::class, 'store'])
                     ->name('applications.documents.verify');

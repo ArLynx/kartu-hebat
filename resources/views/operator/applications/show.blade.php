@@ -386,6 +386,38 @@
                     $detailItems[] = ['Nama Wali', $orangTua->nama_wali ?: '-'];
                     $detailItems[] = ['Pekerjaan & Jabatan Wali', $pekerjaanWali];
                 }
+
+                $asnSkItems = [];
+                if ($orangTua?->pekerjaan_ayah === 'ASN' || filled($orangTua?->sk_jabatan_ayah)) {
+                    $asnSkItems[] = [
+                        'peran' => 'ayah',
+                        'title' => 'SK Jabatan Terakhir Ayah',
+                        'nama' => $orangTua?->nama_ayah ?: '-',
+                        'jabatan' => $orangTua?->jabatan_ayah ?: '-',
+                        'path' => $orangTua?->sk_jabatan_ayah,
+                        'mime' => $orangTuaSkMimes['ayah'] ?? null,
+                    ];
+                }
+                if ($orangTua?->pekerjaan_ibu === 'ASN' || filled($orangTua?->sk_jabatan_ibu)) {
+                    $asnSkItems[] = [
+                        'peran' => 'ibu',
+                        'title' => 'SK Jabatan Terakhir Ibu',
+                        'nama' => $orangTua?->nama_ibu ?: '-',
+                        'jabatan' => $orangTua?->jabatan_ibu ?: '-',
+                        'path' => $orangTua?->sk_jabatan_ibu,
+                        'mime' => $orangTuaSkMimes['ibu'] ?? null,
+                    ];
+                }
+                if ($orangTua?->memiliki_wali && ($orangTua?->pekerjaan_wali === 'ASN' || filled($orangTua?->sk_jabatan_wali))) {
+                    $asnSkItems[] = [
+                        'peran' => 'wali',
+                        'title' => 'SK Jabatan Terakhir Wali',
+                        'nama' => $orangTua?->nama_wali ?: '-',
+                        'jabatan' => $orangTua?->jabatan_wali ?: '-',
+                        'path' => $orangTua?->sk_jabatan_wali,
+                        'mime' => $orangTuaSkMimes['wali'] ?? null,
+                    ];
+                }
             @endphp
 
             <dl class="mt-6 grid gap-x-8 gap-y-5 border-t border-slate-200 pt-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -395,6 +427,51 @@
                         <dd class="mt-1 text-sm font-medium text-slate-900">{{ $value ?: '-' }}</dd>
                     </div>
                 @endforeach
+                @if(count($asnSkItems) > 0)
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Dokumen SK Jabatan Terakhir Orang Tua / Wali (ASN)</dt>
+                        <dd class="mt-2 grid gap-3 {{ count($asnSkItems) > 1 ? 'sm:grid-cols-2' : 'grid-cols-1' }}">
+                            @foreach($asnSkItems as $skItem)
+                                @php
+                                    $isSkPreviewable = in_array($skItem['mime'], ['application/pdf', 'image/jpeg', 'image/png'], true);
+                                @endphp
+                                <div class="rounded border border-slate-200 p-3 text-sm">
+                                    <div class="font-semibold text-slate-900">{{ $skItem['title'] }}</div>
+                                    <div class="mt-0.5 text-xs text-slate-500">
+                                        {{ $skItem['nama'] }} · Jabatan ASN: {{ $skItem['jabatan'] }}
+                                    </div>
+                                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                                        @if(filled($skItem['path']) && $skItem['mime'] !== null)
+                                            @if($isSkPreviewable)
+                                                <button
+                                                    type="button"
+                                                    class="btn-secondary !px-3 !py-1.5 text-xs"
+                                                    @click="openPreview(
+                                                        {{ Js::from(route('operator.applications.orang-tua-sk.lihat', [$application, $skItem['peran']])) }},
+                                                        {{ Js::from(route('operator.applications.orang-tua-sk.unduh', [$application, $skItem['peran']])) }},
+                                                        {{ Js::from($skItem['title'].' — '.$skItem['nama']) }},
+                                                        {{ Js::from($skItem['mime']) }}
+                                                    )"
+                                                >
+                                                    <x-icon name="eye" class="h-3.5 w-3.5" />
+                                                    Lihat
+                                                </button>
+                                            @endif
+                                            <a href="{{ route('operator.applications.orang-tua-sk.unduh', [$application, $skItem['peran']]) }}" class="btn-secondary !px-3 !py-1.5 text-xs">
+                                                <x-icon name="download" class="h-3.5 w-3.5" />
+                                                Unduh
+                                            </a>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+                                                <x-icon name="x" class="h-3 w-3" /> Berkas SK belum diunggah
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </dd>
+                    </div>
+                @endif
                 @if($application->application_type === \App\Enums\ApplicationType::DISABILITAS)
                     <div class="sm:col-span-2 lg:col-span-3">
                         <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Jenis Disabilitas</dt>

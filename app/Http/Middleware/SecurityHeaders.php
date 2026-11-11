@@ -18,8 +18,10 @@ class SecurityHeaders
         // di-frame same-origin.
         $framed = $request->routeIs(
             'documents.preview',
+            'mahasiswa.orang-tua.sk.preview',
             'operator.applications.formulir.lihat',
             'operator.applications.prestasi.lihat',
+            'operator.applications.orang-tua-sk.lihat',
         );
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', $framed ? 'SAMEORIGIN' : 'DENY');

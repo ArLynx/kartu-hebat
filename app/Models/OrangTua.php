@@ -24,6 +24,7 @@ class OrangTua extends Model
         'nik_ayah',
         'pekerjaan_ayah',
         'jabatan_ayah',
+        'sk_jabatan_ayah',
 
         // Ibu
         'nama_ibu',
@@ -31,6 +32,7 @@ class OrangTua extends Model
         'nik_ibu',
         'pekerjaan_ibu',
         'jabatan_ibu',
+        'sk_jabatan_ibu',
 
         // Wali
         'memiliki_wali',
@@ -38,6 +40,7 @@ class OrangTua extends Model
         'nik_wali',
         'pekerjaan_wali',
         'jabatan_wali',
+        'sk_jabatan_wali',
     ];
 
     protected function casts(): array

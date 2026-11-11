@@ -554,6 +554,24 @@
                             @endif
                         </dd>
 
+                        @if ($orangTua?->status_ayah === 'hidup' && $orangTua?->pekerjaan_ayah === 'ASN')
+                            <dd class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                @if ($orangTua->sk_jabatan_ayah)
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
+                                        <x-icon name="check" class="h-3 w-3" />
+                                        SK Jabatan Terakhir sudah diunggah
+                                    </span>
+                                    <a href="{{ route('mahasiswa.orang-tua.sk.preview', 'ayah') }}" target="_blank" rel="noopener" class="font-semibold text-brand-700 hover:underline">Lihat SK</a>
+                                    <a href="{{ route('mahasiswa.orang-tua.sk.download', 'ayah') }}" class="font-semibold text-brand-700 hover:underline">Unduh SK</a>
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 font-semibold text-rose-700">
+                                        <x-icon name="x" class="h-3 w-3" />
+                                        SK Jabatan Terakhir belum diunggah
+                                    </span>
+                                @endif
+                            </dd>
+                        @endif
+
                     </div>
 
 
@@ -579,6 +597,24 @@
                             @endif
                         </dd>
 
+                        @if ($orangTua?->status_ibu === 'hidup' && $orangTua?->pekerjaan_ibu === 'ASN')
+                            <dd class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                @if ($orangTua->sk_jabatan_ibu)
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
+                                        <x-icon name="check" class="h-3 w-3" />
+                                        SK Jabatan Terakhir sudah diunggah
+                                    </span>
+                                    <a href="{{ route('mahasiswa.orang-tua.sk.preview', 'ibu') }}" target="_blank" rel="noopener" class="font-semibold text-brand-700 hover:underline">Lihat SK</a>
+                                    <a href="{{ route('mahasiswa.orang-tua.sk.download', 'ibu') }}" class="font-semibold text-brand-700 hover:underline">Unduh SK</a>
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 font-semibold text-rose-700">
+                                        <x-icon name="x" class="h-3 w-3" />
+                                        SK Jabatan Terakhir belum diunggah
+                                    </span>
+                                @endif
+                            </dd>
+                        @endif
+
                     </div>
 
 
@@ -601,6 +637,24 @@
                             @if ($orangTua->nik_wali)
                                 <dd class="mt-1 text-xs text-slate-500">
                                     NIK: {{ $orangTua->nik_wali }}
+                                </dd>
+                            @endif
+
+                            @if ($orangTua->pekerjaan_wali === 'ASN')
+                                <dd class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                    @if ($orangTua->sk_jabatan_wali)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
+                                            <x-icon name="check" class="h-3 w-3" />
+                                            SK Jabatan Terakhir sudah diunggah
+                                        </span>
+                                        <a href="{{ route('mahasiswa.orang-tua.sk.preview', 'wali') }}" target="_blank" rel="noopener" class="font-semibold text-brand-700 hover:underline">Lihat SK</a>
+                                        <a href="{{ route('mahasiswa.orang-tua.sk.download', 'wali') }}" class="font-semibold text-brand-700 hover:underline">Unduh SK</a>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 font-semibold text-rose-700">
+                                            <x-icon name="x" class="h-3 w-3" />
+                                            SK Jabatan Terakhir belum diunggah
+                                        </span>
+                                    @endif
                                 </dd>
                             @endif
 
@@ -989,6 +1043,12 @@
                         Upload kembali formulir yang telah dicetak dan ditandatangani.
                     </p>
 
+                    @error('file')
+                        <div class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
+                            ⚠️ {{ $message }}
+                        </div>
+                    @enderror
+
                 </div>
 
 
@@ -1087,7 +1147,7 @@
          GANTI FILE
          ========================================================= --}}
                             <form method="POST" action="{{ route('mahasiswa.formulir.upload') }}"
-                                enctype="multipart/form-data" class="mt-4">
+                                enctype="multipart/form-data" class="mt-4" data-file-field>
 
                                 @csrf
 
@@ -1104,6 +1164,7 @@
 
                                     <input id="surat_permohonan_ganti" type="file" name="file"
                                         accept=".pdf,application/pdf" class="hidden"
+                                        data-max-kb="2048" data-file-label="nama_surat_ganti"
                                         onchange="document.getElementById('nama_surat_ganti').textContent = this.files[0]?.name || 'Belum ada file dipilih';">
 
                                     <span id="nama_surat_ganti" class="text-sm text-slate-500">
@@ -1118,6 +1179,8 @@
                                     </button>
 
                                 </div>
+
+                                <p data-file-error class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></p>
 
                             </form>
 
@@ -1146,7 +1209,7 @@
          BELUM ADA FILE SURAT
          ========================================================= --}}
                             <form method="POST" action="{{ route('mahasiswa.formulir.upload') }}"
-                                enctype="multipart/form-data" class="mt-5">
+                                enctype="multipart/form-data" class="mt-5" data-file-field>
 
                                 @csrf
 
@@ -1177,6 +1240,7 @@
 
                                         <input id="surat_permohonan" type="file" name="file"
                                             accept=".pdf,application/pdf" class="hidden"
+                                            data-max-kb="2048" data-file-label="nama_surat"
                                             onchange="document.getElementById('nama_surat').textContent = this.files[0]?.name || 'Belum ada file dipilih';">
 
                                         <span id="nama_surat" class="max-w-xs truncate text-sm text-slate-500">
@@ -1191,6 +1255,8 @@
                                         </button>
 
                                     </div>
+
+                                    <p data-file-error class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-700"></p>
 
                                 </div>
 
@@ -1295,7 +1361,7 @@
          GANTI FILE
          ========================================================= --}}
                                 <form method="POST" action="{{ route('mahasiswa.formulir.upload') }}"
-                                    enctype="multipart/form-data" class="mt-4">
+                                    enctype="multipart/form-data" class="mt-4" data-file-field>
 
                                     @csrf
 
@@ -1312,6 +1378,7 @@
 
                                         <input id="pakta_integritas_ganti" type="file" name="file"
                                             accept=".pdf,application/pdf" class="hidden"
+                                            data-max-kb="2048" data-file-label="nama_pakta_ganti"
                                             onchange="document.getElementById('nama_pakta_ganti').textContent = this.files[0]?.name || 'Belum ada file dipilih';">
 
                                         <span id="nama_pakta_ganti" class="text-sm text-slate-500">
@@ -1326,6 +1393,8 @@
                                         </button>
 
                                     </div>
+
+                                    <p data-file-error class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></p>
 
                                 </form>
 
@@ -1354,7 +1423,7 @@
          BELUM ADA FILE PAKTA
          ========================================================= --}}
                                 <form method="POST" action="{{ route('mahasiswa.formulir.upload') }}"
-                                    enctype="multipart/form-data" class="mt-5">
+                                    enctype="multipart/form-data" class="mt-5" data-file-field>
 
                                     @csrf
 
@@ -1385,6 +1454,7 @@
 
                                             <input id="pakta_integritas" type="file" name="file"
                                                 accept=".pdf,application/pdf" class="hidden"
+                                                data-max-kb="2048" data-file-label="nama_pakta"
                                                 onchange="document.getElementById('nama_pakta').textContent = this.files[0]?.name || 'Belum ada file dipilih';">
 
                                             <span id="nama_pakta" class="max-w-xs truncate text-sm text-slate-500">
@@ -1399,6 +1469,8 @@
                                             </button>
 
                                         </div>
+
+                                        <p data-file-error class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-700"></p>
 
                                     </div>
 

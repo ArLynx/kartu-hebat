@@ -196,7 +196,7 @@
                             </div>
 
                             {{-- DOKUMEN SERTIFIKAT --}}
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-2" data-file-field>
                                 <label class="form-label">
                                     Dokumen Sertifikat / Piagam Penghargaan
                                     <span class="text-red-500">*</span>
@@ -207,9 +207,11 @@
                                     type="file"
                                     name="dokumen"
                                     accept=".pdf,.jpg,.jpeg,.png"
+                                    data-max-kb="2048"
                                     required
                                 >
                                 <p class="mt-1 text-xs text-slate-500">Wajib diunggah sebagai bukti keabsahan prestasi.</p>
+                                <p data-file-error class="mt-2 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></p>
                                 @error('dokumen')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
@@ -348,7 +350,7 @@
                             </div>
 
                             {{-- DOKUMEN SK --}}
-                            <div>
+                            <div data-file-field>
                                 <label class="form-label">
                                     Dokumen Surat Keputusan (SK)
                                     <span class="text-red-500">*</span>
@@ -359,9 +361,11 @@
                                     type="file"
                                     name="dokumen"
                                     accept=".pdf,.jpg,.jpeg,.png"
+                                    data-max-kb="2048"
                                     required
                                 >
                                 <p class="mt-1 text-xs text-slate-500">Wajib diunggah sebagai bukti keabsahan SK kepengurusan.</p>
+                                <p data-file-error class="mt-2 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></p>
                                 @error('dokumen')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
@@ -616,9 +620,9 @@
                                         </div>
 
                                         {{-- DOKUMEN --}}
-                                        <div>
+                                        <div data-file-field>
                                             @if($prestasi->dokumen_prestasi)
-                                                <label class="form-label">Ganti Dokumen SK <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                                <label class="form-label">Ganti Dokumen SK <span class="text-xs text-slate-400 font-normal">(opsional, maks 2 MB)</span></label>
                                             @else
                                                 <label class="form-label">Dokumen SK <span class="text-red-500">*</span> <span class="text-xs text-slate-400 font-normal">(wajib, PDF, JPG, PNG maks 2 MB)</span></label>
                                             @endif
@@ -627,8 +631,10 @@
                                                 type="file"
                                                 name="dokumen"
                                                 accept=".pdf,.jpg,.jpeg,.png"
+                                                data-max-kb="2048"
                                                 @if(! $prestasi->dokumen_prestasi) required @endif
                                             >
+                                            <p data-file-error class="mt-2 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></p>
                                             @error('dokumen')
                                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                             @enderror
@@ -724,9 +730,9 @@
                                         </div>
 
                                         {{-- DOKUMEN --}}
-                                        <div class="md:col-span-2">
+                                        <div class="md:col-span-2" data-file-field>
                                             @if($prestasi->dokumen_prestasi)
-                                                <label class="form-label">Ganti Dokumen Sertifikat <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                                <label class="form-label">Ganti Dokumen Sertifikat <span class="text-xs text-slate-400 font-normal">(opsional, maks 2 MB)</span></label>
                                             @else
                                                 <label class="form-label">Dokumen Sertifikat <span class="text-red-500">*</span> <span class="text-xs text-slate-400 font-normal">(wajib, PDF, JPG, PNG maks 2 MB)</span></label>
                                             @endif
@@ -735,8 +741,10 @@
                                                 type="file"
                                                 name="dokumen"
                                                 accept=".pdf,.jpg,.jpeg,.png"
+                                                data-max-kb="2048"
                                                 @if(! $prestasi->dokumen_prestasi) required @endif
                                             >
+                                            <p data-file-error class="mt-2 hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></p>
                                             @error('dokumen')
                                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                             @enderror

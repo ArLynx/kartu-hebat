@@ -8,6 +8,7 @@ use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -39,5 +40,17 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*'));
+
+        $exceptions->render(function (PostTooLargeException $exception, Request $request) {
+            $message = 'Ukuran berkas yang diunggah terlalu besar (maksimal 2 MB). Silakan pilih berkas dengan ukuran maksimal 2 MB.';
+
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => $message], 413);
+            }
+
+            return back()
+                ->withInput($request->except(['file', 'dokumen']))
+                ->with('error', $message);
+        });
     })
     ->create();

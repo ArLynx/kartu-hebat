@@ -228,6 +228,125 @@
     </div>
 
     @livewireScripts
+    <script>
+        (function () {
+            function formatMb(bytes) {
+                return (bytes / (1024 * 1024)).toFixed(2).replace('.', ',');
+            }
+
+            function getMaxMbLabel(maxKb) {
+                const mb = maxKb / 1024;
+                return Number.isInteger(mb) ? String(mb) : mb.toFixed(1).replace('.', ',');
+            }
+
+            document.addEventListener('change', function (event) {
+                const input = event.target;
+                if (!input || input.tagName !== 'INPUT' || input.type !== 'file' || !input.hasAttribute('data-max-kb')) {
+                    return;
+                }
+
+                const maxKb = parseInt(input.getAttribute('data-max-kb') || '2048', 10);
+                const maxBytes = maxKb * 1024;
+                const maxMbLabel = getMaxMbLabel(maxKb);
+                const container = input.closest('[data-file-field]') || input.parentElement;
+                const errorEl = container ? container.querySelector('[data-file-error]') : null;
+                const labelId = input.getAttribute('data-file-label');
+                const labelEl = labelId ? document.getElementById(labelId) : null;
+                const file = input.files && input.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+                if (file.size > maxBytes) {
+                    const sizeMb = formatMb(file.size);
+                    if (errorEl) {
+                        errorEl.textContent = '⚠️ Ukuran berkas "' + file.name + '" (' + sizeMb + ' MB) melebihi batas maksimal ' + maxMbLabel + ' MB. Silakan pilih berkas dengan ukuran maksimal ' + maxMbLabel + ' MB.';
+                        errorEl.classList.remove('hidden');
+                    }
+                    input.classList.add('border-red-500', 'bg-red-50/40');
+                    if (labelEl) {
+                        labelEl.textContent = 'Ukuran file terlalu besar (' + sizeMb + ' MB)';
+                        labelEl.classList.add('text-red-600', 'font-semibold');
+                    }
+                    input.dataset.oversized = '1';
+                    input.value = '';
+                } else {
+                    delete input.dataset.oversized;
+                    if (errorEl) {
+                        errorEl.textContent = '';
+                        errorEl.classList.add('hidden');
+                    }
+                    input.classList.remove('border-red-500', 'bg-red-50/40');
+                    if (labelEl) {
+                        labelEl.classList.remove('text-red-600', 'font-semibold');
+                    }
+                }
+            });
+
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+                if (!form || form.tagName !== 'FORM') {
+                    return;
+                }
+
+                const fileInputs = form.querySelectorAll('input[type="file"][data-max-kb]');
+                if (!fileInputs.length) {
+                    return;
+                }
+
+                let firstErrorEl = null;
+
+                fileInputs.forEach(function (input) {
+                    const maxKb = parseInt(input.getAttribute('data-max-kb') || '2048', 10);
+                    const maxBytes = maxKb * 1024;
+                    const maxMbLabel = getMaxMbLabel(maxKb);
+                    const container = input.closest('[data-file-field]') || input.parentElement;
+                    const errorEl = container ? container.querySelector('[data-file-error]') : null;
+                    const file = input.files && input.files[0];
+
+                    if (input.dataset.oversized === '1') {
+                        if (errorEl) {
+                            errorEl.classList.remove('hidden');
+                            if (!firstErrorEl) {
+                                firstErrorEl = errorEl;
+                            }
+                        }
+                        return;
+                    }
+
+                    if (file && file.size > maxBytes) {
+                        const sizeMb = formatMb(file.size);
+                        if (errorEl) {
+                            errorEl.textContent = '⚠️ Ukuran berkas "' + file.name + '" (' + sizeMb + ' MB) melebihi batas maksimal ' + maxMbLabel + ' MB. Silakan pilih berkas dengan ukuran maksimal ' + maxMbLabel + ' MB.';
+                            errorEl.classList.remove('hidden');
+                            if (!firstErrorEl) {
+                                firstErrorEl = errorEl;
+                            }
+                        }
+                        input.dataset.oversized = '1';
+                        return;
+                    }
+
+                    if (input.hasAttribute('data-file-label') && (!file)) {
+                        if (errorEl) {
+                            errorEl.textContent = '⚠️ Silakan pilih berkas PDF terlebih dahulu (maksimal ' + maxMbLabel + ' MB) sebelum menekan tombol Unggah.';
+                            errorEl.classList.remove('hidden');
+                            if (!firstErrorEl) {
+                                firstErrorEl = errorEl;
+                            }
+                        }
+                    }
+                });
+
+                if (firstErrorEl) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, true);
+        })();
+    </script>
     @stack('scripts')
 </body>
 

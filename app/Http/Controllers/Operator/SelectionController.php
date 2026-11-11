@@ -114,14 +114,34 @@ class SelectionController extends Controller
                 }
             });
 
-        $rawCounts = Application::query()
+        $activeTab = $request->string('tab')->trim()->toString() ?: 'lolos';
+        if (! in_array($activeTab, ['lolos', 'tms'], true)) {
+            $activeTab = 'lolos';
+        }
+
+        $tmsBaseQuery = Application::query()
             ->visibleTo($request->user())
             ->where('applications.periode', $selectedPeriode)
-            ->whereIn('applications.status', [
-                ApplicationStatus::SELEKSI_KABUPATEN->value,
-                ApplicationStatus::DITERIMA->value,
-                ApplicationStatus::DITOLAK->value,
-            ])
+            ->where(function (Builder $query): void {
+                $query->where('applications.status', ApplicationStatus::TMS->value)
+                    ->orWhere(function (Builder $subQuery): void {
+                        $subQuery->where('applications.status', ApplicationStatus::VERIFIKASI_DINAS->value)
+                            ->whereHas('sanggahan', fn (Builder $s) => $s->where('status', SanggahanStatus::DIKABULKAN->value));
+                    });
+            });
+
+        $rawCountsBase = $activeTab === 'tms'
+            ? (clone $tmsBaseQuery)
+            : Application::query()
+                ->visibleTo($request->user())
+                ->where('applications.periode', $selectedPeriode)
+                ->whereIn('applications.status', [
+                    ApplicationStatus::SELEKSI_KABUPATEN->value,
+                    ApplicationStatus::DITERIMA->value,
+                    ApplicationStatus::DITOLAK->value,
+                ]);
+
+        $rawCounts = $rawCountsBase
             ->leftJoin('pendaftarans', 'pendaftarans.id', '=', 'applications.pendaftaran_id')
             ->leftJoin('pendidikans', 'pendidikans.pendaftaran_id', '=', 'pendaftarans.id')
             ->selectRaw('applications.application_type, pendaftarans.jalur_beasiswa_id, count(*) as total, SUM(pendidikans.nominal_ukt) as total_ukt')
@@ -149,23 +169,23 @@ class SelectionController extends Controller
             ->pluck('total_ukt', 'jalur_beasiswa_id')
             ->map(fn ($total): float => (float) $total);
 
+        $lolosCurrentTrackCount = $activeTab === 'lolos'
+            ? ($selectedJalurId
+                ? (int) ($jalurCounts[$selectedJalurId] ?? 0)
+                : (int) ($typeCounts[$selectedType->value] ?? 0))
+            : Application::query()
+                ->visibleTo($request->user())
+                ->where('applications.periode', $selectedPeriode)
+                ->where('applications.application_type', $selectedType->value)
+                ->whereIn('applications.status', [
+                    ApplicationStatus::SELEKSI_KABUPATEN->value,
+                    ApplicationStatus::DITERIMA->value,
+                    ApplicationStatus::DITOLAK->value,
+                ])
+                ->when($selectedJalurId, fn ($q) => $q->whereHas('pendaftaran', fn ($p) => $p->where('jalur_beasiswa_id', $selectedJalurId)))
+                ->count();
+
         $selectedJalur = $selectedJalurId ? $jalurBeasiswas->firstWhere('id', $selectedJalurId) : null;
-
-        $activeTab = $request->string('tab')->trim()->toString() ?: 'lolos';
-        if (! in_array($activeTab, ['lolos', 'tms'], true)) {
-            $activeTab = 'lolos';
-        }
-
-        $tmsBaseQuery = Application::query()
-            ->visibleTo($request->user())
-            ->where('applications.periode', $selectedPeriode)
-            ->where(function (Builder $query): void {
-                $query->where('applications.status', ApplicationStatus::TMS->value)
-                    ->orWhere(function (Builder $subQuery): void {
-                        $subQuery->where('applications.status', ApplicationStatus::VERIFIKASI_DINAS->value)
-                            ->whereHas('sanggahan', fn (Builder $s) => $s->where('status', SanggahanStatus::DIKABULKAN->value));
-                    });
-            });
 
         $currentTrackTmsBase = (clone $tmsBaseQuery)
             ->where('applications.application_type', $selectedType->value);
@@ -214,6 +234,7 @@ class SelectionController extends Controller
 
         return view('operator.selection', [
             'activeTab' => $activeTab,
+            'lolosCurrentTrackCount' => $lolosCurrentTrackCount,
             'currentTrackTmsCount' => $currentTrackTmsCount,
             'allTracksTmsCount' => $allTracksTmsCount,
             'tmsApplications' => $tmsApplications,
