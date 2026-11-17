@@ -497,7 +497,7 @@
 
                     <div class="aspect-video w-full overflow-hidden rounded-[1.5rem] bg-slate-100">
 
-                        <iframe class="h-full w-full" src="https://www.youtube.com/embed/TNiGf6ZxFe4?si"
+                        <iframe class="h-full w-full" src="https://www.youtube.com/embed/vzWZcZ3J1tE?si=oRkE4TxpM8mMm3EJ"
                             title="Tutorial Pendaftaran Kartu Hebat Mahasiswa" frameborder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowfullscreen>

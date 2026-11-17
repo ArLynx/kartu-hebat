@@ -33,6 +33,12 @@ class SecurityHeaders
         // skrip inline, sehingga butuh 'unsafe-eval' + 'unsafe-inline'.
         // Nilai ini tetap memblokir muatan dari origin eksternal yang tidak
         // diizinkan, objek plugin, clickjacking, dan pengubahan base-uri.
+        $frameSrc = "'self'";
+
+        if ($request->routeIs('home')) {
+            $frameSrc .= ' https://www.youtube.com https://www.youtube-nocookie.com';
+        }
+
         $connectSrc = 'connect-src \'self\'';
         if (! app()->isProduction()) {
             // Izinkan websocket HMR Vite saat development.
@@ -49,7 +55,7 @@ class SecurityHeaders
             ."base-uri 'self'; "
             ."form-action 'self'; "
             ."frame-ancestors '".($framed ? 'self' : 'none')."'; "
-            ."frame-src 'self'; "
+            ."frame-src {$frameSrc}; "
             .(app()->isProduction() ? 'upgrade-insecure-requests' : '');
 
         $response->headers->set('Content-Security-Policy', $csp);
