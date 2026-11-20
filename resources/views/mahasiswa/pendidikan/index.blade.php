@@ -259,7 +259,7 @@
                                     type="number"
                                     name="nominal_ukt"
                                     min="0"
-                                    step="1000"
+                                    step="1"
                                     value="{{ old('nominal_ukt', $pendidikan?->nominal_ukt !== null ? (int) $pendidikan->nominal_ukt : '') }}"
                                     placeholder="Contoh: 3500000"
                                     required
