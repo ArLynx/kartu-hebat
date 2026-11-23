@@ -299,22 +299,6 @@
 
                                                 </div>
 
-                                                <div class="group/item">
-
-                                                    <dt
-                                                        class="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400">
-
-                                                        <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
-
-                                                        Peringkat Jalur
-
-                                                    </dt>
-
-                                                    <dd class="mt-2 text-sm font-bold leading-6 text-slate-800">
-                                                        {{ $result->selection?->rank ?? '-' }}
-                                                    </dd>
-
-                                                </div>
 
                                                 <div class="group/item">
 
