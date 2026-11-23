@@ -165,7 +165,7 @@
                             kemudian kirim kembali pendaftaran.</p>
                     @endif
 
-                    @if ($pendaftaran->application->verificationLogs->isNotEmpty())
+                    {{-- @if ($pendaftaran->application->verificationLogs->isNotEmpty())
                         <div class="mt-5 border-t border-slate-200 pt-5">
                             <h3 class="text-sm font-bold text-slate-900">Riwayat terbaru</h3>
                             <div class="mt-3 space-y-3">
@@ -237,7 +237,7 @@
                                 @endforeach
                             </div>
                         </div>
-                    @endif
+                    @endif --}}
                 </div>
             </section>
         @endif
