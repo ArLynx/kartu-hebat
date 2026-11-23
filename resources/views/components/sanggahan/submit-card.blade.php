@@ -1,7 +1,25 @@
-@props(['application', 'canSubmit' => false, 'reason' => null])
+@props(['application', 'rejectedDocuments' => null, 'canSubmit' => false, 'reason' => null])
 
 @php($sanggahan = $application->sanggahan)
 
+@if (! $application->tmsDetailsRevealed() && ! $sanggahan)
+    <section class="mt-7 rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">
+                    <x-icon name="clock" class="h-3.5 w-3.5" />
+                    Menunggu Pengumuman Hasil
+                </span>
+                <h2 class="mt-3 text-lg font-extrabold text-slate-900">Hasil Verifikasi Belum Diumumkan</h2>
+                <p class="mt-1 text-sm text-slate-700">
+                    Pengajuan <strong>{{ $application->nomor_pengajuan }}</strong> sudah selesai diverifikasi.
+                </p>
+            </div>
+        </div>
+
+        <x-sanggahan.tms-details :application="$application" class="mt-4" />
+    </section>
+@else
 <section class="mt-7 rounded-2xl border border-red-200 bg-red-50/60 p-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -20,7 +38,7 @@
         @endif
     </div>
 
-    <x-sanggahan.tms-agencies :application="$application" class="mt-4" />
+    <x-sanggahan.tms-details :application="$application" :rejected-documents="$rejectedDocuments" class="mt-4" />
 
     @if ($sanggahan)
         <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -59,3 +77,4 @@
         @endif
     </div>
 </section>
+@endif

@@ -18,6 +18,7 @@
                 :application="$pendaftaran->application"
                 :can-submit="$canSubmitSanggahan"
                 :reason="$sanggahanReason"
+                :rejected-documents="$rejectedDocuments"
             />
         @endif
 

@@ -8,6 +8,7 @@ use App\Enums\SanggahanStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Periode extends Model
 {
@@ -53,6 +54,42 @@ class Periode extends Model
     public function isMasaSanggahOpen(): bool
     {
         return $this->masaSanggahStatus() === MasaSanggahStatus::SEDANG_BERLANGSUNG;
+    }
+
+    /**
+     * Apakah rincian keputusan TMS boleh ditampilkan kepada mahasiswa.
+     *
+     * Rincian (dinas penolak, catatan verifikator, dan berkas yang dinilai
+     * tidak memenuhi) ditahan sampai Masa Sanggah periode ini dimulai. Bila
+     * jadwal belum ditetapkan sama sekali, rincian tetap ditampilkan untuk
+     * periode yang sudah ditutup atau yang jendela pendaftarannya sudah
+     * berakhir, supaya riwayat lama tidak mendadak hilang.
+     */
+    public function tmsDetailsRevealed(): bool
+    {
+        $status = $this->masaSanggahStatus();
+
+        if ($status->isScheduled()) {
+            return $status !== MasaSanggahStatus::BELUM_DIMULAI;
+        }
+
+        return $this->status !== 'aktif'
+            || ($this->tanggal_selesai !== null && $this->tanggal_selesai->isBefore(today()));
+    }
+
+    /**
+     * Kalimat penjelas saat rincian keputusan TMS masih ditahan.
+     *
+     * MasaSanggahStatus::BELUM_DIMULAI hanya muncul ketika kedua tanggal
+     * sanggah terisi, sehingga tanggal mulai selalu tersedia di cabang itu.
+     */
+    public function tmsDetailsNotice(): ?string
+    {
+        return match ($this->masaSanggahStatus()) {
+            MasaSanggahStatus::BELUM_DIMULAI => 'Rincian hasil verifikasi akan diumumkan saat Masa Sanggah dimulai pada '.$this->tanggal_mulai_sanggah->format('d M Y').'.',
+            MasaSanggahStatus::BELUM_DIJADWALKAN => 'Rincian hasil verifikasi akan diumumkan melalui Masa Sanggah periode ini.',
+            default => null,
+        };
     }
 
     public function hasUnresolvedSanggahans(): bool
@@ -117,6 +154,11 @@ class Periode extends Model
     public function pendaftarans(): HasMany
     {
         return $this->hasMany(Pendaftaran::class);
+    }
+
+    public function applications(): HasManyThrough
+    {
+        return $this->hasManyThrough(Application::class, Pendaftaran::class);
     }
 
     public function sanggahans(): HasMany

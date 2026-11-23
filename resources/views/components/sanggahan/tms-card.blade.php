@@ -1,7 +1,19 @@
-@props(['application', 'canSubmit' => false, 'reason' => null, 'showForm' => false])
+@props(['application', 'rejectedDocuments' => null, 'canSubmit' => false, 'reason' => null, 'showForm' => false])
 
 @php($sanggahan = $application->sanggahan)
 
+@if (! $application->tmsDetailsRevealed() && ! $sanggahan)
+    <section class="card overflow-hidden">
+        <div class="border-b border-slate-200 px-6 py-5">
+            <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Hasil Verifikasi</p>
+            <h2 class="mt-1 text-lg font-extrabold text-slate-900">{{ $application->nomor_pengajuan }}</h2>
+        </div>
+
+        <div class="px-6 py-5">
+            <x-sanggahan.tms-details :application="$application" />
+        </div>
+    </section>
+@else
 <section class="card overflow-hidden">
     <div class="border-b border-slate-200 px-6 py-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -21,8 +33,8 @@
 
     <div class="space-y-4 px-6 py-5">
         <div>
-            <h3 class="text-sm font-bold text-slate-900">Dinas yang memutuskan TMS</h3>
-            <x-sanggahan.tms-agencies :application="$application" class="mt-3" />
+            <h3 class="text-sm font-bold text-slate-900">Hasil Verifikasi Dinas</h3>
+            <x-sanggahan.tms-details :application="$application" :rejected-documents="$rejectedDocuments ?? null" class="mt-3" />
         </div>
 
         @if ($sanggahan)
@@ -97,3 +109,5 @@
         </div>
     @endif
 </section>
+@endif
+

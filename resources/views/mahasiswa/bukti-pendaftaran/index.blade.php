@@ -466,7 +466,7 @@
         {{-- CATATAN VERIFIKASI --}}
         {{-- ================================================== --}}
 
-        @if($pendaftaran->application?->catatan)
+        @if($pendaftaran->application?->catatan && ! $pendaftaran->application?->isTmsRevealPending())
 
             <div
                 class="border-t border-amber-200 bg-amber-50 px-6 py-6 sm:px-10"

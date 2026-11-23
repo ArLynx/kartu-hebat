@@ -32,6 +32,8 @@ class DashboardController extends Controller
                 'dokumens',
                 'laporanPertanggungjawaban',
                 'application.verificationLogs.actor',
+                'application.pendaftaran.periode',
+                'application.sanggahan',
                 'application.documents.type',
                 'application.documents.verifications',
             ])
@@ -96,6 +98,8 @@ class DashboardController extends Controller
                 'kategoriBeasiswa',
                 'jalurBeasiswa',
                 'application',
+                'application.pendaftaran.periode',
+                'application.sanggahan',
                 'laporanPertanggungjawaban',
                 'dokumens.jenisDokumen',
                 'formulirPendaftaran',

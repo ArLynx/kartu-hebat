@@ -224,6 +224,53 @@ class Application extends Model
     }
 
     /**
+     * Apakah rincian keputusan TMS sudah boleh ditampilkan kepada mahasiswa.
+     */
+    public function tmsDetailsRevealed(): bool
+    {
+        if ($this->status !== ApplicationStatus::TMS) {
+            return true;
+        }
+
+        if ($this->relationLoaded('sanggahan') ? $this->sanggahan !== null : $this->sanggahan()->exists()) {
+            return true;
+        }
+
+        return $this->resolvedPeriode()?->tmsDetailsRevealed() ?? true;
+    }
+
+    /**
+     * Application berstatus TMS yang rinciannya masih ditahan sampai
+     * Masa Sanggah dimulai.
+     */
+    public function isTmsRevealPending(): bool
+    {
+        return $this->status === ApplicationStatus::TMS && ! $this->tmsDetailsRevealed();
+    }
+
+    /**
+     * Kalimat penjelas saat rincian TMS masih ditahan.
+     */
+    public function tmsDetailsNotice(): ?string
+    {
+        return $this->isTmsRevealPending()
+            ? $this->resolvedPeriode()?->tmsDetailsNotice()
+            : null;
+    }
+
+    /**
+     * Label status yang aman ditampilkan ke mahasiswa. Status TMS yang belum
+     * diumumkan diganti label netral agar hasil verifikasi tidak bocor lebih
+     * awal dari jadwal Masa Sanggah.
+     */
+    public function studentStatusLabel(): string
+    {
+        return $this->isTmsRevealPending()
+            ? 'Menunggu Pengumuman Hasil'
+            : $this->status->label();
+    }
+
+    /**
      * Periode yang menjadi konteks application. Application lama hanya
      * menyimpan nama periode sebagai string, sehingga dicocokkan lewat nama.
      */

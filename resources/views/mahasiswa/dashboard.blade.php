@@ -15,7 +15,7 @@
                 <span
                     class="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-brand-700">{{ $pendaftaran->nomor_pendaftaran }}</span>
                 <p class="mt-2 text-sm font-medium text-slate-700">
-                    {{ $pendaftaran->application?->status?->label() ?? ucfirst($pendaftaran->status) }}</p>
+                    {{ $pendaftaran->application?->studentStatusLabel() ?? ucfirst($pendaftaran->status) }}</p>
             </div>
         @endif
     </div>
@@ -140,7 +140,7 @@
                     <p class="text-xs font-bold uppercase tracking-wider text-brand-700">Status Verifikasi</p>
                     <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h2 class="text-2xl font-extrabold">{{ $pendaftaran->application->status->label() }}</h2>
+                            <h2 class="text-2xl font-extrabold">{{ $pendaftaran->application->studentStatusLabel() }}</h2>
                             <p class="mt-1 text-sm text-slate-600">Nomor pengajuan:
                                 {{ $pendaftaran->application->nomor_pengajuan }}</p>
                         </div>
@@ -152,9 +152,19 @@
                 <div class="px-6 py-5 sm:px-8">
                     <div class="h-2 overflow-hidden rounded-full bg-slate-100">
                         <div class="h-full rounded-full bg-brand-600"
-                            style="width: {{ $pendaftaran->application->status->progress() }}%"></div>
+                            style="width: {{ $pendaftaran->application->isTmsRevealPending() ? 50 : $pendaftaran->application->status->progress() }}%"></div>
                     </div>
-                    @if ($pendaftaran->application->catatan)
+                    @if ($pendaftaran->application->isTmsRevealPending())
+                        <div
+                            class="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex items-start gap-3">
+                                <x-icon name="clock" class="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                                <p>{{ $pendaftaran->application->tmsDetailsNotice() ?? 'Rincian hasil verifikasi akan diumumkan melalui Masa Sanggah periode ini.' }}</p>
+                            </div>
+                            <a href="{{ route('mahasiswa.sanggahan.index') }}" class="btn-secondary shrink-0">Lihat Jadwal</a>
+                        </div>
+                    @endif
+                    @if ($pendaftaran->application->catatan && $pendaftaran->application->tmsDetailsRevealed())
                         <div
                             class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
                             <strong>Catatan petugas:</strong> {{ $pendaftaran->application->catatan }}
@@ -262,7 +272,7 @@
                     </div>
                 </div>
                 <span
-                    class="inline-flex w-fit rounded-full {{ $stepStatuses[7] ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }} px-4 py-2 text-sm font-bold">{{ ucfirst($pendaftaran->status) }}</span>
+                    class="inline-flex w-fit rounded-full {{ $stepStatuses[7] ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }} px-4 py-2 text-sm font-bold">{{ $pendaftaran->application?->isTmsRevealPending() ? 'Sedang Diproses' : ucfirst($pendaftaran->status) }}</span>
             </div>
 
             <div class="mt-8 grid gap-3 sm:grid-cols-2 {{ $isNonAkademik ? 'lg:grid-cols-7' : 'lg:grid-cols-6' }}">
@@ -334,6 +344,7 @@
                             @php
                                 $rLpj = $riwayat->laporanPertanggungjawaban;
                                 $isApproved = $riwayat->status === 'approved' || ($riwayat->application && $riwayat->application->status === \App\Enums\ApplicationStatus::DITERIMA);
+                                $isRevealPending = (bool) $riwayat->application?->isTmsRevealPending();
                             @endphp
                             <tr>
                                 <td class="font-bold text-slate-800">
@@ -346,7 +357,9 @@
                                     <p class="text-[11px] text-slate-500">{{ $riwayat->kategoriBeasiswa?->nama ?? '-' }}</p>
                                 </td>
                                 <td>
-                                    @if($isApproved)
+                                    @if($isRevealPending)
+                                        <span class="status-chip status-neutral text-xs">Sedang Diproses</span>
+                                    @elseif($isApproved)
                                         <span class="status-chip status-success text-xs">Lulus / Diterima</span>
                                     @elseif($riwayat->status === 'submitted')
                                         <span class="status-chip status-info text-xs">Sedang Diproses</span>

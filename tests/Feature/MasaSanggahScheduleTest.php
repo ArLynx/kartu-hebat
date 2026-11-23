@@ -2,7 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ApplicationStatus;
+use App\Enums\ApplicationType;
 use App\Enums\UserRole;
+use App\Models\Application;
+use App\Models\KategoriBeasiswa;
+use App\Models\Pendaftaran;
 use App\Models\Periode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -185,6 +190,98 @@ class MasaSanggahScheduleTest extends TestCase
             ->assertOk()
             ->assertSee('Telah berakhir')
             ->assertDontSee('Sedang berlangsung');
+    }
+
+    public function test_periode_list_warns_when_tms_exists_without_masa_sanggah_schedule(): void
+    {
+        $superadmin = $this->superadmin();
+        $student = User::factory()->create(['role' => UserRole::MAHASISWA]);
+
+        $periode = $this->periode([
+            'tanggal_mulai_sanggah' => null,
+            'tanggal_selesai_sanggah' => null,
+        ]);
+
+        $kategori = KategoriBeasiswa::query()->create([
+            'periode_id' => $periode->id,
+            'kode' => 'KAT-WARN',
+            'application_type' => ApplicationType::AKADEMIK,
+            'nama' => 'Kategori Peringatan',
+            'kuota' => 5,
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+
+        $pendaftaran = Pendaftaran::query()->create([
+            'user_id' => $student->id,
+            'periode_id' => $periode->id,
+            'kategori_beasiswa_id' => $kategori->id,
+            'nomor_pendaftaran' => 'KHM-WARN-001',
+            'status' => 'rejected',
+            'submitted_at' => now(),
+        ]);
+
+        Application::query()->create([
+            'pendaftaran_id' => $pendaftaran->id,
+            'mahasiswa_id' => $student->id,
+            'nomor_pengajuan' => 'KHM-WARN-001',
+            'periode' => $periode->nama,
+            'status' => ApplicationStatus::TMS,
+            'application_type' => ApplicationType::AKADEMIK,
+            'submitted_at' => now(),
+            'locked_at' => now(),
+        ]);
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.periodes.index'))
+            ->assertOk()
+            ->assertSee('Ada pengajuan TMS; rincian TMS belum dapat diumumkan tanpa jadwal Masa Sanggah.');
+    }
+
+    public function test_periode_list_does_not_warn_once_schedule_is_set(): void
+    {
+        $superadmin = $this->superadmin();
+        $student = User::factory()->create(['role' => UserRole::MAHASISWA]);
+
+        $periode = $this->periode([
+            'tanggal_mulai_sanggah' => '2026-11-10',
+            'tanggal_selesai_sanggah' => '2026-11-12',
+        ]);
+
+        $kategori = KategoriBeasiswa::query()->create([
+            'periode_id' => $periode->id,
+            'kode' => 'KAT-WARN-2',
+            'application_type' => ApplicationType::AKADEMIK,
+            'nama' => 'Kategori Peringatan',
+            'kuota' => 5,
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+
+        $pendaftaran = Pendaftaran::query()->create([
+            'user_id' => $student->id,
+            'periode_id' => $periode->id,
+            'kategori_beasiswa_id' => $kategori->id,
+            'nomor_pendaftaran' => 'KHM-WARN-002',
+            'status' => 'rejected',
+            'submitted_at' => now(),
+        ]);
+
+        Application::query()->create([
+            'pendaftaran_id' => $pendaftaran->id,
+            'mahasiswa_id' => $student->id,
+            'nomor_pengajuan' => 'KHM-WARN-002',
+            'periode' => $periode->nama,
+            'status' => ApplicationStatus::TMS,
+            'application_type' => ApplicationType::AKADEMIK,
+            'submitted_at' => now(),
+            'locked_at' => now(),
+        ]);
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.periodes.index'))
+            ->assertOk()
+            ->assertDontSee('rincian TMS belum dapat diumumkan');
     }
 
     private function periode(array $attributes = []): Periode

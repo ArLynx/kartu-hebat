@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Superadmin;
 
+use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Periode;
 use Illuminate\Http\RedirectResponse;
@@ -14,7 +15,12 @@ class PeriodeController extends Controller
     public function index(): View
     {
         $periodes = Periode::query()
-            ->withCount(['kategoriBeasiswas', 'pendaftarans'])
+            ->withCount([
+                'kategoriBeasiswas',
+                'pendaftarans',
+                'applications as has_tms_without_schedule' => fn ($query) => $query
+                    ->where('applications.status', ApplicationStatus::TMS->value),
+            ])
             ->orderByDesc('tahun')
             ->orderByDesc('tanggal_mulai')
             ->paginate(15);

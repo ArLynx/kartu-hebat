@@ -15,24 +15,31 @@
 
         <x-sanggahan.schedule :periode="$periode" />
 
-        @forelse ($tmsApplications as $application)
+        @forelse ($revealedApplications as $application)
             @php
                 $eligibility = $eligibilities[$application->id];
             @endphp
 
             <x-sanggahan.tms-card
                 :application="$application"
+                :rejected-documents="$rejectedDocuments[$application->id] ?? null"
                 :can-submit="$eligibility['can_submit']"
                 :reason="$eligibility['reason']"
                 :show-form="$eligibility['can_submit']"
             />
         @empty
-            <section class="card p-7 text-center">
-                <p class="text-sm text-slate-600">
-                    Tidak ada pengajuan berstatus TMS pada akun Anda. Sanggahan hanya tersedia untuk pengajuan TMS.
-                </p>
-            </section>
+            @if ($pendingApplications->isEmpty())
+                <section class="card p-7 text-center">
+                    <p class="text-sm text-slate-600">
+                        Tidak ada pengajuan berstatus TMS pada akun Anda. Sanggahan hanya tersedia untuk pengajuan TMS.
+                    </p>
+                </section>
+            @endif
         @endforelse
+
+        @foreach ($pendingApplications as $application)
+            <x-sanggahan.tms-card :application="$application" />
+        @endforeach
 
         <section class="card overflow-hidden">
             <div class="border-b border-slate-200 px-6 py-5">

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Blacklist;
-use App\Models\LaporanPertanggungjawaban;
 use App\Models\Pendaftaran;
 use App\Services\MahasiswaPendaftaranService;
 use Illuminate\Http\RedirectResponse;
@@ -38,14 +37,13 @@ class LpjController extends Controller
                 'dataPribadi',
                 'laporanPertanggungjawaban',
                 'blacklists' => fn ($bq) => $bq->latest('id'),
-            ])
-            ->latest('id')
+            ])->latest('id')
             ->first();
 
         // 2. Jika belum ada yang berstatus Diterima, cari pendaftaran terakhir untuk konteks status
         $latestPendaftaran = $pendaftaran ?: Pendaftaran::query()
             ->where('user_id', $user->id)
-            ->with(['periode', 'kategoriBeasiswa', 'application'])
+            ->with(['periode', 'kategoriBeasiswa', 'application.pendaftaran.periode'])
             ->latest('id')
             ->first();
 
@@ -79,7 +77,7 @@ class LpjController extends Controller
 
         $riwayatPendaftarans = Pendaftaran::query()
             ->where('user_id', $user->id)
-            ->with(['periode', 'kategoriBeasiswa', 'jalurBeasiswa', 'application', 'laporanPertanggungjawaban'])
+            ->with(['periode', 'kategoriBeasiswa', 'jalurBeasiswa', 'application', 'application.pendaftaran.periode', 'laporanPertanggungjawaban'])
             ->orderByDesc('id')
             ->get();
 

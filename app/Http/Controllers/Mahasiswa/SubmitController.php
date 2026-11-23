@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Pendaftaran;
+use App\Services\AgencyVerificationService;
 use App\Services\ApplicationWorkflowService;
 use App\Services\MahasiswaPendaftaranService;
 use App\Services\SanggahanService;
@@ -19,6 +20,7 @@ class SubmitController extends Controller
         private readonly MahasiswaPendaftaranService $flow,
         private readonly ApplicationWorkflowService $workflow,
         private readonly SanggahanService $sanggahanService,
+        private readonly AgencyVerificationService $agencyVerification,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -41,6 +43,12 @@ class SubmitController extends Controller
             ? $this->sanggahanService->ineligibilityReason($application, $request->user())
             : null;
 
+        $rejectedDocuments = $application !== null
+            && $application->status === ApplicationStatus::TMS
+            && $application->tmsDetailsRevealed()
+            ? $this->agencyVerification->rejectedDocumentsFor($application)
+            : collect();
+
         return view('mahasiswa.submit.index', [
             'pendaftaran' => $pendaftaran,
             'stepStatuses' => $this->flow->completion($pendaftaran),
@@ -48,6 +56,7 @@ class SubmitController extends Controller
             'canEdit' => $this->flow->isEditable($pendaftaran),
             'canSubmitSanggahan' => $canSubmitSanggahan,
             'sanggahanReason' => $sanggahanReason,
+            'rejectedDocuments' => $rejectedDocuments,
         ]);
     }
 

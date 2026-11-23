@@ -721,7 +721,7 @@
                                     {{ $document?->nama_file_asli ?: 'Belum diunggah' }}
                                 </p>
 
-                                @if ($assessment && $assessment->result !== \App\Enums\DocumentVerificationResult::BELUM_DINILAI)
+                                @if ($assessment && $assessment->result !== \App\Enums\DocumentVerificationResult::BELUM_DINILAI && ! $pendaftaran->application?->isTmsRevealPending())
                                     <p class="mt-1 text-xs font-semibold {{ $assessment->result === \App\Enums\DocumentVerificationResult::TIDAK_MEMENUHI ? 'text-red-600' : 'text-emerald-600' }}">
                                         {{ $assessment->result->label() }}
                                         @if ($assessment->notes)

@@ -230,6 +230,23 @@ class AgencyVerificationService
     }
 
     /**
+     * Dokumen pada putaran verifikasi berjalan yang dinilai tidak memenuhi
+     * syarat oleh dinas, lengkap dengan catatan verifikatornya.
+     *
+     * @return Collection<int, DocumentVerification>
+     */
+    public function rejectedDocumentsFor(Application $application): Collection
+    {
+        return DocumentVerification::query()
+            ->where('application_id', $application->id)
+            ->where('round', self::currentRound($application))
+            ->where('result', DocumentVerificationResult::TIDAK_MEMENUHI->value)
+            ->with(['document.type', 'verifier'])
+            ->orderBy('stage')
+            ->get();
+    }
+
+    /**
      * Validasi bahwa seluruh berkas yang menjadi kewenangan dinas telah
      * dinilai sebelum dinas membuat keputusan MS / TMS. Dinas yang hanya
      * meninjau (Sosial, BKPSDM, Parsepor) tidak memiliki checklist wajib.
@@ -337,10 +354,14 @@ class AgencyVerificationService
                     ['role' => $operator->role->value],
                 );
 
+                $revealPending = $target === ApplicationStatus::TMS && $application->isTmsRevealPending();
+
                 $this->notifyStudent(
                     $application,
                     'Status verifikasi diperbarui',
-                    $target->label().($notes ? ': '.$notes : '.'),
+                    $revealPending
+                        ? 'Hasil verifikasi pengajuan '.$application->nomor_pengajuan.' telah diproses dan akan diumumkan melalui Masa Sanggah.'
+                        : $target->label().($notes ? ': '.$notes : '.'),
                 );
 
                 $this->notifyNextOperators($application, $target);

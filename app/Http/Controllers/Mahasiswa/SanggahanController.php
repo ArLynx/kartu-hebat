@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Periode;
 use App\Models\Sanggahan;
+use App\Services\AgencyVerificationService;
 use App\Services\SanggahanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,10 @@ use Illuminate\View\View;
 
 class SanggahanController extends Controller
 {
-    public function __construct(private readonly SanggahanService $sanggahanService) {}
+    public function __construct(
+        private readonly SanggahanService $sanggahanService,
+        private readonly AgencyVerificationService $agencyVerification,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -40,7 +44,21 @@ class SanggahanController extends Controller
             return [$application->id => ['can_submit' => $reason === null, 'reason' => $reason]];
         });
 
-        $eligibleApplications = $tmsApplications
+        $revealedApplications = $tmsApplications
+            ->filter(fn (Application $application): bool => $application->tmsDetailsRevealed())
+            ->values();
+
+        $pendingApplications = $tmsApplications
+            ->reject(fn (Application $application): bool => $application->tmsDetailsRevealed())
+            ->values();
+
+        $rejectedDocuments = $revealedApplications->mapWithKeys(
+            fn (Application $application): array => [
+                $application->id => $this->agencyVerification->rejectedDocumentsFor($application),
+            ],
+        );
+
+        $eligibleApplications = $revealedApplications
             ->filter(fn (Application $application): bool => $eligibilities[$application->id]['can_submit'])
             ->values();
 
@@ -51,6 +69,9 @@ class SanggahanController extends Controller
         return view('mahasiswa.sanggahan.index', compact(
             'sanggahans',
             'tmsApplications',
+            'revealedApplications',
+            'pendingApplications',
+            'rejectedDocuments',
             'eligibilities',
             'periode',
         ));

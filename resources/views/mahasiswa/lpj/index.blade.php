@@ -266,7 +266,7 @@
                 <div class="mt-6 inline-flex flex-col items-center rounded-xl bg-slate-50 px-5 py-3 text-xs">
                     <span class="font-medium text-slate-500">Status Pengajuan Anda Saat Ini:</span>
                     <span class="mt-1 font-bold text-slate-800">
-                        {{ $latestPendaftaran->nomor_pendaftaran }} ({{ ucfirst(str_replace('_', ' ', $latestPendaftaran->status)) }})
+                        {{ $latestPendaftaran->nomor_pendaftaran }} ({{ $latestPendaftaran->application?->isTmsRevealPending() ? 'Sedang Diproses' : ucfirst(str_replace('_', ' ', $latestPendaftaran->status)) }})
                     </span>
                 </div>
             @else

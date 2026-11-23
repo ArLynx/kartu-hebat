@@ -85,6 +85,11 @@
                             @else
                                 <span class="text-xs italic text-slate-400">Belum diatur</span>
                             @endif
+                            @if($masaSanggahStatus === \App\Enums\MasaSanggahStatus::BELUM_DIJADWALKAN && $periode->has_tms_without_schedule)
+                                <p class="mt-1 text-xs font-semibold text-amber-600">
+                                    ● Ada pengajuan TMS; rincian TMS belum dapat diumumkan tanpa jadwal Masa Sanggah.
+                                </p>
+                            @endif
                             <div class="mt-1">
                                 <x-status-badge :status="$masaSanggahStatus" class="text-xs" />
                             </div>

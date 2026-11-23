@@ -29,6 +29,7 @@ class BuktiPendaftaranController extends Controller
                 'dataPribadi',
                 'pendidikan',
                 'application',
+                'application.pendaftaran.periode',
             ])
             ->latest('id')
             ->first();
