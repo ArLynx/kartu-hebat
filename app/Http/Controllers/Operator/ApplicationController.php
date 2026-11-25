@@ -121,6 +121,7 @@ class ApplicationController extends Controller
             'sanggahan.decidedBy',
             'pendaftaran.prestasis',
             'pendaftaran.jalurBeasiswa',
+            'pendaftaran.pendidikan',
             'pendaftaran.formulirPendaftaran',
             'pendaftaran.dataPribadi',
             'pendaftaran.orangTua',

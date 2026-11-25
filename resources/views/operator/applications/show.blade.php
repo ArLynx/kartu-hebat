@@ -378,6 +378,7 @@
 
             @php
                 $orangTua = $application->pendaftaran?->orangTua;
+                $nominalUkt = $application->pendaftaran?->pendidikan?->nominal_ukt;
                 $pekerjaanAyah = $orangTua?->pekerjaan_ayah ?: '-';
                 if ($orangTua?->jabatan_ayah) {
                     $pekerjaanAyah .= ' ('.$orangTua->jabatan_ayah.')';
@@ -522,6 +523,10 @@
                 <div class="sm:col-span-2 lg:col-span-3">
                     <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Alamat</dt>
                     <dd class="mt-1 text-sm leading-6 text-slate-900">{{ $application->mahasiswa->profile?->alamat }}, {{ $application->mahasiswa->profile?->village?->display_name }}, Kecamatan {{ $application->mahasiswa->profile?->village?->kecamatan?->name }}</dd>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3">
+                    <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Nominal UKT</dt>
+                    <dd class="mt-1 text-sm font-medium text-slate-900">{{ $nominalUkt !== null ? 'Rp '.number_format((float) $nominalUkt, 0, ',', '.') : '-' }}</dd>
                 </div>
             </dl>
 

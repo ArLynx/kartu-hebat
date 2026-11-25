@@ -85,6 +85,26 @@ class OperatorJalurBeasiswaVisibilityTest extends TestCase
         $response->assertSee('Reguler');
     }
 
+    public function test_operator_application_show_displays_nominal_ukt(): void
+    {
+        $operator = $this->kabupatenOperator();
+        $application = $this->createApplicationWithJalur($operator, ApplicationType::AKADEMIK, $this->jalurReguler);
+
+        Pendidikan::query()->create([
+            'pendaftaran_id' => $application->pendaftaran_id,
+            'nim' => 'UKT-SHOW-001',
+            'nominal_ukt' => 1254028,
+            'tahun_masuk' => 2023,
+            'akreditasi_perguruan_tinggi' => 'Baik Sekali',
+        ]);
+
+        $response = $this->actingAs($operator)->get(route('operator.applications.show', $application));
+
+        $response->assertSuccessful();
+        $response->assertSee('Nominal UKT');
+        $response->assertSee('Rp 1.254.028');
+    }
+
     public function test_operator_selection_shows_reguler_and_non_reguler(): void
     {
         $operator = $this->kabupatenOperator();
