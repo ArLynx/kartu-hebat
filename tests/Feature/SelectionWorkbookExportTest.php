@@ -7,7 +7,9 @@ use App\Enums\ApplicationType;
 use App\Enums\UserRole;
 use App\Exports\CandidatesExport;
 use App\Exports\CandidatesWorkbookExport;
+use App\Exports\TmsCandidatesExport;
 use App\Models\Application;
+use App\Models\DataPribadi;
 use App\Models\JalurBeasiswa;
 use App\Models\KategoriBeasiswa;
 use App\Models\MahasiswaProfile;
@@ -24,6 +26,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Tests\TestCase;
 
 class SelectionWorkbookExportTest extends TestCase
@@ -157,6 +163,93 @@ class SelectionWorkbookExportTest extends TestCase
         $decisionIndex = array_search('Keputusan', $export->headings(), true);
 
         $this->assertSame(ApplicationStatus::DITERIMA->value, $row[$decisionIndex]);
+    }
+
+    public function test_candidates_export_places_nomor_rekening_after_ukt_with_text_format(): void
+    {
+        $application = $this->candidate(ApplicationType::AKADEMIK, $this->reguler, rank: 1);
+
+        DataPribadi::query()->create($this->dataPribadiAttributes($application, '6212000001280'));
+
+        $export = new CandidatesExport($this->operator->kabupaten_id, ApplicationType::AKADEMIK);
+        $headings = $export->headings();
+        $nikIndex = array_search('NIK', $headings, true);
+        $uktIndex = array_search('UKT', $headings, true);
+        $rekeningIndex = array_search('Nomor Rekening', $headings, true);
+
+        $this->assertSame($uktIndex + 1, $rekeningIndex);
+
+        $row = $export->map($export->collection()->first());
+        $this->assertSame('6212000001280', $row[$rekeningIndex]);
+
+        $formats = $export->columnFormats();
+        $this->assertSame(NumberFormat::FORMAT_TEXT, $formats[Coordinate::stringFromColumnIndex($nikIndex + 1)]);
+        $this->assertSame(NumberFormat::FORMAT_TEXT, $formats[Coordinate::stringFromColumnIndex($rekeningIndex + 1)]);
+
+        $this->assertCellStoresText($export, Coordinate::stringFromColumnIndex($nikIndex + 1), (string) $row[$nikIndex]);
+        $this->assertCellStoresText($export, Coordinate::stringFromColumnIndex($rekeningIndex + 1), $row[$rekeningIndex]);
+    }
+
+    public function test_tms_candidates_export_places_nomor_rekening_after_ukt_with_text_format(): void
+    {
+        $application = $this->candidate(ApplicationType::AKADEMIK, $this->reguler, rank: 1);
+
+        DataPribadi::query()->create($this->dataPribadiAttributes($application, '6212000001280'));
+
+        $export = new TmsCandidatesExport(
+            $this->operator->kabupaten_id,
+            (string) config('kartu_hebat.current_period'),
+            ApplicationType::AKADEMIK,
+        );
+        $headings = $export->headings();
+        $nikIndex = array_search('NIK', $headings, true);
+        $uktIndex = array_search('UKT', $headings, true);
+        $rekeningIndex = array_search('Nomor Rekening', $headings, true);
+
+        $this->assertSame($uktIndex + 1, $rekeningIndex);
+
+        $row = $export->map($application);
+        $this->assertSame(3000000.0, $row[$uktIndex]);
+        $this->assertSame('6212000001280', $row[$rekeningIndex]);
+
+        $formats = $export->columnFormats();
+        $this->assertSame(NumberFormat::FORMAT_TEXT, $formats[Coordinate::stringFromColumnIndex($nikIndex + 1)]);
+        $this->assertSame(NumberFormat::FORMAT_TEXT, $formats[Coordinate::stringFromColumnIndex($rekeningIndex + 1)]);
+
+        $this->assertCellStoresText($export, Coordinate::stringFromColumnIndex($nikIndex + 1), (string) $row[$nikIndex]);
+        $this->assertCellStoresText($export, Coordinate::stringFromColumnIndex($rekeningIndex + 1), $row[$rekeningIndex]);
+    }
+
+    private function assertCellStoresText(CandidatesExport|TmsCandidatesExport $export, string $column, string $value): void
+    {
+        $cell = (new Spreadsheet)->getActiveSheet()->getCell($column.'2');
+        $export->bindValue($cell, $value);
+
+        $this->assertSame(DataType::TYPE_STRING, $cell->getDataType());
+        $this->assertSame($value, $cell->getValue());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function dataPribadiAttributes(Application $application, string $nomorRekening): array
+    {
+        return [
+            'pendaftaran_id' => $application->pendaftaran_id,
+            'nik' => '6212000099'.str_pad((string) $application->id, 4, '0', STR_PAD_LEFT),
+            'nama_lengkap' => $application->mahasiswa->name,
+            'tempat_lahir' => 'Puruk Cahu',
+            'tanggal_lahir' => '2003-01-01',
+            'jenis_kelamin' => 'L',
+            'alamat' => 'Jalan Ahmad Yani',
+            'village_id' => $this->village->id,
+            'provinsi' => 'Kalimantan Tengah',
+            'kabupaten' => 'Murung Raya',
+            'kecamatan' => 'Murung',
+            'desa' => 'Puruk Cahu',
+            'no_hp' => '081234567890',
+            'nomor_rekening' => $nomorRekening,
+        ];
     }
 
     private function candidate(ApplicationType $type, JalurBeasiswa $jalur, int $rank): Application

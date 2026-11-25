@@ -12,13 +12,23 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class TmsCandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
+class TmsCandidatesExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithCustomValueBinder, WithHeadings, WithMapping, WithTitle
 {
     private int $rowNumber = 0;
+
+    /** @var array<int, string>|null */
+    private ?array $textColumns = null;
 
     public function __construct(
         private readonly int $kabupatenId,
@@ -37,6 +47,7 @@ class TmsCandidatesExport implements FromCollection, ShouldAutoSize, WithHeading
                 'mahasiswa.profile.village.kecamatan',
                 'pendaftaran.jalurBeasiswa',
                 'pendaftaran.pendidikan',
+                'pendaftaran.dataPribadi',
                 'agencyVerifications.verifier',
                 'sanggahan',
                 'verificationLogs' => fn ($query) => $query->where('action', 'sanggahan_granted'),
@@ -68,6 +79,8 @@ class TmsCandidatesExport implements FromCollection, ShouldAutoSize, WithHeading
             'Universitas',
             'Program Studi',
             'Semester',
+            'UKT',
+            'Nomor Rekening',
             'Jalur Beasiswa',
             'Kategori Mahasiswa',
             'Kecamatan',
@@ -145,11 +158,15 @@ class TmsCandidatesExport implements FromCollection, ShouldAutoSize, WithHeading
             $application->nomor_pengajuan,
             $application->submitted_at?->format('d/m/Y H:i') ?? '-',
             $application->mahasiswa->name,
-            "'".$application->mahasiswa->profile?->nik,
+            $application->mahasiswa->profile?->nik,
             $application->mahasiswa->profile?->nim,
             $application->mahasiswa->profile?->universitas,
             $application->mahasiswa->profile?->program_studi,
             $application->mahasiswa->profile?->semester,
+            $application->pendaftaran?->pendidikan?->nominal_ukt !== null
+                ? (float) $application->pendaftaran->pendidikan->nominal_ukt
+                : '-',
+            $application->pendaftaran?->dataPribadi?->nomor_rekening ?: '-',
             $application->application_type?->label(),
             $application->pendaftaran?->jalurBeasiswa?->nama ?? '-',
             $application->mahasiswa->profile?->village?->kecamatan?->name ?? '-',
@@ -164,5 +181,52 @@ class TmsCandidatesExport implements FromCollection, ShouldAutoSize, WithHeading
     public function title(): string
     {
         return $this->sheetTitle ?? 'Rekap Berkas TMS';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function columnFormats(): array
+    {
+        $formats = [];
+
+        foreach ($this->textColumns() as $column) {
+            $formats[$column] = NumberFormat::FORMAT_TEXT;
+        }
+
+        return $formats;
+    }
+
+    public function bindValue(Cell $cell, $value): bool
+    {
+        if (in_array($cell->getColumn(), $this->textColumns(), true)) {
+            $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
+
+            return true;
+        }
+
+        return (new DefaultValueBinder)->bindValue($cell, $value);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function textColumns(): array
+    {
+        if ($this->textColumns !== null) {
+            return $this->textColumns;
+        }
+
+        $this->textColumns = [];
+
+        foreach (['NIK', 'Nomor Rekening'] as $heading) {
+            $index = array_search($heading, $this->headings(), true);
+
+            if ($index !== false) {
+                $this->textColumns[] = Coordinate::stringFromColumnIndex($index + 1);
+            }
+        }
+
+        return $this->textColumns;
     }
 }

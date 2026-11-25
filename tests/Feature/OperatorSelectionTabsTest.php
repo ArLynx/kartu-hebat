@@ -364,7 +364,8 @@ class OperatorSelectionTabsTest extends TestCase
 
         $this->assertTrue($collection->contains('id', $app->id));
         $mapped = $export->map($app);
-        $this->assertStringContainsString('Dikabulkan (Menunggu dinas menilai ulang)', $mapped[15]);
+        $statusIndex = array_search('Status Sanggahan', $export->headings(), true);
+        $this->assertStringContainsString('Dikabulkan (Menunggu dinas menilai ulang)', $mapped[$statusIndex]);
     }
 
     public function test_non_kabupaten_operator_cannot_export_tms_candidates(): void

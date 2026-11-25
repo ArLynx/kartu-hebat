@@ -10,12 +10,22 @@ use App\Services\Scoring\NonAcademicTierResolver;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
+class CandidatesExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithCustomValueBinder, WithHeadings, WithMapping, WithTitle
 {
+    /** @var array<int, string>|null */
+    private ?array $textColumns = null;
+
     public function __construct(
         private readonly int $kabupatenId,
         private readonly ?ApplicationType $applicationType = null,
@@ -32,6 +42,7 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
                 'selection',
                 'pendaftaran.jalurBeasiswa',
                 'pendaftaran.pendidikan',
+                'pendaftaran.dataPribadi',
                 'pendaftaran.prestasis',
             ])
             ->where('periode', config('kartu_hebat.current_period'))
@@ -72,6 +83,7 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             'Semester',
             'IPK',
             'UKT',
+            'Nomor Rekening',
             'Tahun Masuk (Angkatan)',
             'Akreditasi PT',
             'Pengurus Ormawa',
@@ -106,6 +118,7 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             $application->mahasiswa->profile?->semester,
             $application->mahasiswa->profile?->ipk,
             $pendidikan?->nominal_ukt !== null ? (float) $pendidikan->nominal_ukt : '-',
+            $application->pendaftaran?->dataPribadi?->nomor_rekening ?: '-',
             $pendidikan?->tahun_masuk ?? '-',
             $pendidikan?->akreditasi_perguruan_tinggi ?? '-',
             $ormawa !== null
@@ -130,6 +143,53 @@ class CandidatesExport implements FromCollection, ShouldAutoSize, WithHeadings, 
     public function title(): string
     {
         return $this->sheetTitle ?? 'Rekap Seleksi';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function columnFormats(): array
+    {
+        $formats = [];
+
+        foreach ($this->textColumns() as $column) {
+            $formats[$column] = NumberFormat::FORMAT_TEXT;
+        }
+
+        return $formats;
+    }
+
+    public function bindValue(Cell $cell, $value): bool
+    {
+        if (in_array($cell->getColumn(), $this->textColumns(), true)) {
+            $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
+
+            return true;
+        }
+
+        return (new DefaultValueBinder)->bindValue($cell, $value);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function textColumns(): array
+    {
+        if ($this->textColumns !== null) {
+            return $this->textColumns;
+        }
+
+        $this->textColumns = [];
+
+        foreach (['NIK', 'Nomor Rekening'] as $heading) {
+            $index = array_search($heading, $this->headings(), true);
+
+            if ($index !== false) {
+                $this->textColumns[] = Coordinate::stringFromColumnIndex($index + 1);
+            }
+        }
+
+        return $this->textColumns;
     }
 
     private function decisionValue(Application $application): string
