@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 class Application extends Model
 {
@@ -195,7 +196,8 @@ class Application extends Model
     /**
      * Gerbang verifikasi dinas: tanggal pendaftaran periode masih berjalan,
      * atau application dibuka kembali lewat sanggahan yang dikabulkan selama
-     * periodenya masih aktif.
+     * periodenya masih aktif. Batas akhir verifikasi dapat diperpanjang
+     * sementara lewat config tanpa mengubah tanggal pendaftaran.
      */
     public function isVerificationWindowOpen(): bool
     {
@@ -210,10 +212,10 @@ class Application extends Model
 
             $today = today();
 
-            $isRegistrationOpen = $periode->tanggal_mulai?->lte($today)
-                && $periode->tanggal_selesai?->gte($today);
+            $isVerificationOpen = $periode->tanggal_mulai?->lte($today)
+                && $this->verificationDeadline($periode)?->gte($today);
 
-            return $isRegistrationOpen || $this->isReopenedForVerification();
+            return $isVerificationOpen || $this->isReopenedForVerification();
         }
 
         if ($this->periode === config('kartu_hebat.current_period')) {
@@ -221,6 +223,25 @@ class Application extends Model
         }
 
         return $this->isReopenedForVerification();
+    }
+
+    /**
+     * Batas akhir verifikasi untuk sebuah periode. Override config hanya
+     * berlaku untuk periode yang ditentukan dan bersifat sementara.
+     */
+    private function verificationDeadline(Periode $periode): ?Carbon
+    {
+        $override = config('kartu_hebat.verification_override');
+
+        if (
+            ! empty($override['until'])
+            && ! empty($override['periode_id'])
+            && (int) $override['periode_id'] === (int) $periode->getKey()
+        ) {
+            return Carbon::parse($override['until']);
+        }
+
+        return $periode->tanggal_selesai;
     }
 
     /**

@@ -7,6 +7,10 @@ return [
     'current_period' => env('KHM_CURRENT_PERIOD', '2026/2027 Ganjil'),
     'registration_open' => env('KHM_REGISTRATION_OPEN', '2026-08-01'),
     'registration_close' => env('KHM_REGISTRATION_CLOSE', '2026-11-30'),
+    'verification_override' => [
+        'periode_id' => env('KHM_VERIFICATION_PERIOD_ID'),
+        'until' => env('KHM_VERIFICATION_UNTIL'),
+    ],
     'allowed_email_domains' => [
         'gmail.com', 'googlemail.com',
         'yahoo.com', 'yahoo.co.id', 'ymail.com',
