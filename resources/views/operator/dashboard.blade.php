@@ -46,6 +46,54 @@
     @endforeach
 </div>
 
+@if($agencyCoverage->isNotEmpty())
+<section class="table-shell mt-7">
+    <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-lg font-bold">Cakupan Verifikasi per SOPD</h2>
+            <p class="mt-1 text-xs text-slate-500">Progres verifikasi tiap dinas pada periode {{ config('kartu_hebat.current_period') }}.</p>
+        </div>
+        <a href="{{ route('operator.reconciliation') }}" class="text-sm font-semibold text-brand-600">Lihat Rekonsiliasi</a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>SOPD</th>
+                    <th>Nama SOPD</th>
+                    <th>Wajib Verifikasi</th>
+                    <th class="text-right">Total Wajib</th>
+                    <th class="text-right">Sudah Verifikasi</th>
+                    <th class="text-right">Sisa Verifikasi</th>
+                    <th class="text-right">% Sudah</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($agencyCoverage as $sopd)
+                    <tr>
+                        <td class="font-semibold text-slate-700">{{ $sopd['code'] }}</td>
+                        <td>{{ $sopd['name'] }}</td>
+                        <td>{{ $sopd['requirement'] }}</td>
+                        <td class="text-right font-medium">{{ number_format($sopd['total']) }}</td>
+                        <td class="text-right font-medium">{{ number_format($sopd['verified']) }}</td>
+                        <td class="text-right font-medium">{{ number_format($sopd['remaining']) }}</td>
+                        <td class="text-right">
+                            @if($sopd['percent_verified'] === null)
+                                <span class="text-slate-400">&mdash;</span>
+                            @else
+                                <span class="status-chip {{ $sopd['percent_verified'] >= 80 ? 'status-success' : ($sopd['percent_verified'] >= 50 ? 'status-warning' : 'status-danger') }}">
+                                    {{ number_format($sopd['percent_verified'], 1) }}%
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</section>
+@endif
+
 <div class="mt-7 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
     <section class="card p-6">
         <div class="flex items-center justify-between">
